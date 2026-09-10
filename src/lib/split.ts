@@ -1,0 +1,107 @@
+import { PDFDocument } from 'pdf-lib'
+
+export interface SplitPart {
+  bytes: Uint8Array
+  size: number
+  /** Intervalo de páginas 1-based, inclusivo */
+  from: number
+  to: number
+}
+
+export interface SplitOptions {
+  /** Tamanho máximo de cada parte, em bytes */
+  maxBytes: number
+  /** Chamado a cada parte concluída (para progresso) */
+  onProgress?: (pagesDone: number, totalPages: number) => void
+  /** Senha do PDF, se necessário */
+  password?: string
+}
+
+export class SplitError extends Error {
+  constructor(message: string, public readonly code: 'PAGE_TOO_BIG' | 'EMPTY' | 'LOAD') {
+    super(message)
+    this.name = 'SplitError'
+  }
+}
+
+async function loadDoc(bytes: Uint8Array): Promise<PDFDocument> {
+  try {
+    return await PDFDocument.load(bytes, { ignoreEncryption: true, updateMetadata: false })
+  } catch (e) {
+    throw new SplitError(`Não foi possível ler o PDF para dividir: ${(e as Error).message}`, 'LOAD')
+  }
+}
+
+async function buildRange(src: PDFDocument, from: number, to: number): Promise<Uint8Array> {
+  const out = await PDFDocument.create()
+  const indices: number[] = []
+  for (let i = from; i <= to; i++) indices.push(i)
+  const pages = await out.copyPages(src, indices)
+  for (const p of pages) out.addPage(p)
+  return out.save({ useObjectStreams: true, addDefaultPage: false })
+}
+
+/**
+ * Divide um PDF em partes sequenciais, cada uma com no máximo `maxBytes`.
+ *
+ * Estratégia: estima quantas páginas cabem por parte pela média de bytes/página,
+ * monta a parte, mede o tamanho real e ajusta (recursos compartilhados como fontes
+ * e imagens fazem o tamanho real não ser exatamente proporcional).
+ */
+export async function splitPdf(bytes: Uint8Array, opts: SplitOptions): Promise<SplitPart[]> {
+  const src = await loadDoc(bytes)
+  const total = src.getPageCount()
+  if (total === 0) throw new SplitError('O PDF não tem páginas.', 'EMPTY')
+
+  const avgPerPage = bytes.byteLength / total
+  const parts: SplitPart[] = []
+  let from = 0
+
+  while (from < total) {
+    // Chute inicial conservador (90% do que caberia pela média).
+    let count = Math.max(1, Math.floor((opts.maxBytes / avgPerPage) * 0.9))
+    count = Math.min(count, total - from)
+
+    let built = await buildRange(src, from, from + count - 1)
+
+    // Se coube com folga e ainda há páginas, tenta crescer (poucas iterações).
+    let grow = 0
+    while (built.byteLength < opts.maxBytes * 0.8 && from + count < total && grow < 4) {
+      const extra = Math.max(1, Math.floor(((opts.maxBytes - built.byteLength) / avgPerPage) * 0.8))
+      const nextCount = Math.min(total - from, count + extra)
+      const candidate = await buildRange(src, from, from + nextCount - 1)
+      if (candidate.byteLength <= opts.maxBytes) {
+        built = candidate
+        count = nextCount
+        grow++
+      } else {
+        break
+      }
+    }
+
+    // Se estourou, encolhe até caber.
+    while (built.byteLength > opts.maxBytes) {
+      if (count === 1) {
+        throw new SplitError(
+          `A página ${from + 1} sozinha tem ${Math.ceil(built.byteLength / 1024)} KB e não cabe no limite.`,
+          'PAGE_TOO_BIG',
+        )
+      }
+      const ratio = opts.maxBytes / built.byteLength
+      count = Math.max(1, Math.min(count - 1, Math.floor(count * ratio * 0.95)))
+      built = await buildRange(src, from, from + count - 1)
+    }
+
+    parts.push({ bytes: built, size: built.byteLength, from: from + 1, to: from + count })
+    from += count
+    opts.onProgress?.(from, total)
+  }
+
+  return parts
+}
+
+/** Conta páginas com pdf-lib (usa ignoreEncryption para PDFs com senha de dono). */
+export async function countPages(bytes: Uint8Array): Promise<number> {
+  const doc = await loadDoc(bytes)
+  return doc.getPageCount()
+}

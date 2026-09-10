@@ -1,0 +1,98 @@
+import { PDFDocument, StandardFonts, rgb, pushGraphicsState, popGraphicsState, concatTransformationMatrix, drawObject } from 'pdf-lib'
+import { zlibSync } from 'fflate'
+import { mkdirSync, writeFileSync, existsSync } from 'node:fs'
+import { join } from 'node:path'
+
+export const FIXTURE_DIR = join(process.cwd(), 'test-results', 'fixtures')
+const A4: [number, number] = [595.28, 841.89]
+
+/** Ruído pseudoaleatório determinístico (incompressível → PDF grande), com "linhas de texto". */
+function noise(width: number, height: number, seed: number): Uint8Array {
+  const data = new Uint8Array(width * height * 3)
+  let s = seed >>> 0 || 1
+  for (let i = 0; i < data.length; i++) {
+    s ^= s << 13
+    s ^= s >>> 17
+    s ^= s << 5
+    data[i] = 180 + ((s >>> 0) % 76)
+  }
+  for (let y = 40; y < height - 40; y += 22) {
+    for (let yy = y; yy < y + 4; yy++) {
+      for (let x = 40; x < width - 40; x++) {
+        const i = (yy * width + x) * 3
+        data[i] = 20
+        data[i + 1] = 20
+        data[i + 2] = 30
+      }
+    }
+  }
+  return data
+}
+
+/** Cria um PDF "digitalizado": cada página é uma imagem RGB grande (FlateDecode de ruído). */
+export async function makeScanPdf(path: string, pages: number, width = 1240, height = 1754): Promise<void> {
+  const doc = await PDFDocument.create()
+  for (let p = 0; p < pages; p++) {
+    const compressed = zlibSync(noise(width, height, 1234 + p), { level: 1 })
+    const stream = doc.context.stream(compressed, {
+      Type: 'XObject',
+      Subtype: 'Image',
+      Width: width,
+      Height: height,
+      ColorSpace: 'DeviceRGB',
+      BitsPerComponent: 8,
+      Filter: 'FlateDecode',
+    })
+    const ref = doc.context.register(stream)
+    const page = doc.addPage(A4)
+    const name = page.node.newXObject('Im', ref)
+    page.pushOperators(pushGraphicsState(), concatTransformationMatrix(A4[0], 0, 0, A4[1], 0, 0), drawObject(name), popGraphicsState())
+  }
+  writeFileSync(path, await doc.save({ useObjectStreams: false }))
+}
+
+export async function makeTextPdf(path: string, pages: number): Promise<void> {
+  const doc = await PDFDocument.create()
+  const font = await doc.embedFont(StandardFonts.Helvetica)
+  for (let p = 0; p < pages; p++) {
+    const page = doc.addPage(A4)
+    for (let i = 0; i < 40; i++) {
+      page.drawText(`Pagina ${p + 1}, linha ${i + 1}: texto nativo pesquisavel do documento.`, {
+        x: 50,
+        y: 800 - i * 18,
+        size: 11,
+        font,
+        color: rgb(0.1, 0.1, 0.1),
+      })
+    }
+  }
+  writeFileSync(path, await doc.save())
+}
+
+export interface Fixtures {
+  scanBig: string
+  scanHuge: string
+  text: string
+  corrupt: string
+}
+
+export async function ensureFixtures(): Promise<Fixtures> {
+  mkdirSync(FIXTURE_DIR, { recursive: true })
+  const scanBig = join(FIXTURE_DIR, 'scan_big.pdf')
+  const scanHuge = join(FIXTURE_DIR, 'scan_huge.pdf')
+  const text = join(FIXTURE_DIR, 'text.pdf')
+  const corrupt = join(FIXTURE_DIR, 'corrupt.pdf')
+  if (!existsSync(scanBig)) await makeScanPdf(scanBig, 3)
+  if (!existsSync(scanHuge)) await makeScanPdf(scanHuge, 12)
+  if (!existsSync(text)) await makeTextPdf(text, 20)
+  if (!existsSync(corrupt)) {
+    const junk = new Uint8Array(7 * 1024 * 1024)
+    let s = 99
+    for (let i = 0; i < junk.length; i++) {
+      s = (s * 1103515245 + 12345) >>> 0
+      junk[i] = s >>> 24
+    }
+    writeFileSync(corrupt, Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.from(junk)]))
+  }
+  return { scanBig, scanHuge, text, corrupt }
+}
