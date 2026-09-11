@@ -29,7 +29,7 @@ Estado em 11/09/2026, após revisão adversarial (corretude, privacidade, regras
 | §13.2 Espaço reservado para anúncios sem deslocar layout | Feito (vazio) | `.ad-slot` abaixo de "Como funciona", longe dos botões |
 | §15.1 Navegadores: Chrome/Edge/Firefox/Safari | Parcial | Testado só em Chromium headless; Firefox/Safari pendentes de teste manual |
 | §15.3 Piloto com profissionais | Pendente | Depende de pessoas reais |
-| §19 Nome público, domínio, e-mail de contato, ferramenta de analytics | Pendente (decisão do dono) | `src/config/site.mjs` |
+| §19 Nome público, domínio, e-mail de contato, ferramenta de analytics | Pendente (decisão do dono) | `src/config/site.mjs`; hospedagem pronta em `wrangler.jsonc` (Cloudflare Workers, ver README "Colocar no ar") |
 
 ## Regras pesquisadas mas não cadastradas (fonte oficial inacessível ou não confirmada)
 

@@ -1,0 +1,15 @@
+// Cloudflare Workers com arquivos estáticos (o site inteiro é estático: sem código de servidor).
+// Deploy manual: npm run deploy (precisa de CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID ou `npx wrangler login`).
+// Deploy automático: Workers Builds conectado ao repositório (ver README, seção "Colocar no ar").
+// O nome abaixo precisa ser o mesmo nome do Worker criado no painel da Cloudflare.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "6mb",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist/",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash"
+  },
+  "observability": { "enabled": false }
+}

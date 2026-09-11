@@ -11,6 +11,8 @@
     "dev": "astro dev",
     "build": "npm run validate:rules && astro build",
     "preview": "astro preview",
+    "preview:cf": "npm run build && npx wrangler@4 dev --port 8788",
+    "deploy": "npm run build && npx wrangler@4 deploy",
     "check": "astro check",
     "typecheck": "astro check",
     "validate:rules": "node scripts/validate-rules.mjs",

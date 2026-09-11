@@ -1,4 +1,4 @@
-# Cloudflare Pages / Netlify. Vercel usa vercel.json com o mesmo conteúdo.
+# Cloudflare Workers (static assets) / Cloudflare Pages / Netlify. Vercel usa vercel.json com o mesmo conteúdo.
 # A Content-Security-Policy é emitida pelo Astro como <meta http-equiv> (ver astro.config.mjs).
 /*
   X-Content-Type-Options: nosniff

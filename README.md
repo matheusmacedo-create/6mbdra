@@ -78,18 +78,38 @@ Para rodar localmente atrás de proxy: `NODE_USE_ENV_PROXY=1 node scripts/check-
 
 ## Deploy
 
-Node 22 ou mais novo (`.node-version` e `engines` no `package.json`; na Cloudflare Pages use o
-sistema de build v3 ou a variável `NODE_VERSION=22`). Defina `SITE_URL` no ambiente de build com o
-domínio final (sem ela o site usa a URL de preview da hospedagem para canonical e sitemap).
+Site 100 % estático (`dist/`), publicado como **Cloudflare Worker com arquivos estáticos**
+(`wrangler.jsonc`; plano gratuito compatível com uso comercial; o `gs.wasm` de 16 MB fica abaixo do
+teto de 25 MiB por arquivo). `public/_headers` define cache e cabeçalhos de segurança; a
+Content-Security-Policy é gerada pelo próprio Astro como `<meta http-equiv>` com os hashes dos
+scripts inline que ele emite (`security.csp` em `astro.config.mjs`), sem `unsafe-eval`.
 
-Site 100 % estático (`dist/`). Recomendado: **Cloudflare Pages** (plano gratuito compatível com uso
-comercial; o `gs.wasm` de 16 MB fica abaixo do teto de 25 MiB por arquivo). `public/_headers` define
-cache e cabeçalhos de segurança; a Content-Security-Policy é gerada pelo próprio Astro como
-`<meta http-equiv>` com os hashes dos scripts inline que ele emite (`security.csp` em
-`astro.config.mjs`), sem `unsafe-eval`. Vercel funciona (`vercel.json` equivalente), mas o plano Hobby
-não permite uso comercial. Ajuste `src/config/site.mjs` (nome, URL, e-mail) antes de publicar.
+### Colocar no ar (Workers Builds, sem token)
 
-Conferência local do build com os cabeçalhos: `node scripts/serve-dist.mjs 4329`.
+1. No painel da Cloudflare: **Workers & Pages → Create → Import a repository** e escolha
+   `matheusmacedo-create/6mbdra`.
+2. Nome do projeto: **`6mb`** (precisa ser igual ao `name` do `wrangler.jsonc`, senão o build falha).
+3. Build command: `npm run build`. Deploy command: `npx wrangler deploy` (o padrão).
+   Branch de produção: a branch com o código (hoje `claude/jolly-einstein-q6ps8f`).
+4. Variável de build `SITE_URL` = URL pública do site (por exemplo `https://6mb.SEU-SUBDOMINIO.workers.dev`
+   ou o domínio próprio). Sem ela, canonical e sitemap apontam para o domínio previsto em
+   `src/config/site.mjs`.
+5. **Deploy**. A partir daí cada push na branch de produção publica de novo; outras branches geram
+   URLs de preview se "non-production branch builds" estiver ligado.
+
+Node 22 vem de `.node-version` (o Workers Builds respeita o arquivo). Domínio próprio: **Settings →
+Domains & Routes** no Worker.
+
+### Deploy manual
+
+`npm run deploy` (build + `wrangler deploy`). Exige `npx wrangler login` ou as variáveis
+`CLOUDFLARE_API_TOKEN` (token com permissão *Workers Scripts: Edit*) e `CLOUDFLARE_ACCOUNT_ID`.
+Conferência local do site como ele vai rodar na Cloudflare, com `_headers`, redirecionamentos e 404:
+`npm run preview:cf` (porta 8788). Só os cabeçalhos: `node scripts/serve-dist.mjs 4329`.
+
+Alternativas: Cloudflare Pages (importe o repositório como Pages; build `npm run build`, saída
+`dist`; mesmo `_headers`) e Vercel (`vercel.json` equivalente, mas o plano Hobby não permite uso
+comercial). Ajuste `src/config/site.mjs` (nome, URL, e-mail) antes de publicar.
 
 Analytics: nenhum provedor vem ativo. `src/tool/lib/analytics.ts` expõe `track()` com eventos
 agregados (sem nome/conteúdo de arquivo); para ligar um provedor, defina `window.__analytics`.
