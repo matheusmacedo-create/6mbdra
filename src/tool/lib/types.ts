@@ -1,4 +1,4 @@
-import type { Analysis } from './analyze'
+import type { Analysis } from './splitTypes'
 
 /** Ciclo de vida de um arquivo no lote. O que mostrar ao usuário vem de deriveKind(). */
 export type JobStatus =

@@ -1,6 +1,5 @@
 import { RpcClient, RpcRemoteError } from './rpc'
-import { SplitError, type SplitResult } from './split'
-import type { Analysis } from './analyze'
+import { SplitError, type SplitResult, type Analysis } from './splitTypes'
 import type { SplitResultMessage } from '../workers/pdf.worker'
 
 /** Cliente do worker de pdf-lib (análise, contagem de páginas e divisão em partes). */

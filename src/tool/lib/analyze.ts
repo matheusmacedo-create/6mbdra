@@ -1,16 +1,8 @@
 import { PDFDocument, PDFName, PDFDict, PDFArray } from 'pdf-lib'
 
-export interface Analysis {
-  /** Começa com %PDF e o pdf-lib conseguiu ler a estrutura */
-  valid: boolean
-  pages: number
-  /** Tem dicionário /Encrypt (senha de abertura ou só restrições) */
-  encrypted: boolean
-  /** Indícios de assinatura digital (campo /Sig com /ByteRange) */
-  signed: boolean
-  /** Motivo quando valid = false */
-  reason?: string
-}
+import type { Analysis } from './splitTypes'
+
+export type { Analysis }
 
 /** Mensagens internas do pdf-lib não ajudam o usuário; traduz para algo compreensível. */
 function friendlyReason(e: unknown): string {

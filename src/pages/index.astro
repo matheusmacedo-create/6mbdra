@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro'
 import App from '../tool/App'
 import { REGRAS } from '../tool/lib/regras'
 import { getCollection } from 'astro:content'
+import wasmUrl from '@jspawn/ghostscript-wasm/gs.wasm?url'
 const guias = (await getCollection('guias')).sort((a, b) => a.data.title.localeCompare(b.data.title, 'pt-BR')).slice(0, 4)
 ---
 <Base
@@ -10,6 +11,9 @@ const guias = (await getCollection('guias')).sort((a, b) => a.data.title.localeC
   description="Prepare vários PDFs de uma vez para caberem no limite do tribunal (PJe, eproc, e-SAJ, Projudi). Grátis, sem cadastro e sem enviar arquivos: tudo roda no seu navegador."
   path="/"
 >
+  <Fragment slot="head">
+    <link rel="preload" as="fetch" crossorigin="anonymous" href={wasmUrl} />
+  </Fragment>
   <main class="page">
     <section class="hero">
       <h1>Deixe cada PDF dentro do limite do tribunal, sem enviar nada para a internet</h1>

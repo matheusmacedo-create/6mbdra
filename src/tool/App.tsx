@@ -177,7 +177,7 @@ export default function App() {
             </span>
             <span className="spacer" />
             {phase === 'review' && (
-              <button className="btn" onClick={() => start()} disabled={counts.ready === 0 || counts.analyzing > 0 || engine.state === 'loading'} data-testid="start">
+              <button className="btn" onClick={() => start()} disabled={counts.ready === 0 || counts.analyzing > 0} data-testid="start">
                 {counts.analyzing > 0 ? 'Analisando…' : `Preparar ${counts.ready} arquivo${counts.ready === 1 ? '' : 's'}`}
               </button>
             )}

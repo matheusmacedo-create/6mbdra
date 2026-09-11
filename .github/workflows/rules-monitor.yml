@@ -6,42 +6,77 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   issues: write
+
+concurrency:
+  group: rules-monitor
+  cancel-in-progress: false
 
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Conferir fontes
+      - name: Conferir fontes (atualiza o lock)
         id: check
         run: |
           set +e
-          node scripts/check-sources.mjs > resultado.json
-          echo "code=$?" >> "$GITHUB_OUTPUT"
+          node scripts/check-sources.mjs --update --out resultado.json
+          code=$?
+          set -e
+          echo "code=$code" >> "$GITHUB_OUTPUT"
           cat resultado.json
-      - name: Abrir tarefa de revisão
-        if: steps.check.outputs.code == '2'
+          # 0 = tudo certo, 2 = há achados para revisão; qualquer outro código é falha do próprio monitor.
+          if [ "$code" != "0" ] && [ "$code" != "2" ]; then exit "$code"; fi
+      - name: Comitar contadores e hashes do lock
+        run: |
+          if git diff --quiet -- src/data/fontes.lock.json; then echo "lock sem mudanças"; exit 0; fi
+          git config user.name "monitor-de-regras[bot]"
+          git config user.email "monitor-de-regras@users.noreply.github.com"
+          git add src/data/fontes.lock.json
+          git commit -m "monitor: atualiza lock das fontes ($(date -u +%Y-%m-%d)) [skip ci]"
+          git push
+      - name: Garantir label
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh label create regras --description "Revisão das fontes das regras dos tribunais" --color 0E8A16 --force
+      - name: Abrir ou atualizar a tarefa de revisão
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TITLE="Revisar regras: fontes mudaram ou estão fora do ar ($(date -u +%Y-%m-%d))"
+          ASSINATURA=$(node -e "console.log(require('./resultado.json').assinatura)")
+          EXISTING=$(gh issue list --label regras --state open --search "Revisar regras in:title" --json number,body --jq '.[0].number // empty')
+          if [ "${{ steps.check.outputs.code }}" = "0" ]; then
+            if [ -n "$EXISTING" ]; then
+              gh issue comment "$EXISTING" --body "Rodada de $(date -u +%Y-%m-%d): nenhuma diferença nas fontes. Fechando; a issue reabre sozinha se algo mudar."
+              gh issue close "$EXISTING" --reason completed
+            fi
+            exit 0
+          fi
           BODY_FILE=$(mktemp)
           {
-            echo "O monitor semanal encontrou diferenças nas fontes oficiais. Revise cada item, confirme o significado da mudança e só então atualize \`src/data/regras.json\` (e rode \`node scripts/check-sources.mjs --update\`)."
+            echo "<!-- assinatura: $ASSINATURA -->"
+            echo "O monitor semanal encontrou diferenças nas fontes oficiais. Revise cada item, confirme o significado da mudança e só então atualize \`src/data/regras.json\`."
+            echo
+            echo "Fontes com HTTP 403/503 repetidos costumam ser bloqueio a robôs, não mudança de regra: confira manualmente no navegador. Para páginas dinâmicas use \`monitor_so_trecho\`; para trechos em imagem, \`trecho_em_imagem\`."
             echo
             echo '```json'
             cat resultado.json
             echo '```'
           } > "$BODY_FILE"
-          EXISTING=$(gh issue list --label regras --state open --search "Revisar regras" --json number --jq '.[0].number')
-          if [ -n "$EXISTING" ]; then
-            gh issue comment "$EXISTING" --body-file "$BODY_FILE"
+          if [ -z "$EXISTING" ]; then
+            gh issue create --title "Revisar regras: fontes mudaram ou estão fora do ar ($(date -u +%Y-%m-%d))" --label regras --body-file "$BODY_FILE"
+            exit 0
+          fi
+          PREV=$(gh issue view "$EXISTING" --json body --jq '.body' | grep -o 'assinatura: [0-9a-f]*' | head -1 | cut -d' ' -f2)
+          LAST=$(gh issue view "$EXISTING" --json comments --jq '.comments[-1].body // ""' | grep -o 'assinatura: [0-9a-f]*' | head -1 | cut -d' ' -f2)
+          if [ "$ASSINATURA" = "$PREV" ] || [ "$ASSINATURA" = "$LAST" ]; then
+            echo "mesmos achados da rodada anterior; sem novo comentário"
           else
-            gh issue create --title "$TITLE" --label regras --body-file "$BODY_FILE" || gh issue create --title "$TITLE" --body-file "$BODY_FILE"
+            gh issue comment "$EXISTING" --body-file "$BODY_FILE"
           fi

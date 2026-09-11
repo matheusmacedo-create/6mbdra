@@ -31,6 +31,7 @@ const current = (p: string) => (path === p || (p !== '/' && path.startsWith(p)) 
     <meta property="og:locale" content="pt_BR" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="sitemap" href="/sitemap-index.xml" />
+    <slot name="head" />
   </head>
   <body>
     <header class="site-header">

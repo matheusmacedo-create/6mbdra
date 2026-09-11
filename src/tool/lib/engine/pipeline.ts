@@ -2,7 +2,7 @@ import type { OutputFile, ProcessSettings } from '../types'
 import { compressedName, partName } from '../naming'
 import { LEVELS, pickStartLevel, nextLevel, prevLevel, type Level } from './levels'
 import { EngineError, type CompressionEngine } from './types'
-import { SplitError, type SplitResult } from '../split'
+import { SplitError, type SplitResult } from '../splitTypes'
 
 export interface PipelineDeps {
   engine: CompressionEngine | null

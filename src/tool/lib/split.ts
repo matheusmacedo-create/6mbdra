@@ -1,12 +1,9 @@
 import { PDFDocument, PDFName } from 'pdf-lib'
 
-export interface SplitPart {
-  bytes: Uint8Array
-  size: number
-  /** Intervalo de páginas 1-based, inclusivo */
-  from: number
-  to: number
-}
+import { SplitError, type SplitPart, type SplitResult } from './splitTypes'
+
+export { SplitError }
+export type { SplitPart, SplitResult }
 
 export interface SplitOptions {
   /** Tamanho máximo de cada parte, em bytes */
@@ -16,18 +13,6 @@ export interface SplitOptions {
   signal?: AbortSignal
 }
 
-export interface SplitResult {
-  parts: SplitPart[]
-  /** Recursos do documento que não acompanham as partes (marcadores, formulários…) */
-  avisos: string[]
-}
-
-export class SplitError extends Error {
-  constructor(message: string, public readonly code: 'PAGE_TOO_BIG' | 'EMPTY' | 'LOAD' | 'ABORTED') {
-    super(message)
-    this.name = 'SplitError'
-  }
-}
 
 async function loadDoc(bytes: Uint8Array): Promise<PDFDocument> {
   try {

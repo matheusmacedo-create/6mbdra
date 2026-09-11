@@ -4,6 +4,10 @@
 // trecho (ou do texto todo, quando não há trecho; ou do binário, para PDFs) em
 // src/data/fontes.lock.json. Diferenças e fontes fora do ar por duas rodadas seguidas viram
 // uma lista para revisão humana (JSON na saída + código de saída 2). Nunca altera regras.json.
+//
+// Uso: node scripts/check-sources.mjs [--update] [--out resultado.json]
+//   --update  grava o lock (hashes e contadores de falha) — o workflow semanal usa e comita.
+// No Node, defina NODE_USE_ENV_PROXY=1 se a rede exigir proxy (HTTPS_PROXY).
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { dirname, join } from 'node:path'
@@ -12,10 +16,15 @@ import { fileURLToPath } from 'node:url'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const rulesPath = join(root, 'src', 'data', 'regras.json')
 const lockPath = join(root, 'src', 'data', 'fontes.lock.json')
-const update = process.argv.includes('--update')
+const args = process.argv.slice(2)
+const update = args.includes('--update')
+const outIdx = args.indexOf('--out')
+const outPath = outIdx >= 0 ? args[outIdx + 1] : null
 const TODAY = new Date().toISOString().slice(0, 10)
 const FAILURES_BEFORE_REPORT = 2
 const WINDOW = 200
+const CONCURRENCY = 5
+const TIMEOUT_MS = 20_000
 
 const rules = JSON.parse(readFileSync(rulesPath, 'utf8')).regras
 const lock = existsSync(lockPath) ? JSON.parse(readFileSync(lockPath, 'utf8')) : {}
@@ -77,7 +86,7 @@ function decodeHtml(buf, contentType) {
 
 async function fetchSource(url) {
   const ctrl = new AbortController()
-  const t = setTimeout(() => ctrl.abort(), 30_000)
+  const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
   try {
     const res = await fetch(url, {
       signal: ctrl.signal,
@@ -98,21 +107,38 @@ async function fetchSource(url) {
   }
 }
 
+/** Executa `fn` sobre os itens com no máximo `limit` em paralelo, preservando a ordem. */
+async function mapLimit(items, limit, fn) {
+  const out = new Array(items.length)
+  let next = 0
+  const worker = async () => {
+    for (;;) {
+      const i = next++
+      if (i >= items.length) return
+      out[i] = await fn(items[i], i)
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
+  return out
+}
+
 const urls = [...new Set(rules.map((r) => r.fonte_url))]
+const results = await mapLimit(urls, CONCURRENCY, (url) => fetchSource(url))
+
 const findings = []
 const newLock = { ...lock }
 
-for (const url of urls) {
+urls.forEach((url, idx) => {
+  const r = results[idx]
   const affected = rules.filter((x) => x.fonte_url === url)
   const ids = affected.map((x) => x.id)
   const prev = lock[url] ?? {}
-  const r = await fetchSource(url)
 
   if (!r.ok) {
     const falhas = (prev.falhas ?? 0) + 1
     newLock[url] = { ...prev, falhas, ultima_falha: `${TODAY} ${r.detail}` }
     if (falhas >= FAILURES_BEFORE_REPORT) findings.push({ url, tipo: 'inacessivel', detalhe: `${r.detail} (${falhas} rodadas seguidas)`, regras: ids })
-    continue
+    return
   }
 
   let hash = r.hash
@@ -137,11 +163,17 @@ for (const url of urls) {
   else if (!soTrecho && prev.hash && prev.hash !== hash) findings.push({ url, tipo: 'mudou', detalhe: `conteúdo em volta do trecho mudou (${prev.hash.slice(0, 8)} → ${hash.slice(0, 8)})`, regras: ids })
 
   newLock[url] = { hash, verificado_em: TODAY, falhas: 0 }
-}
+})
+
+// Assinatura estável dos achados (sem contadores), para o workflow não repetir o mesmo comentário toda semana.
+const assinatura = sha(JSON.stringify(findings.map((f) => [f.tipo, f.url, [...f.regras].sort()]).sort()))
+const report = { data: TODAY, verificadas: urls.length, achados: findings, assinatura: findings.length ? assinatura.slice(0, 16) : 'ok' }
 
 if (update) {
   writeFileSync(lockPath, JSON.stringify(newLock, null, 2) + '\n')
   console.error(`[fontes] lock atualizado: ${Object.keys(newLock).length} fonte(s)`)
 }
-console.log(JSON.stringify({ data: TODAY, verificadas: urls.length, achados: findings }, null, 2))
-if (findings.length && !update) process.exit(2)
+const json = JSON.stringify(report, null, 2)
+if (outPath) writeFileSync(outPath, json + '\n')
+console.log(json)
+if (findings.length) process.exit(2)

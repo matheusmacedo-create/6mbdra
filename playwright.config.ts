@@ -7,9 +7,12 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   reporter: [['list']],
+  outputDir: 'test-results/output',
   use: {
     baseURL: 'http://localhost:4329',
     headless: true,
+    trace: 'retain-on-failure',
+    screenshot: 'only-on-failure',
   },
   webServer: {
     command: 'npm run build && node scripts/serve-dist.mjs 4329',

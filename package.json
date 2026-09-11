@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.2.0",
   "description": "Preparador de PDFs para peticionamento eletrônico: compacta e divide PDFs no navegador para caberem no limite do tribunal.",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "type": "module",
   "scripts": {
     "dev": "astro dev",

@@ -66,11 +66,21 @@ docs/decisoes-tecnicas.md
 
 Só entram regras confirmadas em fonte oficial (`*.jus.br`, `*.gov.br`), com trecho literal, URL,
 data da fonte e data da conferência. O arquivo é `src/data/regras.json`; o build roda
-`scripts/validate-rules.mjs`. Toda segunda-feira `rules-monitor.yml` confere as fontes e abre
-uma issue se algo mudou. Depois de revisar, atualize a regra e rode
-`node scripts/check-sources.mjs --update` para gravar os novos hashes.
+`scripts/validate-rules.mjs` (enumerações de instância, tipo e sistema; campos opcionais para limite
+por página, por petição, condicional por páginas, exigência de PDF/A e motivo de revisão).
+
+Toda segunda-feira `rules-monitor.yml` confere as fontes (`scripts/check-sources.mjs`): compara o
+trecho citado, normalizado, e um hash da vizinhança dele; grava contadores e hashes em
+`src/data/fontes.lock.json` (comitado pelo próprio workflow) e abre ou atualiza uma issue com o
+label `regras` quando algo muda ou uma fonte fica fora do ar por duas rodadas seguidas — sem
+repetir o comentário se os achados forem os mesmos, e fechando a issue quando tudo volta ao normal.
+Para rodar localmente atrás de proxy: `NODE_USE_ENV_PROXY=1 node scripts/check-sources.mjs`.
 
 ## Deploy
+
+Node 22 ou mais novo (`.node-version` e `engines` no `package.json`; na Cloudflare Pages use o
+sistema de build v3 ou a variável `NODE_VERSION=22`). Defina `SITE_URL` no ambiente de build com o
+domínio final (sem ela o site usa a URL de preview da hospedagem para canonical e sitemap).
 
 Site 100 % estático (`dist/`). Recomendado: **Cloudflare Pages** (plano gratuito compatível com uso
 comercial; o `gs.wasm` de 16 MB fica abaixo do teto de 25 MiB por arquivo). `public/_headers` define

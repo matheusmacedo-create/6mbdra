@@ -3,7 +3,13 @@ name: CI
 on:
   push:
     branches: ['**']
+    paths-ignore:
+      - 'src/data/fontes.lock.json'
   pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -27,5 +33,5 @@ jobs:
         if: failure()
         with:
           name: playwright-results
-          path: test-results/
+          path: test-results/output/
           retention-days: 7

@@ -4,8 +4,7 @@ import { processPdf, type PipelineDeps } from '../lib/engine/pipeline'
 import { EngineError } from '../lib/engine/types'
 import { createEngine, GhostscriptEngine } from '../lib/engine'
 import { PdfWorkerClient } from '../lib/pdfWorkerClient'
-import { SplitError } from '../lib/split'
-import type { Analysis } from '../lib/analyze'
+import { SplitError, type Analysis } from '../lib/splitTypes'
 import { sizeBucket, track } from '../lib/analytics'
 
 type Action =
