@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Settings } from '../lib/types'
-import { agruparPorTribunal, regrasVigentes, regraPorId, formatLimite, limiteBytes, metaBytes, percentualMeta, rotuloContexto, rotuloSistema, META_PERCENTUAL_PADRAO } from '../lib/regras'
+import { agruparPorTribunal, regrasVigentes, regraPorId, formatLimite, limiteBytes, metaBytes, mostrarBytesDoLimite, percentualMeta, rotuloContexto, rotuloSistema, META_PERCENTUAL_PADRAO } from '../lib/regras'
 import { formatBytes, formatDate } from '../lib/format'
 import { CUSTOM_MB_MAX, CUSTOM_MB_MIN, resolveSettings } from '../lib/limits'
 import { track } from '../lib/analytics'
@@ -8,19 +8,36 @@ import { track } from '../lib/analytics'
 interface Props {
   settings: Settings
   onChange: (s: Settings) => void
+  /** Avisa quando o limite manual digitado é inválido (o botão Preparar fica bloqueado). */
+  onValidity?: (valid: boolean) => void
 }
 
-export function RuleSelector({ settings, onChange }: Props) {
+function parseMb(text: string): number {
+  return Number(text.trim().replace(',', '.'))
+}
+
+function isValidMb(n: number): boolean {
+  return Number.isFinite(n) && n >= CUSTOM_MB_MIN && n <= CUSTOM_MB_MAX
+}
+
+const fmtMb = (n: number) => n.toLocaleString('pt-BR')
+
+export function RuleSelector({ settings, onChange, onValidity }: Props) {
   const regras = regrasVigentes()
   const grupos = agruparPorTribunal(regras)
   const regra = settings.ruleId ? regraPorId(settings.ruleId) : undefined
   const [customText, setCustomText] = useState(String(settings.customMb).replace('.', ','))
   const resolved = resolveSettings(settings)
+  const customValid = regra !== undefined || isValidMb(parseMb(customText))
+
+  useEffect(() => {
+    onValidity?.(customValid)
+  }, [customValid, onValidity])
 
   const setCustom = (text: string) => {
     setCustomText(text)
-    const n = Number(text.replace(',', '.'))
-    if (Number.isFinite(n) && n >= CUSTOM_MB_MIN && n <= CUSTOM_MB_MAX) onChange({ ...settings, ruleId: null, customMb: n })
+    const n = parseMb(text)
+    if (isValidMb(n)) onChange({ ...settings, ruleId: null, customMb: n })
   }
 
   return (
@@ -64,15 +81,22 @@ export function RuleSelector({ settings, onChange }: Props) {
               id="limite-mb"
               type="text"
               inputMode="decimal"
-              aria-describedby="limite-hint"
+              aria-describedby={customValid ? 'limite-hint' : 'limite-erro limite-hint'}
+              aria-invalid={customValid ? undefined : true}
               value={customText}
               onChange={(e) => setCustom(e.target.value)}
               data-testid="custom-limit"
             />
             <span>MB</span>
           </div>
+          {!customValid && (
+            <div className="hint err" id="limite-erro" data-testid="custom-limit-error">
+              Informe um número entre {fmtMb(CUSTOM_MB_MIN)} e {fmtMb(CUSTOM_MB_MAX)} MB (use vírgula para decimais, como 1,5).
+            </div>
+          )}
           <div className="hint" id="limite-hint">
-            Confira o valor no sistema do seu tribunal. Consideramos 1 MB = 1.000.000 bytes (a leitura mais conservadora).
+            Informe o limite exatamente como o tribunal declara: a margem de segurança de {META_PERCENTUAL_PADRAO}% é aplicada por nós. Consideramos 1 MB =
+            1.000.000 bytes (a leitura mais conservadora).
           </div>
         </div>
       )}
@@ -85,7 +109,13 @@ export function RuleSelector({ settings, onChange }: Props) {
               {rotuloContexto(regra) ? ` · ${rotuloContexto(regra)}` : ''}
             </div>
             <dl>
-              <div><dt>Limite declarado</dt><dd>{formatLimite(regra)} ({formatBytes(limiteBytes(regra))})</dd></div>
+              <div>
+                <dt>Limite declarado</dt>
+                <dd>
+                  {formatLimite(regra)}
+                  {mostrarBytesDoLimite(regra) ? ` (${formatBytes(limiteBytes(regra))})` : ''}
+                </dd>
+              </div>
               <div><dt>Meta segura</dt><dd>{formatBytes(metaBytes(regra))} ({percentualMeta(regra)}% do limite)</dd></div>
               {regra.limite_por_pagina_kb && <div><dt>Por página</dt><dd>até {regra.limite_por_pagina_kb} KB (a meta de cada arquivo considera o número de páginas)</dd></div>}
               {regra.limite_total_peticao_mb && <div><dt>Por petição</dt><dd>soma dos arquivos até {regra.limite_total_peticao_mb} MB</dd></div>}

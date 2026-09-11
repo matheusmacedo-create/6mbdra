@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DEFAULT_SETTINGS, deriveKind, isBusy, isStale as isStaleJob, type Settings, type OutputFile, type Job } from './lib/types'
 import { useJobQueue, type EngineStatus } from './hooks/useJobQueue'
 import { DropZone } from './components/DropZone'
@@ -38,12 +38,17 @@ function loadSettings(): Settings {
   return s
 }
 
+const plural = (n: number, um: string, varios: string) => (n === 1 ? um : varios)
+
 export default function App() {
   const [settings, setSettings] = useState<Settings>(loadSettings)
   const process = useMemo(() => resolveSettings(settings), [settings])
   const [engine, setEngine] = useState<EngineStatus>({ state: 'idle' })
   const [notice, setNotice] = useState<string | null>(null)
-  const { jobs, addFiles, remove, clear, start, cancel, retry, allowSigned } = useJobQueue(process, setEngine)
+  const [limitValid, setLimitValid] = useState(true)
+  /** Única região aria-live da ferramenta: só marcos (análise concluída, lote concluído…). */
+  const [announce, setAnnounce] = useState('')
+  const { jobs, batchCount, addFiles, remove, clear, start, cancel, retry, allow } = useJobQueue(process, setEngine)
 
   useEffect(() => {
     try {
@@ -57,11 +62,12 @@ export default function App() {
   const counts = {
     ready: kinds.filter((k) => k === 'ready').length,
     unchanged: kinds.filter((k) => k === 'unchanged').length,
-    blocked: kinds.filter((k) => k === 'signed' || k === 'protected' || k === 'invalid').length,
+    blocked: kinds.filter((k) => k === 'signed' || k === 'restricted' || k === 'protected' || k === 'invalid').length,
     busy: jobs.filter(isBusy).length,
     analyzing: kinds.filter((k) => k === 'analyzing').length,
     done: kinds.filter((k) => k === 'done').length,
     error: kinds.filter((k) => k === 'error').length,
+    stale: jobs.filter((j) => isStaleJob(j, process)).length,
   }
   // A análise prévia faz parte da revisão do lote (§5 etapa 3); "processing" é só o processamento de fato.
   const phase: Phase =
@@ -72,10 +78,38 @@ export default function App() {
       const pdfs = files.filter((f) => /\.pdf$/i.test(f.name) || f.type === 'application/pdf')
       const ignored = files.length - pdfs.length
       addFiles(pdfs)
-      setNotice(ignored > 0 ? `${ignored} arquivo${ignored === 1 ? ' foi ignorado porque não é' : 's foram ignorados porque não são'} PDF.` : null)
+      const msg = ignored > 0 ? `${ignored} arquivo${ignored === 1 ? ' foi ignorado porque não é' : 's foram ignorados porque não são'} PDF.` : null
+      setNotice(msg)
+      if (msg) setAnnounce(msg)
     },
     [addFiles],
   )
+
+  // Marcos anunciados a leitores de tela (uma região só; a lista em si não é aria-live).
+  const prevAnalyzing = useRef(0)
+  useEffect(() => {
+    if (prevAnalyzing.current > 0 && counts.analyzing === 0 && jobs.length > 0) {
+      const parts = [
+        `${counts.ready} para otimizar`,
+        counts.unchanged > 0 ? `${counts.unchanged} já ${plural(counts.unchanged, 'cabe', 'cabem')}` : '',
+        counts.blocked > 0 ? `${counts.blocked} com aviso` : '',
+      ].filter(Boolean)
+      setAnnounce(`Análise concluída: ${parts.join(', ')}.`)
+    }
+    prevAnalyzing.current = counts.analyzing
+  }, [counts.analyzing, counts.ready, counts.unchanged, counts.blocked, jobs.length])
+  const prevPhase = useRef<Phase>(phase)
+  useEffect(() => {
+    const from = prevPhase.current
+    prevPhase.current = phase
+    if (from === 'processing' && phase !== 'processing') {
+      setAnnounce(
+        phase === 'result'
+          ? `Processamento concluído: ${counts.done} ${plural(counts.done, 'pronto', 'prontos')}${counts.error > 0 ? `, ${counts.error} com erro` : ''}.`
+          : 'Processamento cancelado.',
+      )
+    }
+  }, [phase, counts.done, counts.error])
 
   // Aviso ao fechar a aba com trabalho em andamento.
   useEffect(() => {
@@ -104,10 +138,7 @@ export default function App() {
           files.push({ name: safeFileName(j.name), bytes: new Uint8Array(await j.file.arrayBuffer()), size: j.originalSize, kind: 'original' })
         }
       }
-      if (files.length) {
-        downloadZip(files)
-        track('download', { tipo: 'zip', arquivos: files.length })
-      }
+      if (files.length) downloadZip(files) // o evento 'download' é emitido por downloadZip
     } finally {
       setZipping(false)
     }
@@ -116,7 +147,7 @@ export default function App() {
     const k = deriveKind(j, process)
     return (k === 'done' || k === 'unchanged') && !isStale(j)
   }).length
-  const staleCount = jobs.filter(isStale).length
+  const zipExcluded = jobs.length - zipCount
 
   // Limite da soma dos arquivos de uma petição (e-SAJ): a ferramenta não divide petições, só avisa.
   const batchBytes = jobs.reduce((a, j) => {
@@ -129,24 +160,27 @@ export default function App() {
   const totalIn = processedDone.reduce((a, j) => a + j.originalSize, 0)
   const totalOut = processedDone.reduce((a, j) => a + (j.outputs.length ? j.outputs.reduce((x, o) => x + o.size, 0) : j.originalSize), 0)
 
+  // Quantos entram ao clicar em Preparar: prontos + resultados preparados para outra meta.
+  const toPrepare = counts.ready + counts.stale
+  const batchDone = Math.max(0, Math.min(batchCount, batchCount - counts.busy))
+
   return (
     <div className="tool" data-phase={phase}>
       <Stepper phase={phase} />
+      <div className="sr-only" role="status" aria-live="polite" data-testid="announce">
+        {announce}
+      </div>
 
       <section className="card" aria-labelledby="h-config">
-        <h2 id="h-config">
-          <span className="step">1</span>Escolha o tribunal ou o limite
-        </h2>
-        <RuleSelector settings={settings} onChange={setSettings} />
+        <h2 id="h-config">Escolha o tribunal ou o limite</h2>
+        <RuleSelector settings={settings} onChange={setSettings} onValidity={setLimitValid} />
       </section>
 
       <section className="card" aria-labelledby="h-files">
-        <h2 id="h-files">
-          <span className="step">2</span>Adicione os PDFs
-        </h2>
+        <h2 id="h-files">Adicione os PDFs</h2>
         <DropZone onFiles={onFiles} compact={jobs.length > 0} />
         {notice && (
-          <div className="note warn" style={{ marginTop: 12 }} role="status">
+          <div className="note warn" style={{ marginTop: 12 }}>
             {notice}
           </div>
         )}
@@ -163,32 +197,47 @@ export default function App() {
         <section className="card" aria-labelledby="h-batch">
           <div className="jobs-header">
             <h2 id="h-batch" style={{ margin: 0 }}>
-              <span className="step">3</span>
               {phase === 'result' ? 'Resultado' : phase === 'processing' ? 'Preparando…' : 'Revise o lote'}
             </h2>
             <span className="jobs-summary" data-testid="summary">
               {jobs.length} arquivo{jobs.length === 1 ? '' : 's'}
               {counts.ready > 0 ? ` · ${counts.ready} para otimizar` : ''}
-              {counts.unchanged > 0 ? ` · ${counts.unchanged} já cabe${counts.unchanged === 1 ? '' : 'm'}` : ''}
+              {counts.stale > 0 ? ` · ${counts.stale} fora da meta atual` : ''}
+              {counts.unchanged > 0 ? ` · ${counts.unchanged} já ${plural(counts.unchanged, 'cabe', 'cabem')}` : ''}
               {counts.blocked > 0 ? ` · ${counts.blocked} com aviso` : ''}
-              {counts.done > 0 ? ` · ${counts.done} pronto${counts.done === 1 ? '' : 's'}` : ''}
+              {counts.done - counts.stale > 0 ? ` · ${counts.done - counts.stale} ${plural(counts.done - counts.stale, 'pronto', 'prontos')}` : ''}
               {counts.error > 0 ? ` · ${counts.error} com erro` : ''}
               {processedDone.length > 0 && totalIn > 0 ? ` (${formatBytes(totalIn)} → ${formatBytes(totalOut)})` : ''}
             </span>
             <span className="spacer" />
-            {phase === 'review' && (
-              <button className="btn" onClick={() => start()} disabled={counts.ready === 0 || counts.analyzing > 0} data-testid="start">
-                {counts.analyzing > 0 ? 'Analisando…' : `Preparar ${counts.ready} arquivo${counts.ready === 1 ? '' : 's'}`}
+            {phase === 'review' && counts.analyzing > 0 && (
+              <button className="btn" disabled data-testid="start">
+                Analisando…
               </button>
+            )}
+            {phase === 'review' && counts.analyzing === 0 && toPrepare > 0 && (
+              <button className="btn" onClick={() => start()} disabled={!limitValid} title={limitValid ? undefined : 'Corrija o limite informado'} data-testid="start">
+                {counts.ready > 0 ? `Preparar ${toPrepare} arquivo${toPrepare === 1 ? '' : 's'}` : `Reprocessar ${toPrepare} arquivo${toPrepare === 1 ? '' : 's'}`}
+              </button>
+            )}
+            {phase === 'review' && counts.analyzing === 0 && toPrepare === 0 && (
+              <span className="hint" data-testid="nothing-to-prepare">
+                {counts.blocked > 0 ? 'Nada a preparar: veja os avisos abaixo.' : 'Todos os arquivos já cabem na meta. Nada a preparar.'}
+              </span>
             )}
             {phase === 'processing' && counts.busy > 0 && (
               <button className="btn danger" onClick={cancel} data-testid="cancel">
                 Cancelar processamento
               </button>
             )}
+            {phase === 'result' && counts.stale > 0 && (
+              <button className="btn" onClick={() => start()} disabled={!limitValid} data-testid="start">
+                Reprocessar {counts.stale} arquivo{counts.stale === 1 ? '' : 's'}
+              </button>
+            )}
             {phase === 'result' && zipCount > 0 && (
-              <button className="btn" onClick={collectZip} disabled={zipping} data-testid="download-all">
-                {zipping ? 'Montando o ZIP…' : 'Baixar tudo (.zip)'}
+              <button className={`btn${counts.stale > 0 ? ' secondary' : ''}`} onClick={collectZip} disabled={zipping} data-testid="download-all">
+                {zipping ? 'Montando o ZIP…' : `Baixar ${zipCount} arquivo${zipCount === 1 ? '' : 's'} (.zip)`}
               </button>
             )}
             {counts.busy === 0 && (
@@ -198,42 +247,41 @@ export default function App() {
             )}
           </div>
 
-          {phase === 'processing' && (
+          {phase === 'processing' && batchCount > 0 && (
             <div className="overall">
-              <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={jobs.length} aria-valuenow={counts.done + counts.error}>
-                <div style={{ width: `${Math.max(2, ((counts.done + counts.error) / Math.max(1, jobs.length)) * 100)}%` }} />
+              <div className="progress" role="progressbar" aria-label="Progresso do lote" aria-valuemin={0} aria-valuemax={batchCount} aria-valuenow={batchDone}>
+                <div style={{ width: `${Math.max(2, (batchDone / batchCount) * 100)}%` }} />
               </div>
-              <div className="stage">
-                {counts.analyzing > 0 ? 'Analisando os arquivos…' : `${counts.done + counts.error} de ${jobs.length} concluídos`}
-              </div>
+              <div className="stage">{`${batchDone} de ${batchCount} concluído${batchDone === 1 ? '' : 's'}`}</div>
             </div>
           )}
 
-          {capacity && phase !== 'result' && <div className="note warn" role="status">{capacity}</div>}
+          {capacity && phase !== 'result' && <div className="note warn">{capacity}</div>}
           {overPetition && (
-            <div className="note warn" role="status">
+            <div className="note warn">
               Este sistema também limita a soma dos arquivos de uma petição a {formatBytes(process.totalPetitionBytes!)} (já com a margem). O lote tem{' '}
               {formatBytes(batchBytes)}: será preciso protocolar em mais de uma petição.
             </div>
           )}
           {process.exigePdfa && phase !== 'config' && (
-            <div className="note info" role="status">
+            <div className="note info">
               Este sistema exige PDF/A na petição inicial. Os arquivos preparados aqui saem em PDF comum: converta para PDF/A depois de compactar e antes de assinar.
             </div>
           )}
-          {phase === 'review' && counts.ready > 0 && (
+          {phase === 'review' && toPrepare > 0 && (
             <p className="hint">
-              Ao clicar em <strong>Preparar</strong>, os arquivos marcados "será otimizado" são comprimidos (e divididos, se preciso). Os demais ficam como estão.
+              Ao clicar em <strong>Preparar</strong>, os arquivos marcados "será otimizado" são comprimidos (e divididos, se preciso)
+              {counts.stale > 0 ? ' e os marcados "fora da meta atual" são reprocessados' : ''}. Os demais ficam como estão.
             </p>
           )}
           {phase === 'result' && (
             <p className="hint">
-              Confira cada PDF antes de protocolar. O ZIP inclui os arquivos preparados e os que já cabiam, na ordem do lote.
-              {staleCount > 0 ? ` ${staleCount} arquivo${staleCount === 1 ? ' foi preparado' : 's foram preparados'} para outra meta e ${staleCount === 1 ? 'fica' : 'ficam'} fora do ZIP até ser${staleCount === 1 ? '' : 'em'} reprocessado${staleCount === 1 ? '' : 's'}.` : ''}
+              Confira cada PDF antes de protocolar. O ZIP inclui os arquivos preparados e os que já cabiam, na ordem do lote
+              {zipExcluded > 0 ? `; ${zipExcluded === 1 ? 'fica de fora o arquivo' : `ficam de fora os ${zipExcluded} arquivos`} com erro, com aviso ou fora da meta atual` : ''}.
             </p>
           )}
 
-          <BatchList jobs={jobs} process={process} onRemove={remove} onRetry={retry} onAllowSigned={allowSigned} />
+          <BatchList jobs={jobs} process={process} onRemove={remove} onRetry={retry} onAllow={allow} />
         </section>
       )}
     </div>

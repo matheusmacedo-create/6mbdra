@@ -1,4 +1,4 @@
-import type { Analysis } from './splitTypes'
+import { budgetFor, type Analysis, type SplitBudget } from './splitTypes'
 
 /** Ciclo de vida de um arquivo no lote. O que mostrar ao usuário vem de deriveKind(). */
 export type JobStatus =
@@ -16,7 +16,8 @@ export type JobKind =
   | 'ready' // acima do limite; será otimizado
   | 'unchanged' // já cabe; será mantido idêntico
   | 'signed' // assinatura digital detectada; excluído por padrão
-  | 'protected' // protegido por senha; recusado
+  | 'restricted' // só restrições de edição (abre sem senha); excluído por padrão
+  | 'protected' // exige senha de abertura; recusado
   | 'invalid' // não é um PDF legível
   | 'queued'
   | 'processing'
@@ -43,8 +44,8 @@ export interface Job {
   originalSize: number
   status: JobStatus
   analysis?: Analysis
-  /** Usuário optou por processar mesmo com assinatura detectada */
-  forceSigned?: boolean
+  /** Usuário optou por processar mesmo com assinatura ou restrições detectadas */
+  force?: boolean
   /** 0..1 */
   progress: number
   /** Texto curto em pt-BR do que está acontecendo agora */
@@ -99,10 +100,17 @@ export interface ProcessSettings {
  */
 export function targetFor(job: Pick<Job, 'analysis'>, p: ProcessSettings): number {
   const pages = job.analysis?.pages
-  let target = p.targetBytes
-  if (p.conditional && pages !== undefined && pages >= p.conditional.minPages) target = Math.max(target, p.conditional.targetBytes)
-  if (p.perPageBytes && pages) target = Math.min(target, p.perPageBytes * pages)
-  return target
+  if (!pages) return p.targetBytes
+  return budgetFor(splitBudget(p), pages)
+}
+
+/** Orçamento por parte (mesmas regras de targetFor, aplicadas a cada parte da divisão). */
+export function splitBudget(p: ProcessSettings): SplitBudget {
+  return {
+    maxBytes: p.targetBytes,
+    perPageBytes: p.perPageBytes,
+    conditional: p.conditional ? { minPages: p.conditional.minPages, maxBytes: p.conditional.targetBytes } : undefined,
+  }
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -140,7 +148,8 @@ export function deriveKind(j: Job, target: number | ProcessSettings): JobKind {
       if (a.encrypted) return 'protected'
       // Já cabe: mantido intacto mesmo se assinado (não precisa de processamento).
       if (j.originalSize <= targetBytes) return 'unchanged'
-      if (a.signed && !j.forceSigned) return 'signed'
+      if (a.signed && !j.force) return 'signed'
+      if (a.restricted && !j.force) return 'restricted'
       return 'ready'
     }
   }

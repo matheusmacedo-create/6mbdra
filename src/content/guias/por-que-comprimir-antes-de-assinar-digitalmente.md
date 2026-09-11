@@ -42,12 +42,12 @@ Em todos esses casos, o sistema do tribunal pode recusar o documento ou exibi-lo
 
 A regra é uma só: a assinatura tem de ser a última coisa a acontecer antes do protocolo. O fluxo recomendado é:
 
-1. **Preparar.** Junte as páginas, coloque na ordem certa, compacte e, se necessário, divida o PDF para caber no limite do tribunal. Os limites variam entre cerca de 1,5 MB e 20 MB, conforme tribunal, sistema e tipo de petição; confira o seu no [diretório de limites por tribunal](/tribunais/). A [ferramenta de compactar e dividir PDF](/) faz essa etapa direto no seu navegador, sem enviar o arquivo a servidor algum.
+1. **Preparar.** Junte as páginas, coloque na ordem certa, compacte e, se necessário, divida o PDF para caber no limite do tribunal. Os limites variam muito conforme tribunal, sistema e tipo de petição (de pouco mais de 1 MB a dezenas de megabytes); confira o seu no [diretório de limites por tribunal](/tribunais/). A [ferramenta de compactar e dividir PDF](/) faz essa etapa direto no seu navegador, sem enviar o arquivo a servidor algum.
 2. **Conferir.** Abra cada arquivo final e verifique se todas as páginas estão presentes, legíveis e na ordem. Se dividiu, confira os nomes (parte_01, parte_02) e o tamanho de cada parte.
 3. **Assinar.** Só agora aplique a assinatura digital, em cada arquivo que será enviado. Se o PDF foi dividido em três partes, são três assinaturas.
 4. **Protocolar.** Envie os arquivos assinados. Não abra para editar, não salve por cima e não passe por nenhum outro programa depois da assinatura.
 
-Um detalhe útil: a assinatura acrescenta alguns quilobytes ao arquivo. Por isso, ao compactar, deixe uma pequena margem de segurança (uns 5%) abaixo do limite, para que o arquivo assinado continue cabendo.
+Um detalhe útil: a assinatura acrescenta alguns quilobytes ao arquivo. Por isso, ao compactar, é preciso uma pequena margem de segurança (uns 5%) abaixo do limite, para que o arquivo assinado continue cabendo. A [ferramenta](/) aplica essa margem sozinha quando você informa o limite do tribunal.
 
 ## E se o documento já veio assinado por terceiros?
 

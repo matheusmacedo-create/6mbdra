@@ -52,9 +52,14 @@ jobs:
           ASSINATURA=$(node -e "console.log(require('./resultado.json').assinatura)")
           EXISTING=$(gh issue list --label regras --state open --search "Revisar regras in:title" --json number,body --jq '.[0].number // empty')
           if [ "${{ steps.check.outputs.code }}" = "0" ]; then
+            # Fontes estáveis: só registra (uma vez) que nada mudou. Quem revisa fecha a issue
+            # depois de atualizar verificado_em, para o histórico não sumir sem revisão humana.
             if [ -n "$EXISTING" ]; then
-              gh issue comment "$EXISTING" --body "Rodada de $(date -u +%Y-%m-%d): nenhuma diferença nas fontes. Fechando; a issue reabre sozinha se algo mudar."
-              gh issue close "$EXISTING" --reason completed
+              LAST=$(gh issue view "$EXISTING" --json comments --jq '.comments[-1].body // ""')
+              case "$LAST" in
+                *"nenhuma diferença nova"*) ;;
+                *) gh issue comment "$EXISTING" --body "Rodada de $(date -u +%Y-%m-%d): nenhuma diferença nova nas fontes desde a última rodada. Se os itens acima já foram revisados (e verificado_em atualizado), pode fechar esta issue." ;;
+              esac
             fi
             exit 0
           fi

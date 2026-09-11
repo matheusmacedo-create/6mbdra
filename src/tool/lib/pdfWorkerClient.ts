@@ -1,5 +1,5 @@
 import { RpcClient, RpcRemoteError } from './rpc'
-import { SplitError, type SplitResult, type Analysis } from './splitTypes'
+import { SplitError, type SplitBudget, type SplitResult, type Analysis } from './splitTypes'
 import type { SplitResultMessage } from '../workers/pdf.worker'
 
 /** Cliente do worker de pdf-lib (análise, contagem de páginas e divisão em partes). */
@@ -16,12 +16,12 @@ export class PdfWorkerClient {
     return this.client.call<number>('count', { input: buf }, { transfer: [buf], signal, inactivityMs: 5 * 60_000 })
   }
 
-  async split(bytes: Uint8Array, maxBytes: number, onProgress?: (done: number, total: number) => void, signal?: AbortSignal): Promise<SplitResult> {
+  async split(bytes: Uint8Array, maxBytes: number, onProgress?: (done: number, total: number) => void, signal?: AbortSignal, budget?: SplitBudget): Promise<SplitResult> {
     const buf = bytes.slice().buffer as ArrayBuffer
     try {
       const r = await this.client.call<SplitResultMessage>(
         'split',
-        { input: buf, maxBytes },
+        { input: buf, maxBytes, budget },
         {
           transfer: [buf],
           signal,

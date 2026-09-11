@@ -12,7 +12,7 @@ Boa parte dos PDFs que estouram o limite do peticionamento eletrônico já nasce
 
 Isso acontece porque um PDF escaneado é, na prática, uma sequência de fotografias: cada página é uma imagem. O tamanho do arquivo depende da resolução dessa imagem e de quantas cores ela guarda. Ajustar esses dois pontos no scanner ou no aplicativo do celular resolve a maior parte do problema antes mesmo de você precisar comprimir alguma coisa.
 
-Lembre que os limites de tamanho variam entre cerca de 1,5 MB e 20 MB, conforme o tribunal, o sistema e o tipo de petição. Confira o valor do seu caso no [diretório de limites por tribunal](/tribunais/).
+Lembre que os limites de tamanho variam muito conforme o tribunal, o sistema e o tipo de petição (de pouco mais de 1 MB a dezenas de megabytes por arquivo). Confira o valor do seu caso no [diretório de limites por tribunal](/tribunais/).
 
 ## Por que o PDF escaneado fica grande
 

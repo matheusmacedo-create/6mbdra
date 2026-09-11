@@ -2,6 +2,7 @@
 import { serveRpc } from '../lib/rpc'
 import { countPages, splitPdf, SplitError } from '../lib/split'
 import { analyzePdf } from '../lib/analyze'
+import type { SplitBudget } from '../lib/splitTypes'
 
 declare const self: DedicatedWorkerGlobalScope
 
@@ -11,6 +12,7 @@ interface BytesParams {
 interface SplitParams {
   input: ArrayBuffer
   maxBytes: number
+  budget?: SplitBudget
 }
 export interface SplitResultPart {
   bytes: ArrayBuffer
@@ -30,6 +32,7 @@ serveRpc(
     split: async (p: SplitParams, ctx) => {
       const { parts, avisos } = await splitPdf(new Uint8Array(p.input), {
         maxBytes: p.maxBytes,
+        budget: p.budget,
         onProgress: (done, total) => ctx.progress(done / total, `${done}/${total}`),
       })
       const result: SplitResultMessage = { parts: parts.map((x) => ({ bytes: x.bytes.buffer as ArrayBuffer, from: x.from, to: x.to })), avisos }

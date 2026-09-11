@@ -72,7 +72,7 @@ Seja qual for a ferramenta, escolha o idioma português no reconhecimento, para 
 
 ## Antes de protocolar
 
-Os limites de tamanho por arquivo variam bastante, algo entre 1,5 MB e 20 MB, conforme o tribunal, o sistema e o tipo de petição. Confira o valor que vale para o seu caso no [diretório de limites por tribunal](/tribunais/). Esta ferramenta não é oficial nem vinculada a nenhum tribunal: sempre abra o arquivo final e confira o conteúdo antes de protocolar.
+Os limites de tamanho por arquivo variam bastante conforme o tribunal, o sistema e o tipo de petição (de pouco mais de 1 MB a dezenas de megabytes). Confira o valor que vale para o seu caso no [diretório de limites por tribunal](/tribunais/). Esta ferramenta não é oficial nem vinculada a nenhum tribunal: sempre abra o arquivo final e confira o conteúdo antes de protocolar.
 
 ## Perguntas frequentes
 

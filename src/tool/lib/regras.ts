@@ -98,6 +98,11 @@ export function formatLimite(r: Regra): string {
   return `${r.limite_valor.toLocaleString('pt-BR')} ${r.limite_unidade}`
 }
 
+/** "10 MB" já diz tudo; só MiB e KB ganham a tradução em bytes decimais ao lado. */
+export function mostrarBytesDoLimite(r: Regra): boolean {
+  return r.limite_unidade !== 'MB'
+}
+
 export function rotuloSistema(r: Regra): string {
   return r.sistema_rotulo ?? r.sistema
 }

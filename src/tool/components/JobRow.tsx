@@ -9,7 +9,7 @@ interface Props {
   process: ProcessSettings
   onRemove: (id: string) => void
   onRetry: (id: string) => void
-  onAllowSigned: (id: string) => void
+  onAllow: (id: string) => void
 }
 
 const KIND_LABEL: Record<ReturnType<typeof deriveKind>, { text: string; cls: string }> = {
@@ -17,7 +17,8 @@ const KIND_LABEL: Record<ReturnType<typeof deriveKind>, { text: string; cls: str
   ready: { text: 'Será otimizado', cls: 'info' },
   unchanged: { text: 'Já cabe · mantido', cls: 'ok' },
   signed: { text: 'Assinado digitalmente', cls: 'warn' },
-  protected: { text: 'Protegido por senha', cls: 'err' },
+  restricted: { text: 'Com restrições de edição', cls: 'warn' },
+  protected: { text: 'Exige senha', cls: 'err' },
   invalid: { text: 'Não é um PDF legível', cls: 'err' },
   queued: { text: 'Na fila', cls: 'info' },
   processing: { text: 'Processando…', cls: 'info' },
@@ -25,7 +26,11 @@ const KIND_LABEL: Record<ReturnType<typeof deriveKind>, { text: string; cls: str
   error: { text: 'Não deu certo', cls: 'err' },
 }
 
-export function JobRow({ job, process, onRemove, onRetry, onAllowSigned }: Props) {
+function pageRangeLabel(range: [number, number]): string {
+  return range[0] === range[1] ? `página ${range[0]}` : `páginas ${range[0]}–${range[1]}`
+}
+
+export function JobRow({ job, process, onRemove, onRetry, onAllow }: Props) {
   const targetBytes = targetFor(job, process)
   const kind = deriveKind(job, process)
   const stale = isStaleJob(job, process)
@@ -77,11 +82,16 @@ export function JobRow({ job, process, onRemove, onRetry, onAllowSigned }: Props
             </button>
           )}
           {kind === 'signed' && (
-            <button className="btn small secondary" onClick={() => onAllowSigned(job.id)} data-testid="allow-signed">
+            <button className="btn small secondary" onClick={() => onAllow(job.id)} data-testid="allow-signed">
               Processar mesmo assim
             </button>
           )}
-          <button className="btn small secondary" onClick={() => onRemove(job.id)} aria-label={`Remover ${job.name}`}>
+          {kind === 'restricted' && (
+            <button className="btn small secondary" onClick={() => onAllow(job.id)} data-testid="allow-restricted">
+              Processar mesmo assim
+            </button>
+          )}
+          <button className="btn small secondary" onClick={() => onRemove(job.id)} aria-label={`${busy ? 'Cancelar' : 'Remover'} ${job.name}`}>
             {busy ? 'Cancelar' : 'Remover'}
           </button>
         </div>
@@ -89,7 +99,15 @@ export function JobRow({ job, process, onRemove, onRetry, onAllowSigned }: Props
 
       {kind === 'processing' && (
         <>
-          <div className={`progress${job.progress <= 0 ? ' indeterminate' : ''}`} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(job.progress * 100)}>
+          <div
+            className={`progress${job.progress <= 0 ? ' indeterminate' : ''}`}
+            role="progressbar"
+            aria-label={`Progresso de ${job.name}`}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={job.progress > 0 ? Math.round(job.progress * 100) : undefined}
+            aria-valuetext={job.stage}
+          >
             <div style={{ width: `${Math.max(2, job.progress * 100)}%` }} />
           </div>
           <div className="stage">{job.stage}</div>
@@ -112,10 +130,10 @@ export function JobRow({ job, process, onRemove, onRetry, onAllowSigned }: Props
             <div className="part" key={o.name}>
               <span className="part-name">
                 {o.name}
-                {o.pageRange ? <span className="job-meta"> · páginas {o.pageRange[0]}–{o.pageRange[1]}</span> : null}
+                {o.pageRange ? <span className="job-meta"> · {pageRangeLabel(o.pageRange)}</span> : null}
               </span>
               <span className="badge ok">{formatBytes(o.size)}</span>
-              <button className="btn small secondary" onClick={() => downloadFile(o)}>
+              <button className="btn small secondary" onClick={() => downloadFile(o)} aria-label={`Baixar ${o.name}`}>
                 Baixar
               </button>
             </div>
@@ -123,9 +141,6 @@ export function JobRow({ job, process, onRemove, onRetry, onAllowSigned }: Props
         </div>
       )}
 
-      {kind === 'unchanged' && (
-        <div className="note info">Este arquivo já está dentro da meta de {formatBytes(targetBytes)}. Ele será mantido exatamente como está.</div>
-      )}
       {kind === 'done' && job.outputs.length === 0 && (
         <div className="note info">Já estava dentro da meta: mantido sem alteração.</div>
       )}
@@ -135,9 +150,15 @@ export function JobRow({ job, process, onRemove, onRetry, onAllowSigned }: Props
           preparar o PDF <em>antes</em> de assinar. Se a assinatura não for necessária, você pode processar mesmo assim.
         </div>
       )}
+      {kind === 'restricted' && (
+        <div className="note warn">
+          Este PDF abre sem senha, mas tem restrições de edição ou impressão (senha de permissões). Não removemos proteções por padrão: se
+          processado, o arquivo preparado sai sem essas restrições. Se isso não for um problema, você pode processar mesmo assim.
+        </div>
+      )}
       {kind === 'protected' && (
         <div className="note err">
-          Este PDF está protegido por senha. Não removemos proteções: abra-o no programa de origem, salve uma cópia sem senha e adicione de novo.
+          Este PDF exige senha para ser aberto. Não removemos proteções: abra-o no programa de origem com a senha, salve uma cópia sem senha e adicione de novo.
         </div>
       )}
       {kind === 'invalid' && (

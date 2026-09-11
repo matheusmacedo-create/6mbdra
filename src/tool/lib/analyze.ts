@@ -1,6 +1,7 @@
 import { PDFDocument, PDFName, PDFDict, PDFArray } from 'pdf-lib'
 
 import type { Analysis } from './splitTypes'
+import { opensWithEmptyUserPassword } from './pdfCrypt'
 
 export type { Analysis }
 
@@ -74,8 +75,22 @@ export async function analyzePdf(bytes: Uint8Array): Promise<Analysis> {
   }
   try {
     const pages = doc.getPageCount()
-    if (pages === 0) return { valid: false, pages: 0, encrypted: doc.isEncrypted, signed: signedByBytes, reason: 'O PDF não tem páginas.' }
-    return { valid: true, pages, encrypted: doc.isEncrypted, signed: signedByBytes || hasSignatureField(doc) }
+    // /Encrypt pode ser senha de abertura (recusado) ou só restrições de edição com senha de
+    // usuário vazia (abre em qualquer leitor): nesse caso o usuário decide se processa.
+    let encrypted = false
+    let restricted = false
+    if (doc.isEncrypted) {
+      let opens: boolean | null = null
+      try {
+        opens = await opensWithEmptyUserPassword(doc)
+      } catch {
+        opens = null
+      }
+      if (opens === true) restricted = true
+      else encrypted = true // exige senha, ou não conseguimos decidir: tratamos como protegido
+    }
+    if (pages === 0) return { valid: false, pages: 0, encrypted, restricted, signed: signedByBytes, reason: 'O PDF não tem páginas.' }
+    return { valid: true, pages, encrypted, restricted, signed: signedByBytes || hasSignatureField(doc) }
   } catch (e) {
     // Estrutura tão danificada que o pdf-lib carregou mas não acha a árvore de páginas.
     return { valid: false, pages: 0, encrypted: false, signed: signedByBytes, reason: friendlyReason(e) }

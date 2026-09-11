@@ -1,6 +1,6 @@
 import { PDFDocument, PDFName } from 'pdf-lib'
 
-import { SplitError, type SplitPart, type SplitResult } from './splitTypes'
+import { SplitError, budgetFor, type SplitBudget, type SplitPart, type SplitResult } from './splitTypes'
 
 export { SplitError }
 export type { SplitPart, SplitResult }
@@ -8,6 +8,8 @@ export type { SplitPart, SplitResult }
 export interface SplitOptions {
   /** Tamanho máximo de cada parte, em bytes */
   maxBytes: number
+  /** Orçamento dependente do número de páginas da parte (limite por página / condicional). Prevalece sobre maxBytes. */
+  budget?: SplitBudget
   /** Chamado a cada parte concluída (para progresso) */
   onProgress?: (pagesDone: number, totalPages: number) => void
   signal?: AbortSignal
@@ -61,22 +63,26 @@ export async function splitPdf(bytes: Uint8Array, opts: SplitOptions): Promise<S
   const avgPerPage = bytes.byteLength / total
   const parts: SplitPart[] = []
   let from = 0
+  /** Limite da parte em função de quantas páginas ela tem. */
+  const limitFor = (n: number) => (opts.budget ? budgetFor(opts.budget, n) : opts.maxBytes)
 
   while (from < total) {
     checkAbort()
     // Chute inicial conservador (90% do que caberia pela média).
     let count = Math.max(1, Math.floor((opts.maxBytes / avgPerPage) * 0.9))
     count = Math.min(count, total - from)
+    // Com limite por página, o chute não pode passar do que o orçamento permite para essas páginas.
+    while (count > 1 && limitFor(count) < avgPerPage * count * 0.9) count = Math.max(1, Math.floor(count / 2))
 
     let built = await buildRange(src, from, from + count - 1)
 
     // Se coube com folga e ainda há páginas, tenta crescer (poucas iterações).
     let grow = 0
-    while (built.byteLength < opts.maxBytes * 0.8 && from + count < total && grow < 4) {
-      const extra = Math.max(1, Math.floor(((opts.maxBytes - built.byteLength) / avgPerPage) * 0.8))
+    while (built.byteLength < limitFor(count) * 0.8 && from + count < total && grow < 4) {
+      const extra = Math.max(1, Math.floor(((limitFor(count) - built.byteLength) / avgPerPage) * 0.8))
       const nextCount = Math.min(total - from, count + extra)
       const candidate = await buildRange(src, from, from + nextCount - 1)
-      if (candidate.byteLength <= opts.maxBytes) {
+      if (candidate.byteLength <= limitFor(nextCount)) {
         built = candidate
         count = nextCount
         grow++
@@ -86,14 +92,14 @@ export async function splitPdf(bytes: Uint8Array, opts: SplitOptions): Promise<S
     }
 
     // Se estourou, encolhe até caber.
-    while (built.byteLength > opts.maxBytes) {
+    while (built.byteLength > limitFor(count)) {
       if (count === 1) {
         throw new SplitError(
-          `A página ${from + 1} sozinha tem ${Math.ceil(built.byteLength / 1024)} KB e não cabe no limite.`,
+          `A página ${from + 1} sozinha tem ${Math.ceil(built.byteLength / 1024)} KB e não cabe no limite de ${Math.floor(limitFor(1) / 1024)} KB.`,
           'PAGE_TOO_BIG',
         )
       }
-      const ratio = opts.maxBytes / built.byteLength
+      const ratio = limitFor(count) / built.byteLength
       count = Math.max(1, Math.min(count - 1, Math.floor(count * ratio * 0.95)))
       built = await buildRange(src, from, from + count - 1)
     }

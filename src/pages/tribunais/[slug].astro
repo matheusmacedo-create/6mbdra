@@ -1,6 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro'
-import { REGRAS, formatLimite, limiteBytes, metaBytes, percentualMeta, rotuloContexto, rotuloSistema, tituloRegra, type Regra } from '../../tool/lib/regras'
+import { REGRAS, formatLimite, limiteBytes, metaBytes, mostrarBytesDoLimite, percentualMeta, rotuloContexto, rotuloSistema, tituloRegra, type Regra } from '../../tool/lib/regras'
 import { formatBytes, formatDate } from '../../tool/lib/format'
 
 export function getStaticPaths() {
@@ -24,7 +24,7 @@ const outras = REGRAS.regras.filter((r) => r.tribunal_sigla === regra.tribunal_s
 
     <table>
       <tbody>
-        <tr><th>Limite declarado</th><td>{formatLimite(regra)} ({formatBytes(limiteBytes(regra))}, lendo MB como 1.000.000 bytes)</td></tr>
+        <tr><th>Limite declarado</th><td>{formatLimite(regra)}{mostrarBytesDoLimite(regra) ? ` (${formatBytes(limiteBytes(regra))})` : ''} · lemos MB como 1.000.000 bytes</td></tr>
         <tr><th>Meta segura usada pela ferramenta</th><td>{formatBytes(metaBytes(regra))} ({percentualMeta(regra)}% do limite)</td></tr>
         {regra.limite_por_pagina_kb && <tr><th>Limite por página</th><td>{regra.limite_por_pagina_kb} KB por página (a ferramenta ajusta a meta de cada arquivo pelo número de páginas)</td></tr>}
         {regra.limite_total_peticao_mb && <tr><th>Limite por petição</th><td>{regra.limite_total_peticao_mb} MB na soma dos arquivos de uma petição</td></tr>}

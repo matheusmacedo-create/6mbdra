@@ -25,7 +25,7 @@ Divida quando:
 - O arquivo é muito longo, como autos completos ou um conjunto de notas fiscais.
 - Você já comprimiu, conferiu a qualidade e não quer reduzir mais.
 
-Os limites variam, algo entre 1,5 MB e 20 MB, conforme o tribunal, o sistema e o tipo de petição. Confira o valor do seu caso no [diretório de limites por tribunal](/tribunais/) antes de decidir o tamanho das partes.
+Os limites variam muito conforme o tribunal, o sistema e o tipo de petição (de pouco mais de 1 MB a dezenas de megabytes por arquivo). Confira o valor do seu caso no [diretório de limites por tribunal](/tribunais/) antes de decidir o tamanho das partes.
 
 ## Divisão por páginas inteiras
 
@@ -33,7 +33,7 @@ A forma segura de dividir é por páginas inteiras: a parte 1 vai da página 1 a
 
 A ferramenta faz esse cálculo por você: você informa o limite de tamanho e ela agrupa as páginas em partes que fiquem dentro desse valor. Se uma página específica for maior do que o limite sozinha (uma foto em altíssima resolução, por exemplo), o caminho é comprimir o arquivo antes e só depois dividir.
 
-Uma dica sobre o limite: 1 MB decimal tem 1.000.000 de bytes, enquanto 1 MiB (a medida binária) tem 1.048.576 bytes, e sistemas diferentes contam de jeitos diferentes. Para não ser surpreendido por uma recusa por poucos bytes, deixe uma margem de uns 5% abaixo do limite informado.
+Uma dica sobre o limite: 1 MB decimal tem 1.000.000 de bytes, enquanto 1 MiB (a medida binária) tem 1.048.576 bytes, e sistemas diferentes contam de jeitos diferentes. Para não ser surpreendido por uma recusa por poucos bytes, cada parte deve ficar uns 5% abaixo do limite. A [ferramenta](/) já faz isso: informe o limite do tribunal e ela dimensiona as partes com a margem.
 
 ## Nomes sequenciais: parte_01, parte_02
 
@@ -79,7 +79,7 @@ Se o documento precisa de assinatura digital com certificado (ICP-Brasil, no pad
 - **Esquecer uma parte**: sem a conferência de páginas, é fácil deixar a última parte na pasta de downloads.
 - **Dividir e depois comprimir demais**: se a compressão vem depois da divisão, você pode acabar com partes pequenas e ilegíveis. Comprima primeiro, na medida certa, e divida o que sobrar.
 - **Assinar antes de dividir**: a assinatura se perde. Divida primeiro, assine depois.
-- **Ignorar a margem de segurança**: uma parte com exatamente o tamanho do limite pode ser recusada dependendo de como o sistema conta os bytes.
+- **Ignorar a margem de segurança**: uma parte com exatamente o tamanho do limite pode ser recusada dependendo de como o sistema conta os bytes. Na ferramenta a margem é automática; em outros programas, informe um valor menor.
 
 ## Perguntas frequentes
 
@@ -89,7 +89,7 @@ Sim. Como a divisão por páginas inteiras copia cada página como ela é, a cam
 
 ### Quantas partes é razoável enviar?
 
-Não há regra fixa. O ideal é que cada parte fique o mais próximo possível do limite (com a margem de 5%), para gerar o menor número de arquivos. Se sobrarem muitas partes, vale tentar uma compressão um pouco maior antes.
+Não há regra fixa. O ideal é que cada parte fique o mais próximo possível da meta segura (o limite menos a margem de 5%), para gerar o menor número de arquivos. Se sobrarem muitas partes, vale tentar uma compressão um pouco maior antes.
 
 ### A ferramenta guarda meus arquivos?
 

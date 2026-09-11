@@ -1,6 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro'
-import { REGRAS, agruparPorTribunal, formatLimite, limiteBytes, metaBytes, regrasVigentes, rotuloContexto, rotuloSistema } from '../../tool/lib/regras'
+import { REGRAS, agruparPorTribunal, formatLimite, limiteBytes, metaBytes, mostrarBytesDoLimite, regrasVigentes, rotuloContexto, rotuloSistema } from '../../tool/lib/regras'
 import { formatBytes, formatDate } from '../../tool/lib/format'
 const grupos = agruparPorTribunal(regrasVigentes())
 const contexto = (r: Parameters<typeof rotuloContexto>[0]) => rotuloContexto(r, { omitirAmbos: true }) || 'geral'
@@ -38,9 +38,9 @@ const contexto = (r: Parameters<typeof rotuloContexto>[0]) => rotuloContexto(r, 
                 <tr>
                   <td>{rotuloSistema(r)}</td>
                   <td>{contexto(r)}{r.limite_por_pagina_kb ? ` · ${r.limite_por_pagina_kb} KB/página` : ''}{r.limite_condicional ? ` · ${r.limite_condicional.limite_valor} ${r.limite_condicional.limite_unidade} com ${r.limite_condicional.min_paginas}+ páginas` : ''}{r.exige_pdfa ? ' · PDF/A' : ''}</td>
-                  <td>{formatLimite(r)} <span class="tag">{formatBytes(limiteBytes(r))}</span></td>
+                  <td>{formatLimite(r)}{mostrarBytesDoLimite(r) ? <span class="tag">{formatBytes(limiteBytes(r))}</span> : ''}</td>
                   <td>{formatBytes(metaBytes(r))}</td>
-                  <td>{formatDate(r.verificado_em)}{r.situacao === 'em_revisao' ? <span class="tag" title={r.motivo_revisao}>em revisão</span> : ''}</td>
+                  <td>{formatDate(r.verificado_em)}{r.situacao === 'em_revisao' ? <><span class="tag">em revisão</span><span class="revisao">{r.motivo_revisao}</span></> : ''}</td>
                   <td><a href={`/tribunais/${r.id}/`}>detalhes</a></td>
                 </tr>
               ))}

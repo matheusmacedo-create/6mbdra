@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
-import { type Job, type ProcessSettings, isBusy, isProcessable, targetFor } from '../lib/types'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { type Job, type ProcessSettings, isBusy, isProcessable, isStale, splitBudget, targetFor } from '../lib/types'
 import { processPdf, type PipelineDeps } from '../lib/engine/pipeline'
 import { EngineError } from '../lib/engine/types'
 import { createEngine, GhostscriptEngine } from '../lib/engine'
@@ -75,6 +75,8 @@ export interface EngineStatus {
 
 export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: EngineStatus) => void) {
   const [jobs, dispatch] = useReducer(reducer, [])
+  /** Quantos arquivos entraram no lote em andamento (0 fora do processamento). */
+  const [batchCount, setBatchCount] = useState(0)
   const processRef = useRef(process)
   processRef.current = process
   const runningRef = useRef<string | null>(null)
@@ -92,7 +94,7 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
       pdfAnalyze,
       pdfWork,
       countPages: (bytes, signal) => pdfWork.countPages(bytes, signal),
-      split: (bytes, maxBytes, onProgress, signal) => pdfWork.split(bytes, maxBytes, onProgress, signal),
+      split: (bytes, maxBytes, onProgress, signal, budget) => pdfWork.split(bytes, maxBytes, onProgress, signal, budget),
     }
   }, [])
 
@@ -168,14 +170,17 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
     dispatch({ type: 'clear' })
   }, [])
 
-  /** Coloca na fila todos os arquivos prontos (ou só os ids informados). */
+  /** Coloca na fila todos os arquivos prontos e os preparados para outra meta (ou só os ids informados). */
   const start = useCallback(
     (ids?: string[]) => {
       const p = processRef.current
-      // Sem ids: todos os prontos. Com ids (tentar de novo / reprocessar): também os com erro ou já concluídos.
-      const chosen = jobs.filter((j) => (ids ? ids.includes(j.id) : true) && (isProcessable(j, p) || (ids && (j.status === 'error' || j.status === 'done'))))
+      // Sem ids: prontos + resultados fora da meta atual. Com ids (tentar de novo / reprocessar): também os com erro ou já concluídos.
+      const chosen = jobs.filter((j) => (ids ? ids.includes(j.id) && (isProcessable(j, p) || j.status === 'error' || j.status === 'done') : isProcessable(j, p) || isStale(j, p)))
       if (chosen.length === 0) return 0
-      batchRef.current = { startedAt: Date.now(), count: chosen.length }
+      // "Tentar de novo" durante um lote em andamento soma ao lote em vez de reiniciá-lo.
+      if (batchRef.current && jobs.some(isBusy)) batchRef.current.count += chosen.length
+      else batchRef.current = { startedAt: Date.now(), count: chosen.length }
+      setBatchCount(batchRef.current.count)
       track('lote_iniciado', { quantidade: chosen.length, meta_mb: Math.round(p.targetBytes / 100_000) / 10 })
       dispatch({ type: 'enqueue', ids: chosen.map((j) => j.id) })
       return chosen.length
@@ -189,11 +194,13 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
     for (const c of abortRef.current.values()) c.abort()
     abortRef.current.clear()
     batchRef.current = null
+    setBatchCount(0)
   }, [])
 
   const retry = useCallback((id: string) => start([id]), [start])
 
-  const allowSigned = useCallback((id: string) => dispatch({ type: 'patch', id, patch: { forceSigned: true } }), [])
+  /** Libera um arquivo assinado ou com restrições para processamento. */
+  const allow = useCallback((id: string) => dispatch({ type: 'patch', id, patch: { force: true } }), [])
 
   // Processa a fila, um arquivo por vez.
   useEffect(() => {
@@ -204,6 +211,7 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
       if (batchRef.current && !jobs.some(isBusy)) {
         const b = batchRef.current
         batchRef.current = null
+        setBatchCount(0)
         track('lote_concluido', { quantidade: b.count, segundos: Math.round((Date.now() - b.startedAt) / 1000) })
       }
       return
@@ -224,6 +232,8 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
         const result = await processPdf(bytes, next.name, settings, deps, {
           signal: controller.signal,
           pages: next.analysis?.pages,
+          encryptedInput: next.analysis?.restricted === true,
+          partBudget: processRef.current.perPageBytes || processRef.current.conditional ? splitBudget(processRef.current) : undefined,
           onStage: (stage, progress) => patch({ stage, progress, status: /Dividindo/.test(stage) ? 'splitting' : 'compressing' }),
         })
         const finishedAt = Date.now()
@@ -264,5 +274,5 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
     })()
   }, [jobs, deps])
 
-  return { jobs, addFiles, remove, clear, start, cancel, retry, allowSigned }
+  return { jobs, batchCount, addFiles, remove, clear, start, cancel, retry, allow }
 }

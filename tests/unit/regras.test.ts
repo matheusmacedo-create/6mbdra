@@ -45,7 +45,7 @@ describe('regras', () => {
     const base: Job = { id: 'j', file: new File([], 'a.pdf'), name: 'a.pdf', originalSize: 1_000_000, status: 'analyzed', analysis: { valid: true, pages: 3, encrypted: false, signed: true }, progress: 0, stage: '', outputs: [], warnings: [] }
     expect(deriveKind(base, p)).toBe('unchanged')
     expect(deriveKind({ ...base, originalSize: 9_000_000 }, p)).toBe('signed')
-    expect(deriveKind({ ...base, originalSize: 9_000_000, forceSigned: true }, p)).toBe('ready')
+    expect(deriveKind({ ...base, originalSize: 9_000_000, force: true }, p)).toBe('ready')
     const done: Job = { ...base, status: 'done', targetBytes: 9_500_000, outputs: [{ name: 'a_otimizado.pdf', bytes: new Uint8Array(0), size: 8_000_000, kind: 'compressed' }] }
     expect(isStale(done, p)).toBe(true)
     expect(isStale({ ...done, targetBytes: 5_700_000, outputs: [{ ...done.outputs[0], size: 5_000_000 }] }, p)).toBe(false)

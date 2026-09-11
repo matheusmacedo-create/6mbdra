@@ -74,7 +74,33 @@ Actions). Sem servidor, banco ou autenticação. CSP sem `unsafe-eval`: o glue d
 empacotado pelo Vite como módulo do worker (nada é avaliado dinamicamente); WASM exige
 `'wasm-unsafe-eval'`.
 
-## 5. O que fica para depois
+## 5. Revisão adversarial (11/09/2026)
+
+Seis revisores independentes (corretude, privacidade/segurança, aderência à especificação, dados
+das regras, UX/acessibilidade, build/deploy) com verificação cética. Principais correções:
+cancelamento que não chegava ao worker de pdf-lib; página única maior que a meta derrubava o
+resultado inteiro; escada de níveis sem saída para bilevel; CSP em `<meta>` não governa workers
+(cabeçalho adicionado) e `unsafe-inline` desnecessário; nomes originais no ZIP sem sanitização;
+contagens de analytics filtradas por engano; limites por página/petição só em texto livre;
+monitor sem persistência e baseline gerado sem proxy; pdf-lib duplicado na thread principal.
+
+Da revisão de UX/acessibilidade: seletor de regras estourava a largura no celular; guias mandavam
+aplicar por conta própria a margem que a ferramenta já aplica (margem dupla) e citavam uma faixa de
+limites que não batia com a base; progresso por arquivo codificava o nível (pulava para 83 %) e o
+do lote contava arquivos fora da fila; lista inteira `aria-live`; limite manual inválido aceito em
+silêncio; contraste do botão de cancelar no modo escuro; resultados "fora da meta atual" ignorados
+pelo botão Preparar. Também: o `preload` do `gs.wasm` apontava para uma URL diferente da usada pelo
+worker (11 MB baixados duas vezes) e foi removido.
+
+**PDF só com restrições de edição.** Muitos PDFs de bancos, cartórios e órgãos públicos têm
+`/Encrypt` com senha de usuário vazia: abrem em qualquer leitor, mas o pdf-lib os marca como
+criptografados. Tratá-los como "protegidos por senha" confundia (o usuário nunca digitou senha).
+`pdfCrypt.ts` implementa a verificação da senha vazia do handler padrão (R2–R4 com MD5/RC4, R5/R6
+com SHA-2 e AES via WebCrypto) sem nunca tentar outra senha. Esses arquivos ficam fora por padrão,
+com liberação explícita; o resultado (reescrito pelo Ghostscript) sai sem as restrições, e a divisão
+nunca parte do original criptografado (o pdf-lib copiaria fluxos cifrados ilegíveis).
+
+## 6. O que fica para depois
 
 - MuPDF como motor alternativo (bundle 4× menor) quando o tratamento de bilevel/SMask estiver
   resolvido e testado.

@@ -6,15 +6,17 @@ interface Props {
   process: ProcessSettings
   onRemove: (id: string) => void
   onRetry: (id: string) => void
-  onAllowSigned: (id: string) => void
+  onAllow: (id: string) => void
 }
 
-export function BatchList({ jobs, process, onRemove, onRetry, onAllowSigned }: Props) {
+// Sem aria-live aqui: a lista muda o tempo todo durante o processamento e leitores de tela
+// leriam cada troca de estágio. Os marcos são anunciados pela região de status do App.
+export function BatchList({ jobs, process, onRemove, onRetry, onAllow }: Props) {
   if (jobs.length === 0) return null
   return (
-    <div className="batch-list" aria-live="polite">
+    <div className="batch-list">
       {jobs.map((j) => (
-        <JobRow key={j.id} job={j} process={process} onRemove={onRemove} onRetry={onRetry} onAllowSigned={onAllowSigned} />
+        <JobRow key={j.id} job={j} process={process} onRemove={onRemove} onRetry={onRetry} onAllow={onAllow} />
       ))}
     </div>
   )

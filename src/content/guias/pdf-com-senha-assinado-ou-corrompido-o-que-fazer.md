@@ -12,7 +12,7 @@ Nem todo PDF que passa do limite de tamanho pode ser simplesmente comprimido ou 
 
 Nenhuma delas é um beco sem saída. Na maioria das vezes, basta voltar ao programa que gerou o arquivo, pedir uma nova cópia a quem enviou ou refazer a assinatura na ordem certa. O que você não deve fazer é descobrir o problema só na hora de protocolar.
 
-Como os limites de tamanho variam entre cerca de 1,5 MB e 20 MB conforme tribunal, sistema e tipo de petição, confira o valor que se aplica a você no [diretório de limites por tribunal](/tribunais/).
+Como os limites de tamanho variam muito conforme tribunal, sistema e tipo de petição (de pouco mais de 1 MB a dezenas de megabytes), confira o valor que se aplica a você no [diretório de limites por tribunal](/tribunais/).
 
 ## Como identificar cada caso
 
@@ -36,7 +36,7 @@ Se você não tem a senha, não existe atalho legítimo. Peça a quem enviou o a
 
 A assinatura digital com certificado ICP-Brasil, no padrão PAdES (o formato de assinatura próprio para PDF), funciona como um lacre matemático calculado sobre o conteúdo exato do arquivo. Qualquer alteração faz o lacre deixar de bater: comprimir imagens, dividir em partes, girar uma página e, em alguns programas, até salvar de novo. A assinatura deixa de valer.
 
-É isso que o aviso "a assinatura seria invalidada" quer dizer. Se você seguir em frente, o resultado não terá mais uma assinatura válida. O carimbo visual pode continuar aparecendo na página; o que se perde é a verificação eletrônica.
+É isso que o aviso "Assinado digitalmente" da ferramenta quer dizer: o arquivo fica de fora do lote por padrão, e só é processado se você clicar em "Processar mesmo assim". Se você seguir em frente, o resultado não terá mais uma assinatura válida. O carimbo visual pode continuar aparecendo na página; o que se perde é a verificação eletrônica.
 
 O que fazer depende de quem assinou:
 
@@ -64,7 +64,7 @@ Quando você ainda tem acesso à fonte, gerar o arquivo de novo é mais rápido 
 
 1. Destrave o PDF (remova a senha) no programa de origem.
 2. Comprima e, se necessário, divida em partes nomeadas em sequência (`parte_01`, `parte_02`).
-3. Deixe uma margem de segurança de uns 5% abaixo do limite. Alguns sistemas contam 1 MB como 1.000.000 bytes e outros como 1.048.576 bytes (o chamado MiB), e essa diferença pode derrubar um arquivo que está no limite exato.
+3. Mantenha uma margem de segurança de uns 5% abaixo do limite (a ferramenta aplica essa margem sozinha). Alguns sistemas contam 1 MB como 1.000.000 bytes e outros como 1.048.576 bytes (o chamado MiB), e essa diferença pode derrubar um arquivo que está no limite exato.
 4. Abra cada arquivo final e confira se todas as páginas estão legíveis e na ordem.
 5. Assine digitalmente.
 6. Protocole.

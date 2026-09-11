@@ -101,7 +101,12 @@ async function fetchSource(url) {
     }
     return { ok: true, kind: 'html', text: normalize(visibleText(decodeHtml(buf, type))) }
   } catch (e) {
-    return { ok: false, detail: e?.name === 'AbortError' ? 'timeout' : String(e?.message ?? e) }
+    const code = e?.cause?.code ?? e?.code
+    if (e?.name === 'AbortError') return { ok: false, detail: 'timeout' }
+    if (/UNABLE_TO_VERIFY_LEAF_SIGNATURE|CERT_|SELF_SIGNED|ERR_TLS/.test(String(code))) {
+      return { ok: false, detail: `TLS: ${code} (cadeia de certificados incompleta ou inválida no servidor; conferir no navegador)` }
+    }
+    return { ok: false, detail: String(e?.message ?? e) }
   } finally {
     clearTimeout(t)
   }

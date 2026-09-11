@@ -28,7 +28,7 @@ async function addAndPrepare(page: Page, files: string[]) {
 
 async function waitFinished(page: Page, n: number) {
   await expect
-    .poll(async () => page.locator('[data-testid="job"][data-kind="done"], [data-testid="job"][data-kind="error"], [data-testid="job"][data-kind="unchanged"], [data-testid="job"][data-kind="invalid"], [data-testid="job"][data-kind="signed"]').count(), {
+    .poll(async () => page.locator('[data-testid="job"][data-kind="done"], [data-testid="job"][data-kind="error"], [data-testid="job"][data-kind="unchanged"], [data-testid="job"][data-kind="invalid"], [data-testid="job"][data-kind="signed"], [data-testid="job"][data-kind="protected"], [data-testid="job"][data-kind="restricted"]').count(), {
       timeout: 280_000,
     })
     .toBe(n)
@@ -94,8 +94,10 @@ test('PDF assinado fica de fora por padrão e pode ser liberado', async ({ page 
   await addAndPrepare(page, [fx.signedBig])
   const job = page.getByTestId('job').first()
   await expect(job).toHaveAttribute('data-kind', 'signed')
-  await expect(page.getByTestId('start')).toBeDisabled()
+  await expect(page.getByTestId('start')).toHaveCount(0)
+  await expect(page.getByTestId('nothing-to-prepare')).toContainText(/avisos/)
   await page.getByTestId('allow-signed').click()
+  await expect(page.getByTestId('start')).toBeVisible()
   await expect(job).toHaveAttribute('data-kind', 'ready')
   await page.getByTestId('start').click()
   await waitFinished(page, 1)
@@ -171,4 +173,64 @@ test('páginas públicas respondem e apontam para a ferramenta', async ({ page }
   await page.goto('/guias/')
   const links = page.locator('.grid-cards a')
   expect(await links.count()).toBeGreaterThanOrEqual(8)
+})
+
+test('no celular a ferramenta não rola na horizontal e o seletor cabe na tela', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await expect(page.getByTestId('engine-status')).toHaveAttribute('data-state', 'ready', { timeout: 120_000 })
+  await page.locator('#regra').selectOption({ index: 1 })
+  await page.getByTestId('file-input').setInputFiles([fx.text])
+  await expect.poll(async () => page.locator('[data-testid="job"][data-kind="analyzing"]').count(), { timeout: 60_000 }).toBe(0)
+  const widths = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, inner: window.innerWidth, select: document.querySelector('#regra')!.getBoundingClientRect().width }))
+  expect(widths.scroll, 'largura rolável').toBeLessThanOrEqual(widths.inner)
+  expect(widths.select).toBeLessThanOrEqual(widths.inner)
+})
+
+test('limite manual inválido bloqueia o botão Preparar e explica o erro', async ({ page }) => {
+  await openApp(page, 6)
+  await addAndPrepare(page, [fx.scanBig])
+  await expect(page.getByTestId('start')).toBeEnabled()
+  await page.getByTestId('custom-limit').fill('600')
+  await expect(page.getByTestId('custom-limit')).toHaveAttribute('aria-invalid', 'true')
+  await expect(page.getByTestId('custom-limit-error')).toContainText(/entre 0,5 e 500/)
+  await expect(page.getByTestId('start')).toBeDisabled()
+  await page.getByTestId('custom-limit').fill('6')
+  await expect(page.getByTestId('custom-limit')).not.toHaveAttribute('aria-invalid', 'true')
+  await expect(page.getByTestId('start')).toBeEnabled()
+})
+
+test('PDF só com restrições de edição fica de fora por padrão; liberado, sai legível e sem criptografia', async ({ page }) => {
+  await openApp(page, 6)
+  await addAndPrepare(page, [fx.restricted])
+  const job = page.getByTestId('job').first()
+  await expect(job).toHaveAttribute('data-kind', 'restricted')
+  await expect(job).toContainText(/restrições de edição/)
+  await expect(page.getByTestId('summary')).toContainText('1 com aviso')
+  await expect(page.getByTestId('start')).toHaveCount(0)
+  await page.getByTestId('allow-restricted').click()
+  await expect(job).toHaveAttribute('data-kind', 'ready')
+  await page.getByTestId('start').click()
+  await waitFinished(page, 1)
+  await expect(job).toHaveAttribute('data-kind', 'done')
+  await expect(job).toContainText(/sai sem elas/)
+  const [download] = await Promise.all([page.waitForEvent('download'), job.getByRole('button', { name: /^Baixar \(/ }).click()])
+  const out = readFileSync((await download.path())!)
+  expect(out.length).toBeLessThanOrEqual(5.7 * MB)
+  const doc = await PDFDocument.load(out) // sem ignoreEncryption: precisa abrir como PDF comum
+  expect(doc.isEncrypted).toBe(false)
+  expect(doc.getPageCount()).toBe(3)
+})
+
+test('PDF que exige senha de abertura é recusado na análise, sem pedir senha', async ({ page }) => {
+  await openApp(page, 6)
+  await addAndPrepare(page, [fx.userPassword, fx.scanBig])
+  const locked = page.locator('[data-testid="job"][data-kind="protected"]')
+  await expect(locked).toHaveCount(1)
+  await expect(locked).toContainText(/exige senha/i)
+  await expect(page.locator('input[type="password"]')).toHaveCount(0)
+  await page.getByTestId('start').click()
+  await waitFinished(page, 2)
+  await expect(page.locator('[data-testid="job"][data-kind="done"]')).toHaveCount(1)
+  await expect(locked).toHaveCount(1)
 })

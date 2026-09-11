@@ -43,19 +43,20 @@ A regra prática é comprimir o mínimo necessário para caber no limite, e semp
 
 ## Como escolher o limite certo
 
-Os limites de tamanho por arquivo variam bastante: algo entre 1,5 MB e 20 MB, conforme o tribunal, o sistema (PJe, eproc, e-SAJ, Projudi) e o tipo de petição. Não existe um número único. Antes de comprimir, confira o valor do seu caso no [diretório de limites por tribunal](/tribunais/).
+Os limites de tamanho por arquivo variam bastante conforme o tribunal, o sistema (PJe, eproc, e-SAJ, Projudi) e o tipo de petição: há sistemas que aceitam pouco mais de 1 MB por arquivo e outros que aceitam dezenas de megabytes. Não existe um número único. Antes de comprimir, confira o valor do seu caso no [diretório de limites por tribunal](/tribunais/).
 
-Um detalhe que engana muita gente: há dois jeitos de contar megabytes. No sistema decimal, 1 MB tem 1.000.000 de bytes. No binário, 1 MiB tem 1.048.576 bytes. Sistemas diferentes podem usar um ou outro, e o arquivo que parece caber pode ser recusado por uma diferença mínima. Por isso, deixe uma margem de segurança de uns 5%: se o limite é 10 MB, mire em algo perto de 9,5 MB.
+Um detalhe que engana muita gente: há dois jeitos de contar megabytes. No sistema decimal, 1 MB tem 1.000.000 de bytes. No binário, 1 MiB tem 1.048.576 bytes. Sistemas diferentes podem usar um ou outro, e o arquivo que parece caber pode ser recusado por uma diferença mínima. Por isso, vale uma margem de segurança de uns 5%: se o limite é 10 MB, o arquivo deve ficar perto de 9,5 MB. A [ferramenta](/) aplica essa margem sozinha: você informa o limite do tribunal (ou escolhe o tribunal na lista) e ela mira 95% desse valor.
 
 ## Passo a passo na ferramenta
 
 A ferramenta funciona inteiramente no seu navegador. Nenhum arquivo é enviado a servidor, o que importa quando o documento tem dados de clientes.
 
-1. Abra a ferramenta e selecione o PDF (ou arraste o arquivo para a página).
-2. Escolha o limite de tamanho do seu tribunal. Se tiver dúvida, use o diretório e aplique a margem de 5%.
-3. Inicie a compressão e aguarde. Arquivos grandes podem levar alguns segundos.
-4. Baixe o resultado e abra o PDF para conferir se as páginas continuam legíveis.
-5. Só depois disso, assine digitalmente, se for o caso.
+1. Escolha o tribunal e o sistema na lista (ou informe o limite em MB, se o seu não estiver lá). A margem de segurança de 5% já é aplicada.
+2. Adicione os PDFs: arraste para a área indicada ou clique nela para selecionar (pode ser mais de um).
+3. Revise o lote. A ferramenta analisa cada arquivo antes de mexer em qualquer coisa e mostra o que será otimizado, o que já cabe e o que tem aviso (assinado, com senha, ilegível).
+4. Clique em **Preparar** e aguarde. Arquivos grandes podem levar algumas dezenas de segundos.
+5. Baixe o resultado (um a um ou tudo em um ZIP) e abra cada PDF para conferir se as páginas continuam legíveis.
+6. Só depois disso, assine digitalmente, se for o caso.
 
 Sobre a assinatura: se o PDF já está assinado com certificado digital (ICP-Brasil, padrão PAdES), qualquer alteração invalida a assinatura. O caminho correto é comprimir primeiro e assinar depois. E se o arquivo tem senha de abertura, ele precisa ser destravado no programa de origem antes, porque a ferramenta não consegue ler um PDF fechado.
 

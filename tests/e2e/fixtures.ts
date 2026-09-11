@@ -2,6 +2,7 @@ import { PDFDocument, PDFHexString, PDFName, PDFString, StandardFonts, rgb, push
 import { zlibSync } from 'fflate'
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { encryptPdfRc4 } from '../helpers/encryptPdf'
 
 export const FIXTURE_DIR = join(process.cwd(), 'test-results', 'fixtures')
 const A4: [number, number] = [595.28, 841.89]
@@ -73,6 +74,10 @@ export interface Fixtures {
   scanBig: string
   scanHuge: string
   signedBig: string
+  /** Cópia do scan grande só com restrições do dono (senha de usuário vazia: abre sem senha) */
+  restricted: string
+  /** Cópia do scan grande que exige senha de usuário para abrir */
+  userPassword: string
   text: string
   corrupt: string
 }
@@ -91,11 +96,15 @@ export async function ensureFixtures(): Promise<Fixtures> {
   const scanBig = join(FIXTURE_DIR, 'scan_big.pdf')
   const scanHuge = join(FIXTURE_DIR, 'scan_huge.pdf')
   const signedBig = join(FIXTURE_DIR, 'scan_signed.pdf')
+  const restricted = join(FIXTURE_DIR, 'scan_restrito.pdf')
+  const userPassword = join(FIXTURE_DIR, 'scan_com_senha.pdf')
   const text = join(FIXTURE_DIR, 'text.pdf')
   const corrupt = join(FIXTURE_DIR, 'corrupt.pdf')
   if (!existsSync(scanBig)) await makeScanPdf(scanBig, 3)
   if (!existsSync(scanHuge)) await makeScanPdf(scanHuge, 12)
   if (!existsSync(signedBig)) await makeSignedCopy(scanBig, signedBig)
+  if (!existsSync(restricted)) writeFileSync(restricted, await encryptPdfRc4(new Uint8Array(readFileSync(scanBig)), { ownerPassword: 'dono' }))
+  if (!existsSync(userPassword)) writeFileSync(userPassword, await encryptPdfRc4(new Uint8Array(readFileSync(scanBig)), { ownerPassword: 'dono', userPassword: 'segredo' }))
   if (!existsSync(text)) await makeTextPdf(text, 20)
   if (!existsSync(corrupt)) {
     const junk = new Uint8Array(7 * 1024 * 1024)
@@ -106,5 +115,5 @@ export async function ensureFixtures(): Promise<Fixtures> {
     }
     writeFileSync(corrupt, Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.from(junk)]))
   }
-  return { scanBig, scanHuge, signedBig, text, corrupt }
+  return { scanBig, scanHuge, signedBig, restricted, userPassword, text, corrupt }
 }

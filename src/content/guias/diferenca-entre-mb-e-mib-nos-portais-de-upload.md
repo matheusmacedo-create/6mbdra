@@ -40,7 +40,7 @@ Uma forma de escapar da confusão é olhar o tamanho exato em bytes. No Windows,
 
 Aqui está o ponto central: cada sistema de peticionamento decide, internamente, qual conta usar. Um sistema pode tratar "6 MB" como 6.000.000 bytes; outro, como 6 x 1.048.576 = 6.291.456 bytes. Essa informação raramente aparece na tela de upload.
 
-Os limites também variam bastante, algo entre cerca de 1,5 MB e 20 MB, conforme o tribunal, o sistema (PJe, eproc, e-SAJ, Projudi) e o tipo de petição. Antes de preparar o arquivo, confira o valor no [diretório de limites por tribunal](/tribunais/).
+Os limites também variam bastante conforme o tribunal, o sistema (PJe, eproc, e-SAJ, Projudi) e o tipo de petição: de pouco mais de 1 MB a dezenas de megabytes por arquivo. Antes de preparar o arquivo, confira o valor no [diretório de limites por tribunal](/tribunais/).
 
 Como você não controla qual conta o portal faz, o caminho mais seguro é assumir o pior caso: a contagem decimal, que resulta no limite menor.
 
@@ -54,14 +54,14 @@ Essa folga de uns 5% cobre três situações comuns:
 2. **Arredondamentos na tela**, que escondem alguns milhares de bytes.
 3. **Pequenas alterações depois da compactação**, como assinar digitalmente, o que pode acrescentar alguns quilobytes ao arquivo.
 
-Na prática, ao usar a [ferramenta de compactar e dividir PDF](/), informe um limite um pouco abaixo do que o tribunal exige. Se o portal aceita 6 MB, peça arquivos de até 5,7 MB. Tudo acontece no seu navegador: nenhum arquivo é enviado a servidor.
+Na prática, ao usar a [ferramenta de compactar e dividir PDF](/), informe o limite exatamente como o tribunal declara (ou escolha o tribunal na lista): a margem de 5% é aplicada automaticamente. Se o portal aceita 6 MB, a ferramenta mira 5,7 MB sozinha; não reduza o valor por conta própria, senão a margem é aplicada duas vezes. Tudo acontece no seu navegador: nenhum arquivo é enviado a servidor.
 
 ## Como conferir antes de protocolar
 
 Um roteiro rápido:
 
 - Confira o limite do seu tribunal no [diretório de limites por tribunal](/tribunais/).
-- Compacte ou divida o PDF mirando uns 5% abaixo desse limite.
+- Compacte ou divida o PDF mirando uns 5% abaixo desse limite (a ferramenta faz isso sozinha quando você informa o limite do tribunal).
 - Verifique o tamanho em bytes, não apenas o número arredondado na tela.
 - Abra o arquivo final e confira se todas as páginas estão lá e legíveis.
 - Se dividiu em partes, nomeie em sequência (parte_01, parte_02) para manter a ordem.
@@ -76,7 +76,7 @@ Não dá para garantir. No Windows, "5,9 MB" corresponde a cerca de 6,18 milhõe
 
 ### Que limite devo informar na ferramenta?
 
-Um valor uns 5% abaixo do limite do tribunal. Essa folga cobre a diferença entre MB e MiB, os arredondamentos da tela e o pequeno aumento causado pela assinatura digital. Assim, o arquivo tende a passar em qualquer forma de contagem.
+O limite exatamente como o tribunal declara (ou o tribunal na lista). A ferramenta aplica sozinha a folga de 5%, que cobre a diferença entre MB e MiB, os arredondamentos da tela e o pequeno aumento causado pela assinatura digital. Assim, o arquivo tende a passar em qualquer forma de contagem. Só informe um valor menor se o seu tribunal exigir uma folga maior.
 
 ### Qual é a forma mais confiável de ver o tamanho real de um arquivo?
 

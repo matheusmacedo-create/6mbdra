@@ -1,9 +1,12 @@
 ---
 import Base from '../layouts/Base.astro'
 import App from '../tool/App'
-import { REGRAS } from '../tool/lib/regras'
+import { REGRAS, limiteBytes, regrasVigentes } from '../tool/lib/regras'
+import { formatBytes } from '../tool/lib/format'
 import { getCollection } from 'astro:content'
-import wasmUrl from '@jspawn/ghostscript-wasm/gs.wasm?url'
+const limites = regrasVigentes().map(limiteBytes)
+const limiteMin = limites.length ? Math.min(...limites) : 1_000_000
+const limiteMax = limites.length ? Math.max(...limites) : 50_000_000
 const guias = (await getCollection('guias')).sort((a, b) => a.data.title.localeCompare(b.data.title, 'pt-BR')).slice(0, 4)
 ---
 <Base
@@ -11,9 +14,6 @@ const guias = (await getCollection('guias')).sort((a, b) => a.data.title.localeC
   description="Prepare vários PDFs de uma vez para caberem no limite do tribunal (PJe, eproc, e-SAJ, Projudi). Grátis, sem cadastro e sem enviar arquivos: tudo roda no seu navegador."
   path="/"
 >
-  <Fragment slot="head">
-    <link rel="preload" as="fetch" crossorigin="anonymous" href={wasmUrl} />
-  </Fragment>
   <main class="page">
     <section class="hero">
       <h1>Deixe cada PDF dentro do limite do tribunal, sem enviar nada para a internet</h1>
@@ -66,7 +66,7 @@ const guias = (await getCollection('guias')).sort((a, b) => a.data.title.localeC
       </details>
       <details>
         <summary>Qual é o limite do meu tribunal?</summary>
-        <p>Varia bastante (entre cerca de 1,5 MB e 20 MB) por tribunal, sistema, instância e tipo de petição. Consulte o <a href="/tribunais/">diretório</a> ou a tela de anexar documentos do sistema e, se não achar, informe o limite manualmente.</p>
+        <p>Varia bastante por tribunal, sistema, instância e tipo de petição: na nossa base há limites de {formatBytes(limiteMin)} a {formatBytes(limiteMax)} por arquivo. Consulte o <a href="/tribunais/">diretório</a> ou a tela de anexar documentos do sistema e, se não achar, informe o limite manualmente.</p>
       </details>
     </section>
 

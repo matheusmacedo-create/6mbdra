@@ -2,12 +2,12 @@ import type { OutputFile, ProcessSettings } from '../types'
 import { compressedName, partName } from '../naming'
 import { LEVELS, pickStartLevel, nextLevel, prevLevel, type Level } from './levels'
 import { EngineError, type CompressionEngine } from './types'
-import { SplitError, type SplitResult } from '../splitTypes'
+import { SplitError, type SplitBudget, type SplitResult } from '../splitTypes'
 
 export interface PipelineDeps {
   engine: CompressionEngine | null
   countPages: (bytes: Uint8Array, signal?: AbortSignal) => Promise<number>
-  split: (bytes: Uint8Array, maxBytes: number, onProgress?: (done: number, total: number) => void, signal?: AbortSignal) => Promise<SplitResult>
+  split: (bytes: Uint8Array, maxBytes: number, onProgress?: (done: number, total: number) => void, signal?: AbortSignal, budget?: SplitBudget) => Promise<SplitResult>
 }
 
 export interface PipelineCallbacks {
@@ -15,6 +15,16 @@ export interface PipelineCallbacks {
   signal?: AbortSignal
   /** Páginas já contadas na análise prévia (evita contar de novo) */
   pages?: number
+  /**
+   * O original é criptografado (só restrições, abre sem senha). Nesse caso nunca dividimos o
+   * original com o pdf-lib (sairia ilegível): a divisão parte sempre de uma saída do motor.
+   */
+  encryptedInput?: boolean
+  /**
+   * Orçamento por parte quando a regra tem limite por página ou condicional: a meta de cada parte
+   * depende de quantas páginas ela leva (sem isso, cada parte usa a meta do arquivo inteiro).
+   */
+  partBudget?: SplitBudget
 }
 
 export type PipelineStatus = 'done' | 'unchanged' | 'over'
@@ -31,6 +41,8 @@ export interface PipelineResult {
   /** O conteúdo saiu idêntico ao original (só dividido)? */
   contentUntouched: boolean
 }
+
+const RESTRICTIONS_DROPPED = 'O original tinha restrições de edição (senha de permissões); o arquivo preparado sai sem elas.'
 
 interface Attempt {
   bytes: Uint8Array
@@ -101,7 +113,7 @@ export async function processPdf(
       outputs: [{ name: compressedName(fileName), bytes: fits.bytes, size: fits.bytes.byteLength, kind: 'compressed' }],
       level: fits.level.id,
       pages,
-      warnings: fits.warnings,
+      warnings: cb.encryptedInput ? [...fits.warnings, RESTRICTIONS_DROPPED] : fits.warnings,
       bestSize: fits.bytes.byteLength,
       contentUntouched: false,
     }
@@ -109,8 +121,23 @@ export async function processPdf(
 
   // --- Não coube: escolher a fonte da divisão ----------------------------------
   const best = attempts.length ? attempts.reduce((a, b) => (b.bytes.byteLength < a.bytes.byteLength ? b : a)) : undefined
-  const compressionHelped = best !== undefined && best.bytes.byteLength < input.byteLength * 0.98
+  // Com original criptografado, qualquer saída do motor serve de fonte (sai sem criptografia).
+  const compressionHelped = best !== undefined && (cb.encryptedInput === true || best.bytes.byteLength < input.byteLength * 0.98)
   const warnings: string[] = []
+  if (cb.encryptedInput && !best) {
+    return {
+      status: 'over',
+      outputs: [],
+      pages,
+      warnings: [
+        engineFailure
+          ? `Este PDF tem restrições de edição e a compressão falhou (${engineFailure.message}); ele não pode ser dividido sem antes ser reescrito. Salve uma cópia sem restrições no programa de origem.`
+          : 'Este PDF tem restrições de edição e não pôde ser reescrito. Salve uma cópia sem restrições no programa de origem.',
+      ],
+      bestSize: undefined,
+      contentUntouched: true,
+    }
+  }
 
   if (!settings.autoSplit) {
     if (best && compressionHelped) {
@@ -152,11 +179,12 @@ export async function processPdf(
   } else if (best) {
     warnings.push(...best.warnings)
   }
+  if (cb.encryptedInput) warnings.push(RESTRICTIONS_DROPPED)
 
-  stage('Dividindo em partes…', 0.9)
+  stage('Dividindo em partes…', 0)
   let split: SplitResult
   try {
-    split = await deps.split(source, target, (done, total) => stage(`Dividindo em partes… (página ${done} de ${total})`, 0.9 + 0.1 * (done / total)), signal)
+    split = await deps.split(source, target, (done, total) => stage(`Dividindo em partes… (página ${done} de ${total})`, done / total), signal, cb.partBudget)
   } catch (e) {
     if (signal?.aborted || (e instanceof SplitError && e.code === 'ABORTED')) throw new EngineError('Cancelado.', 'ABORTED')
     if (e instanceof SplitError && e.code === 'PAGE_TOO_BIG') {
@@ -224,17 +252,16 @@ async function compressUntilFits(
 
   const runLevel = async (level: Level, prefix: string): Promise<Attempt> => {
     throwIfAborted(signal)
-    const idx = LEVELS.findIndex((l) => l.id === level.id)
-    const base = idx / LEVELS.length
-    const span = 1 / LEVELS.length
+    // A barra mostra o avanço (por páginas) do passe atual; o texto diz qual passe é.
+    // O número de passes não é conhecido de antemão, então uma barra "global" mentiria.
     const label = `${prefix} (nível ${level.id} de ${LEVELS.length}: ${level.label.toLowerCase()})…`
-    stage(label, base)
+    stage(label, 0)
     const res = await engine.compress(input, {
       level,
       grayscale: settings.grayscale,
       pages,
       signal,
-      onProgress: (f, detail) => stage(`${label}${detail ? ' ' + detail : ''}`, base + span * f),
+      onProgress: (f, detail) => stage(`${label}${detail ? ' ' + detail : ''}`, f),
     })
     await verifyIntegrity(res.bytes, res.pages, pages, deps, signal)
     throwIfAborted(signal)

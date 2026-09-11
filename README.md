@@ -73,7 +73,7 @@ Toda segunda-feira `rules-monitor.yml` confere as fontes (`scripts/check-sources
 trecho citado, normalizado, e um hash da vizinhança dele; grava contadores e hashes em
 `src/data/fontes.lock.json` (comitado pelo próprio workflow) e abre ou atualiza uma issue com o
 label `regras` quando algo muda ou uma fonte fica fora do ar por duas rodadas seguidas — sem
-repetir o comentário se os achados forem os mesmos, e fechando a issue quando tudo volta ao normal.
+repetir o comentário se os achados forem os mesmos, e registrando (uma vez) quando as fontes estabilizam. Fechar a issue é decisão de quem revisa, depois de atualizar `verificado_em`.
 Para rodar localmente atrás de proxy: `NODE_USE_ENV_PROXY=1 node scripts/check-sources.mjs`.
 
 ## Deploy
