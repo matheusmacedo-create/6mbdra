@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import type { Settings } from '../lib/types'
-import { agruparPorTribunal, regrasVigentes, regraPorId, formatLimite, limiteBytes, metaBytes, REGRAS } from '../lib/regras'
+import { agruparPorTribunal, regrasVigentes, regraPorId, formatLimite, limiteBytes, metaBytes, percentualMeta, rotuloContexto, rotuloSistema, META_PERCENTUAL_PADRAO } from '../lib/regras'
 import { formatBytes, formatDate } from '../lib/format'
 import { CUSTOM_MB_MAX, CUSTOM_MB_MIN, resolveSettings } from '../lib/limits'
-import { SITE } from '../../config/site'
 import { track } from '../lib/analytics'
 
 interface Props {
@@ -46,9 +45,9 @@ export function RuleSelector({ settings, onChange }: Props) {
             <optgroup key={grupo} label={grupo}>
               {lista.map((r) => (
                 <option key={r.id} value={r.id}>
-                  {r.sistema} · {formatLimite(r)}
-                  {r.instancia && r.instancia !== 'não se aplica' ? ` · ${r.instancia}` : ''}
-                  {r.tipo_peticionamento && r.tipo_peticionamento !== 'geral' ? ` · ${r.tipo_peticionamento}` : ''}
+                  {rotuloSistema(r)} · {formatLimite(r)}
+                  {rotuloContexto(r, { omitirAmbos: true }) ? ` · ${rotuloContexto(r, { omitirAmbos: true })}` : ''}
+                  {r.situacao === 'em_revisao' ? ' · em revisão' : ''}
                 </option>
               ))}
             </optgroup>
@@ -82,15 +81,19 @@ export function RuleSelector({ settings, onChange }: Props) {
         {regra ? (
           <>
             <div>
-              <strong>{regra.tribunal_sigla} · {regra.sistema}</strong> — {regra.tribunal_nome}
-              {regra.instancia && regra.instancia !== 'não se aplica' ? ` · ${regra.instancia}` : ''}
-              {regra.tipo_peticionamento && regra.tipo_peticionamento !== 'geral' ? ` · ${regra.tipo_peticionamento}` : ''}
+              <strong>{regra.tribunal_sigla} · {rotuloSistema(regra)}</strong> — {regra.tribunal_nome}
+              {rotuloContexto(regra) ? ` · ${rotuloContexto(regra)}` : ''}
             </div>
             <dl>
               <div><dt>Limite declarado</dt><dd>{formatLimite(regra)} ({formatBytes(limiteBytes(regra))})</dd></div>
-              <div><dt>Meta segura</dt><dd>{formatBytes(metaBytes(regra))} ({regra.meta_segura_percentual ?? REGRAS.meta_segura_percentual_padrao}% do limite)</dd></div>
+              <div><dt>Meta segura</dt><dd>{formatBytes(metaBytes(regra))} ({percentualMeta(regra)}% do limite)</dd></div>
+              {regra.limite_por_pagina_kb && <div><dt>Por página</dt><dd>até {regra.limite_por_pagina_kb} KB (a meta de cada arquivo considera o número de páginas)</dd></div>}
+              {regra.limite_total_peticao_mb && <div><dt>Por petição</dt><dd>soma dos arquivos até {regra.limite_total_peticao_mb} MB</dd></div>}
+              {regra.limite_condicional && <div><dt>Condicional</dt><dd>{regra.limite_condicional.limite_valor} {regra.limite_condicional.limite_unidade} para arquivos com {regra.limite_condicional.min_paginas} páginas ou mais</dd></div>}
+              {regra.exige_pdfa && <div><dt>Formato</dt><dd>exige PDF/A na petição inicial (converta depois de compactar)</dd></div>}
               <div><dt>Fonte oficial</dt><dd><a href={regra.fonte_url} target="_blank" rel="noreferrer noopener">{regra.fonte_titulo}</a></dd></div>
-              <div><dt>Verificado em</dt><dd>{formatDate(regra.verificado_em)}{regra.situacao === 'em_revisao' ? ' · em revisão' : ''}</dd></div>
+              <div><dt>Verificado em</dt><dd>{formatDate(regra.verificado_em)}</dd></div>
+              {regra.situacao === 'em_revisao' && <div><dt>Situação</dt><dd><span className="badge warn">em revisão</span> {regra.motivo_revisao}</dd></div>}
             </dl>
             {regra.observacoes && <p className="hint">{regra.observacoes}</p>}
             <p className="hint">
@@ -99,7 +102,7 @@ export function RuleSelector({ settings, onChange }: Props) {
           </>
         ) : (
           <div>
-            Limite: <strong>{formatBytes(resolved.limitBytes)}</strong> · meta segura: <strong>{formatBytes(resolved.targetBytes)}</strong> ({SITE.safetyMarginPercent}% do limite, para
+            Limite: <strong>{formatBytes(resolved.limitBytes)}</strong> · meta segura: <strong>{formatBytes(resolved.targetBytes)}</strong> ({META_PERCENTUAL_PADRAO}% do limite, para
             o portal não recusar por diferença de contagem).
           </div>
         )}

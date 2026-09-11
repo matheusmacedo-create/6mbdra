@@ -21,7 +21,8 @@ declare global {
   }
 }
 
-const FORBIDDEN_KEYS = /nome|name|arquivo|file|processo|texto|text|conteudo|content/i
+// Chaves que sugerem dado de documento. Contagens ('quantidade', 'partes') passam.
+const FORBIDDEN_KEYS = /nome|name|filename|file$|files$|path|processo|texto|text|conteudo|content|hash/i
 
 export function track(event: EventName, props: EventProps = {}) {
   // Defesa em profundidade: nenhuma chave que sugira dado de documento passa.

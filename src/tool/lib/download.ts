@@ -1,5 +1,6 @@
 import type { OutputFile } from './types'
 import { buildZip } from './zip'
+import { track } from './analytics'
 
 function triggerDownload(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob)
@@ -16,9 +17,11 @@ function triggerDownload(blob: Blob, name: string) {
 
 export function downloadFile(file: OutputFile) {
   triggerDownload(new Blob([file.bytes as BlobPart], { type: 'application/pdf' }), file.name)
+  track('download', { tipo: file.kind === 'part' ? 'parte' : 'arquivo' })
 }
 
-export function downloadZip(files: OutputFile[], zipName = 'pdfs-preparados.zip') {
+export function downloadZip(files: OutputFile[], zipName = 'pdfs-preparados.zip', tipo: 'zip' | 'partes' = 'zip') {
   const zip = buildZip(files)
   triggerDownload(new Blob([zip as BlobPart], { type: 'application/zip' }), zipName)
+  track('download', { tipo, quantidade: files.length })
 }

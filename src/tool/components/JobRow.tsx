@@ -1,4 +1,4 @@
-import { deriveKind, type Job } from '../lib/types'
+import { deriveKind, isStale as isStaleJob, targetFor, type Job, type ProcessSettings } from '../lib/types'
 import { formatBytes, formatDuration, formatReduction } from '../lib/format'
 import { downloadFile, downloadZip } from '../lib/download'
 import { LEVELS } from '../lib/engine/levels'
@@ -6,7 +6,7 @@ import { baseName } from '../lib/naming'
 
 interface Props {
   job: Job
-  targetBytes: number
+  process: ProcessSettings
   onRemove: (id: string) => void
   onRetry: (id: string) => void
   onAllowSigned: (id: string) => void
@@ -25,16 +25,16 @@ const KIND_LABEL: Record<ReturnType<typeof deriveKind>, { text: string; cls: str
   error: { text: 'Não deu certo', cls: 'err' },
 }
 
-export function JobRow({ job, targetBytes, onRemove, onRetry, onAllowSigned }: Props) {
-  const kind = deriveKind(job, targetBytes)
-  const badge = KIND_LABEL[kind]
+export function JobRow({ job, process, onRemove, onRetry, onAllowSigned }: Props) {
+  const targetBytes = targetFor(job, process)
+  const kind = deriveKind(job, process)
+  const stale = isStaleJob(job, process)
+  const badge = stale ? { text: 'Fora da meta atual', cls: 'warn' } : KIND_LABEL[kind]
   const busy = kind === 'processing' || kind === 'queued'
   const totalOut = job.outputs.reduce((a, o) => a + o.size, 0)
   const level = job.level ? LEVELS.find((l) => l.id === job.level) : undefined
   const elapsed = job.startedAt && job.finishedAt ? formatDuration(job.finishedAt - job.startedAt) : null
   const pages = job.analysis?.pages
-  /** Resultado feito para outra meta e que não cabe na meta atual. */
-  const stale = kind === 'done' && job.targetBytes !== undefined && job.targetBytes !== targetBytes && job.outputs.some((o) => o.size > targetBytes)
 
   return (
     <div className="job" data-testid="job" data-kind={kind}>
@@ -51,13 +51,18 @@ export function JobRow({ job, targetBytes, onRemove, onRetry, onAllowSigned }: P
         </div>
         <span className={`badge ${badge.cls}`}>{badge.text}</span>
         <div className="job-actions">
+          {stale && (
+            <button className="btn small" onClick={() => onRetry(job.id)} data-testid="reprocess">
+              Reprocessar com a meta atual
+            </button>
+          )}
           {kind === 'done' && job.outputs.length === 1 && (
-            <button className="btn small" onClick={() => downloadFile(job.outputs[0])}>
+            <button className={`btn small${stale ? ' secondary' : ''}`} onClick={() => downloadFile(job.outputs[0])}>
               Baixar ({formatBytes(job.outputs[0].size)})
             </button>
           )}
           {kind === 'done' && job.outputs.length > 1 && (
-            <button className="btn small" onClick={() => downloadZip(job.outputs, `${baseName(job.name)}_partes.zip`)}>
+            <button className={`btn small${stale ? ' secondary' : ''}`} onClick={() => downloadZip(job.outputs, `${baseName(job.name)}_partes.zip`, 'partes')}>
               Baixar as {job.outputs.length} partes (.zip)
             </button>
           )}
@@ -140,12 +145,17 @@ export function JobRow({ job, targetBytes, onRemove, onRetry, onAllowSigned }: P
       )}
       {stale && (
         <div className="note warn">
-          Este arquivo foi preparado para a meta de {formatBytes(job.targetBytes!)}; a meta atual é {formatBytes(targetBytes)} e o resultado não cabe nela.{' '}
-          <button className="btn small secondary" onClick={() => onRetry(job.id)} data-testid="reprocess">
-            Reprocessar com a meta atual
-          </button>
+          Este arquivo foi preparado para a meta de {formatBytes(job.targetBytes!)}; a meta atual é {formatBytes(targetBytes)} e o resultado não cabe nela. Reprocesse antes de protocolar.
         </div>
       )}
+      {kind === 'unchanged' && job.analysis?.signed && (
+        <div className="note info">Assinado digitalmente e já dentro da meta: mantido exatamente como está.</div>
+      )}
+      {process.perPageBytes && (kind === 'ready' || kind === 'unchanged') && job.analysis?.pages ? (
+        <div className="job-meta">
+          Meta para este arquivo: {formatBytes(targetBytes)} (este sistema também limita cada página a {formatBytes(process.perPageBytes)}).
+        </div>
+      ) : null}
       {kind === 'done' && job.warnings.map((w) => <div className="note warn" key={w}>{w}</div>)}
       {kind === 'error' && <div className="note err">{job.error}</div>}
     </div>

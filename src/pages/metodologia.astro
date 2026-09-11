@@ -33,9 +33,19 @@ import { formatDate } from '../tool/lib/format'
     <h2>Situação de cada regra</h2>
     <ul>
       <li><strong>Vigente:</strong> conferida e sem sinal de mudança.</li>
-      <li><strong>Em revisão:</strong> a fonte mudou ou está fora do ar; a regra continua visível com esse aviso até a conferência.</li>
+      <li><strong>Em revisão:</strong> há motivo para cautela, informado ao lado do selo: fontes oficiais que divergem entre si, fonte antiga sem confirmação recente, ou fonte que mudou ou saiu do ar depois da conferência. A regra continua visível (com o valor mais conservador) até uma nova conferência humana.</li>
       <li><strong>Substituída:</strong> sai das listas, mas permanece no histórico.</li>
     </ul>
+    <p>
+      Fontes que ficam inacessíveis para a rotina automática por duas rodadas seguidas entram na tarefa de revisão; muitos portais bloqueiam acesso
+      automatizado sem que a regra tenha mudado, por isso a mudança de situação é sempre decidida por uma pessoa.
+    </p>
+    <h2>Limites além do tamanho por arquivo</h2>
+    <p>
+      Alguns sistemas (e-SAJ, por exemplo) também limitam o tamanho por página e a soma dos arquivos de uma petição. Quando a fonte informa esses valores,
+      eles ficam registrados na regra: a ferramenta ajusta a meta de cada arquivo pelo número de páginas e avisa quando o lote passa do total por
+      petição. Limites condicionais (como um teto maior para arquivos com 30 páginas ou mais) também são aplicados automaticamente.
+    </p>
 
     <h2>Limitações</h2>
     <p>

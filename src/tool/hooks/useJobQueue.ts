@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
-import { type Job, type ProcessSettings, isBusy, isProcessable } from '../lib/types'
+import { type Job, type ProcessSettings, isBusy, isProcessable, targetFor } from '../lib/types'
 import { processPdf, type PipelineDeps } from '../lib/engine/pipeline'
 import { EngineError } from '../lib/engine/types'
 import { createEngine, GhostscriptEngine } from '../lib/engine'
@@ -172,12 +172,12 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
   /** Coloca na fila todos os arquivos prontos (ou só os ids informados). */
   const start = useCallback(
     (ids?: string[]) => {
-      const target = processRef.current.targetBytes
+      const p = processRef.current
       // Sem ids: todos os prontos. Com ids (tentar de novo / reprocessar): também os com erro ou já concluídos.
-      const chosen = jobs.filter((j) => (ids ? ids.includes(j.id) : true) && (isProcessable(j, target) || (ids && (j.status === 'error' || j.status === 'done'))))
+      const chosen = jobs.filter((j) => (ids ? ids.includes(j.id) : true) && (isProcessable(j, p) || (ids && (j.status === 'error' || j.status === 'done'))))
       if (chosen.length === 0) return 0
       batchRef.current = { startedAt: Date.now(), count: chosen.length }
-      track('lote_iniciado', { arquivos: chosen.length, meta_mb: Math.round(target / 100_000) / 10 })
+      track('lote_iniciado', { quantidade: chosen.length, meta_mb: Math.round(p.targetBytes / 100_000) / 10 })
       dispatch({ type: 'enqueue', ids: chosen.map((j) => j.id) })
       return chosen.length
     },
@@ -205,7 +205,7 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
       if (batchRef.current && !jobs.some(isBusy)) {
         const b = batchRef.current
         batchRef.current = null
-        track('lote_concluido', { arquivos: b.count, segundos: Math.round((Date.now() - b.startedAt) / 1000) })
+        track('lote_concluido', { quantidade: b.count, segundos: Math.round((Date.now() - b.startedAt) / 1000) })
       }
       return
     }
@@ -214,7 +214,8 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
     abortRef.current.set(next.id, controller)
     const id = next.id
     const patch = (p: Partial<Job>) => dispatch({ type: 'patch', id, patch: p })
-    const settings = processRef.current
+    // Meta efetiva deste arquivo (limite por página / condicional entram aqui).
+    const settings: ProcessSettings = { ...processRef.current, targetBytes: targetFor(next, processRef.current) }
 
     ;(async () => {
       const startedAt = Date.now()

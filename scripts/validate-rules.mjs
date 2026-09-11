@@ -14,6 +14,9 @@ const OFFICIAL = /^https:\/\/([a-z0-9-]+\.)*(jus\.br|gov\.br)(\/|$)/i
 const UNIDADES = new Set(['MB', 'MiB', 'KB'])
 const SITUACOES = new Set(['vigente', 'em_revisao', 'substituida'])
 const SISTEMAS = new Set(['PJe', 'eproc', 'e-SAJ', 'Projudi', 'e-STJ', 'STF', 'PJe-JT', 'Portal próprio', 'outro'])
+const INSTANCIAS = new Set(['1º grau', '2º grau', 'ambos', 'não se aplica'])
+const TIPOS = new Set(['inicial', 'intermediário', 'recurso', 'geral', 'principal', 'anexos'])
+const BOOLEANS = ['trecho_em_imagem', 'monitor_so_trecho', 'exige_pdfa']
 
 if (!isIsoDate(data.versao)) errors.push(`versao inválida: ${data.versao}`)
 if (!(data.meta_segura_percentual_padrao > 50 && data.meta_segura_percentual_padrao <= 100)) errors.push('meta_segura_percentual_padrao deve estar entre 50 e 100')
@@ -35,10 +38,20 @@ for (const [i, r] of (data.regras ?? []).entries()) {
   if (r.data_fonte && !isIsoDate(r.data_fonte)) errors.push(`${where}: data_fonte deve ser AAAA-MM-DD`)
   if (!isIsoDate(r.verificado_em ?? '')) errors.push(`${where}: verificado_em deve ser AAAA-MM-DD`)
   if (!SITUACOES.has(r.situacao)) errors.push(`${where}: situacao inválida`)
+  if (r.situacao === 'em_revisao' && !r.motivo_revisao) errors.push(`${where}: regra em revisão precisa de motivo_revisao`)
   if (!SISTEMAS.has(r.sistema)) errors.push(`${where}: sistema deve ser um de ${[...SISTEMAS].join(', ')}`)
+  if (r.sistema === 'Portal próprio' && !r.sistema_rotulo) errors.push(`${where}: "Portal próprio" precisa de sistema_rotulo (nome do sistema)`)
+  if (!INSTANCIAS.has(r.instancia)) errors.push(`${where}: instancia deve ser um de ${[...INSTANCIAS].join(', ')}`)
+  if (!TIPOS.has(r.tipo_peticionamento)) errors.push(`${where}: tipo_peticionamento deve ser um de ${[...TIPOS].join(', ')}`)
   if (r.fonte_trecho && r.fonte_trecho.length > 600) errors.push(`${where}: fonte_trecho longo demais (máx. 600)`)
-  if (r.trecho_em_imagem !== undefined && typeof r.trecho_em_imagem !== 'boolean') errors.push(`${where}: trecho_em_imagem deve ser booleano`)
-  if (r.monitor_so_trecho !== undefined && typeof r.monitor_so_trecho !== 'boolean') errors.push(`${where}: monitor_so_trecho deve ser booleano`)
+  for (const b of BOOLEANS) if (r[b] !== undefined && typeof r[b] !== 'boolean') errors.push(`${where}: ${b} deve ser booleano`)
+  if (r.limite_por_pagina_kb !== undefined && !(r.limite_por_pagina_kb > 0 && r.limite_por_pagina_kb < 100000)) errors.push(`${where}: limite_por_pagina_kb inválido`)
+  if (r.limite_total_peticao_mb !== undefined && !(r.limite_total_peticao_mb > 0 && r.limite_total_peticao_mb < 100000)) errors.push(`${where}: limite_total_peticao_mb inválido`)
+  if (r.limite_condicional !== undefined) {
+    const c = r.limite_condicional
+    if (!(c && c.min_paginas > 1 && c.limite_valor > 0 && UNIDADES.has(c.limite_unidade))) errors.push(`${where}: limite_condicional inválido`)
+    else if (c.limite_valor * (c.limite_unidade === 'MiB' ? 1.048576 : c.limite_unidade === 'KB' ? 0.001 : 1) <= r.limite_valor * (r.limite_unidade === 'MiB' ? 1.048576 : r.limite_unidade === 'KB' ? 0.001 : 1)) errors.push(`${where}: limite_condicional deve ser maior que o limite base`)
+  }
 }
 
 if (errors.length) {

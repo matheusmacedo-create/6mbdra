@@ -22,14 +22,12 @@ const guias = (await getCollection('guias')).sort((a, b) => a.data.title.localeC
 
     <App client:only="react" />
 
-    <div class="ad-slot" data-enabled="false" aria-hidden="true"></div>
-
     <section class="prose" id="como-funciona">
       <h2>Como funciona</h2>
       <ol>
         <li><strong>Configurar:</strong> escolha o tribunal e o sistema (ou informe o limite em MB). Mostramos o limite declarado, a meta segura, a fonte oficial e a data em que conferimos.</li>
         <li><strong>Revisar o lote:</strong> cada PDF é analisado antes de qualquer alteração: tamanho, páginas, senha, assinatura digital e integridade. Arquivos que já cabem ficam intactos.</li>
-        <li><strong>Preparar:</strong> o motor primeiro remove redundâncias; só se precisar reduz a resolução das imagens, aos poucos, até caber. Texto, fontes, marcadores e a camada de OCR são preservados. Se nem a compressão máxima resolver, o arquivo é dividido em partes por páginas inteiras.</li>
+        <li><strong>Preparar:</strong> o motor primeiro remove redundâncias; só se precisar reduz a resolução das imagens, aos poucos, até caber. Ao comprimir, texto, fontes, marcadores e a camada de OCR são preservados. Se nem a compressão máxima resolver, o arquivo é dividido em partes por páginas inteiras — nesse caso marcadores, links internos e campos de formulário não acompanham as partes, e a ferramenta avisa.</li>
         <li><strong>Baixar:</strong> cada arquivo é medido de novo antes de aparecer como pronto. Baixe um a um ou tudo em um ZIP, com nomes previsíveis (<code>contrato_otimizado.pdf</code>, <code>laudo_parte_01.pdf</code>).</li>
       </ol>
       <p>
@@ -37,6 +35,8 @@ const guias = (await getCollection('guias')).sort((a, b) => a.data.title.localeC
         <a href="/metodologia/">metodologia de atualização</a>.
       </p>
     </section>
+
+    <div class="ad-slot" data-enabled="false" aria-hidden="true"></div>
 
     <section class="prose faq" id="perguntas">
       <h2>Perguntas frequentes</h2>
@@ -46,7 +46,7 @@ const guias = (await getCollection('guias')).sort((a, b) => a.data.title.localeC
       </details>
       <details>
         <summary>O texto continua pesquisável depois?</summary>
-        <p>Sim. O motor (Ghostscript) reduz apenas as imagens do PDF e mantém texto, fontes, marcadores e a camada de OCR de digitalizações. Se você já tinha texto selecionável, continua tendo.</p>
+        <p>Sim. Ao comprimir, o motor (Ghostscript) reduz apenas as imagens do PDF e mantém texto, fontes, marcadores e a camada de OCR de digitalizações. Se você já tinha texto selecionável, continua tendo. Só quando o arquivo precisa ser dividido em partes é que marcadores, links internos e campos de formulário não acompanham as partes (o texto continua).</p>
       </details>
       <details>
         <summary>Como vocês decidem o quanto comprimir?</summary>

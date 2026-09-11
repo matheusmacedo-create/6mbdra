@@ -5,7 +5,7 @@ import type { ProcessSettings } from '../../src/tool/lib/types'
 import { SplitError } from '../../src/tool/lib/split'
 
 const MB = 1_000_000
-const settings: ProcessSettings = { limitBytes: 6 * MB, targetBytes: 5.7 * MB, autoSplit: true, grayscale: false }
+const settings: ProcessSettings = { limitBytes: 6 * MB, targetBytes: 5.7 * MB, percent: 95, exigePdfa: false, autoSplit: true, grayscale: false }
 
 /** Motor falso: tamanho de saída = entrada × fator do nível (ids 1..6). */
 function fakeEngine(factors: Record<number, number>, opts: { fail?: EngineError; calls?: CompressOptions[]; pages?: number } = {}): CompressionEngine {

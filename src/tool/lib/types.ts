@@ -77,9 +77,32 @@ export interface Settings {
 /** O que o pipeline precisa saber para processar um arquivo. */
 export interface ProcessSettings {
   limitBytes: number
+  /** Meta por arquivo (limite × percentual) */
   targetBytes: number
+  /** Percentual da meta segura aplicado */
+  percent: number
+  /** Meta adicional por página (sistemas e-SAJ), já com o percentual */
+  perPageBytes?: number
+  /** Meta para a soma dos arquivos de uma petição, já com o percentual */
+  totalPetitionBytes?: number
+  /** Meta maior quando o arquivo tem pelo menos minPages páginas */
+  conditional?: { minPages: number; targetBytes: number }
+  /** O sistema exige PDF/A (a ferramenta não converte: só avisa) */
+  exigePdfa: boolean
   autoSplit: boolean
   grayscale: boolean
+}
+
+/**
+ * Meta efetiva de um arquivo: a meta por arquivo (ou a condicional, se o arquivo tem páginas
+ * suficientes), limitada pela meta por página × número de páginas quando a regra tem limite por página.
+ */
+export function targetFor(job: Pick<Job, 'analysis'>, p: ProcessSettings): number {
+  const pages = job.analysis?.pages
+  let target = p.targetBytes
+  if (p.conditional && pages !== undefined && pages >= p.conditional.minPages) target = Math.max(target, p.conditional.targetBytes)
+  if (p.perPageBytes && pages) target = Math.min(target, p.perPageBytes * pages)
+  return target
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -97,7 +120,8 @@ export function isFinished(j: Job): boolean {
   return j.status === 'done' || j.status === 'error'
 }
 
-export function deriveKind(j: Job, targetBytes: number): JobKind {
+export function deriveKind(j: Job, target: number | ProcessSettings): JobKind {
+  const targetBytes = typeof target === 'number' ? target : targetFor(j, target)
   switch (j.status) {
     case 'analyzing':
       return 'analyzing'
@@ -114,14 +138,22 @@ export function deriveKind(j: Job, targetBytes: number): JobKind {
       const a = j.analysis
       if (!a || !a.valid) return 'invalid'
       if (a.encrypted) return 'protected'
-      if (a.signed && !j.forceSigned) return 'signed'
+      // Já cabe: mantido intacto mesmo se assinado (não precisa de processamento).
       if (j.originalSize <= targetBytes) return 'unchanged'
+      if (a.signed && !j.forceSigned) return 'signed'
       return 'ready'
     }
   }
 }
 
 /** Pode entrar na fila quando o usuário clicar em "Preparar arquivos"? */
-export function isProcessable(j: Job, targetBytes: number): boolean {
-  return deriveKind(j, targetBytes) === 'ready'
+export function isProcessable(j: Job, target: number | ProcessSettings): boolean {
+  return deriveKind(j, target) === 'ready'
+}
+
+/** Resultado preparado para outra meta e que não cabe na meta atual. */
+export function isStale(j: Job, p: ProcessSettings): boolean {
+  if (j.status !== 'done' || j.targetBytes === undefined) return false
+  const current = targetFor(j, p)
+  return j.targetBytes !== current && j.outputs.some((o) => o.size > current)
 }

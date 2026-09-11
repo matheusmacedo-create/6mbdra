@@ -1,10 +1,9 @@
 ---
 import Base from '../../layouts/Base.astro'
-import { REGRAS, agruparPorTribunal, formatLimite, limiteBytes, metaBytes, regrasVigentes } from '../../tool/lib/regras'
+import { REGRAS, agruparPorTribunal, formatLimite, limiteBytes, metaBytes, regrasVigentes, rotuloContexto, rotuloSistema } from '../../tool/lib/regras'
 import { formatBytes, formatDate } from '../../tool/lib/format'
 const grupos = agruparPorTribunal(regrasVigentes())
-const contexto = (r: { instancia: string; tipo_peticionamento: string }) =>
-  [r.instancia, r.tipo_peticionamento].filter((x) => x && x !== 'não se aplica' && x !== 'geral').join(', ') || 'geral'
+const contexto = (r: Parameters<typeof rotuloContexto>[0]) => rotuloContexto(r, { omitirAmbos: true }) || 'geral'
 ---
 <Base
   title="Limites de tamanho de PDF por tribunal e sistema"
@@ -22,6 +21,10 @@ const contexto = (r: { instancia: string; tipo_peticionamento: string }) =>
       limite manual na <a href="/">ferramenta</a> e <a href="/contato/">nos avise</a>.
     </div>
     {REGRAS.regras.length === 0 && <p>A base de regras ainda está sendo montada. Enquanto isso, informe o limite manualmente na ferramenta.</p>}
+    <p>
+      <strong>Justiça do Trabalho:</strong> a regra nacional do PJe-JT (primeiro grupo abaixo) vale para todos os TRTs e para o TST; TRT4 e TRT15 aparecem
+      também com suas páginas próprias.
+    </p>
     {[...grupos.entries()].map(([grupo, lista]) => (
       <section>
         <h2>{grupo}</h2>
@@ -33,11 +36,11 @@ const contexto = (r: { instancia: string; tipo_peticionamento: string }) =>
             <tbody>
               {lista.map((r) => (
                 <tr>
-                  <td>{r.sistema}</td>
-                  <td>{contexto(r)}</td>
+                  <td>{rotuloSistema(r)}</td>
+                  <td>{contexto(r)}{r.limite_por_pagina_kb ? ` · ${r.limite_por_pagina_kb} KB/página` : ''}{r.limite_condicional ? ` · ${r.limite_condicional.limite_valor} ${r.limite_condicional.limite_unidade} com ${r.limite_condicional.min_paginas}+ páginas` : ''}{r.exige_pdfa ? ' · PDF/A' : ''}</td>
                   <td>{formatLimite(r)} <span class="tag">{formatBytes(limiteBytes(r))}</span></td>
                   <td>{formatBytes(metaBytes(r))}</td>
-                  <td>{formatDate(r.verificado_em)}{r.situacao === 'em_revisao' ? ' (em revisão)' : ''}</td>
+                  <td>{formatDate(r.verificado_em)}{r.situacao === 'em_revisao' ? <span class="tag" title={r.motivo_revisao}>em revisão</span> : ''}</td>
                   <td><a href={`/tribunais/${r.id}/`}>detalhes</a></td>
                 </tr>
               ))}

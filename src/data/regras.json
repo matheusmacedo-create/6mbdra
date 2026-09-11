@@ -3,6 +3,25 @@
   "meta_segura_percentual_padrao": 95,
   "regras": [
     {
+      "id": "csjt-pje-jt",
+      "tribunal_sigla": "TRTs/TST",
+      "tribunal_nome": "Justiça do Trabalho — PJe-JT em todos os TRTs (1ª a 24ª Região) e no TST",
+      "sistema": "PJe-JT",
+      "instancia": "ambos",
+      "tipo_peticionamento": "geral",
+      "formato": "PDF",
+      "limite_valor": 10,
+      "limite_unidade": "MB",
+      "fonte_url": "https://juslaboris.tst.jus.br/bitstream/handle/20.500.12178/196092/2021_atc0048_tst_csjt.pdf?sequence=1&isAllowed=y",
+      "fonte_titulo": "Ato Conjunto TST.CSJT.GP.SG.SETIC nº 48/2021 – Define o tamanho máximo dos arquivos e extensões suportados pelo PJe (JusLaboris)",
+      "fonte_trecho": "Art. 1º Fica definido que o tamanho máximo dos arquivos no PJe será de 10 (dez) megabytes no formato PDF, exceto para arquivos de áudio e vídeo, que deverão ter o tamanho máximo de 200 (duzentos) megabytes.",
+      "verificado_em": "2026-09-10",
+      "situacao": "vigente",
+      "observacoes": "Regra nacional (Ato Conjunto TST.CSJT.GP.SG.SETIC nº 48/2021, DEJT 09/12/2021), válida no PJe de qualquer TRT e do TST: PDF até 10 MB por arquivo; áudio e vídeo (MP3/MP4) até 200 MB. O ato admite dividir PDFs em partes desde que cada uma respeite o limite. Em petições iniciais o PDF deve estar no padrão PDF/A (Res. CSJT 185/2017); digitalizações com no máximo 300 dpi, A4 retrato (Res. CSJT 94/2012). Revogou o Ato 89/2017 (3 MB). Use esta regra para TRT1, TRT3, TRT5 e demais regiões sem entrada própria.",
+      "data_fonte": "2021-12-09",
+      "exige_pdfa": true
+    },
+    {
       "id": "tjsp-eproc",
       "tribunal_sigla": "TJSP",
       "tribunal_nome": "Tribunal de Justiça do Estado de São Paulo",
@@ -36,7 +55,9 @@
       "verificado_em": "2026-09-10",
       "situacao": "vigente",
       "observacoes": "Peticionamento pelo e-SAJ (Portaria 8.755/13): 30 MB por arquivo, 300 KB por página e 80 MB por petição (soma dos arquivos). O limite por página (300 KB) é o que mais pega em digitalizações: confira o resultado dividindo o tamanho pelo número de páginas.",
-      "monitor_so_trecho": true
+      "monitor_so_trecho": true,
+      "limite_por_pagina_kb": 300,
+      "limite_total_peticao_mb": 80
     },
     {
       "id": "tjsc-eproc",
@@ -60,17 +81,17 @@
       "tribunal_sigla": "TJSE",
       "tribunal_nome": "Tribunal de Justiça de Sergipe",
       "sistema": "eproc",
-      "instancia": "ambos",
-      "tipo_peticionamento": "geral",
+      "instancia": "1º grau",
+      "tipo_peticionamento": "inicial",
       "formato": "PDF",
       "limite_valor": 11,
       "limite_unidade": "MB",
       "fonte_url": "https://www.tjse.jus.br/portal/arquivos/documentos/eproc/manuais/entidades/peticionamento_inicial.pdf",
-      "fonte_titulo": "PETICIONAMENTO INICIAL – Manual eproc TJSE (entidades)",
+      "fonte_titulo": "Peticionamento inicial no eproc — manual publicado pelo TJSE (material desenvolvido pelo TJSP)",
       "fonte_trecho": "Veja abaixo os formatos e tamanhos dos documentos que são permitidos no sistema eproc. ▪ Documentos: PDF, HTM, HTML e KML (Tamanho máximo: 11 MB) ▪ Áudio: MP3, WMA e WAV (Tamanho máximo: 70 MB) ▪ Imagens: JPEG, JPG, PNG e GIF (Tamanho máximo: 11 MB) ▪ Vídeos: MP4, WMV, MPG e MPEG (Tamanho máximo: 70 MB).",
       "verificado_em": "2026-09-10",
       "situacao": "vigente",
-      "observacoes": "Limite por arquivo no eproc do TJSE conforme manual de peticionamento inicial (maio/2025): PDF, HTM, HTML e KML até 11 MB; imagens 11 MB; áudio e vídeo 70 MB. É possível anexar quantos arquivos forem necessários.",
+      "observacoes": "Manual de peticionamento inicial hospedado pelo TJSE (maio/2025), produzido originalmente pelo TJSP para o eproc: PDF, HTM, HTML e KML até 11 MB; imagens 11 MB; áudio e vídeo 70 MB. O valor é o padrão do eproc, não uma parametrização declarada pelo próprio TJSE; 2º grau e petições intermediárias não foram confirmados em fonte própria.",
       "data_fonte": "2025-05-20"
     },
     {
@@ -114,8 +135,8 @@
       "tribunal_sigla": "TRF2",
       "tribunal_nome": "Tribunal Regional Federal da 2ª Região (JFRJ/JFES)",
       "sistema": "eproc",
-      "instancia": "ambos",
-      "tipo_peticionamento": "geral",
+      "instancia": "1º grau",
+      "tipo_peticionamento": "inicial",
       "formato": "PDF",
       "limite_valor": 11,
       "limite_unidade": "MB",
@@ -124,15 +145,16 @@
       "fonte_trecho": "No caso de petição inicial, a mesma deverá ser juntada em arquivo/texto específico, nos formatos indicados no sistema (Documentos: PDF - Tamanho máximo = 11MB; Imagens: JPEG, JPG e PNG - Tamanho máximo = 11MB), e assinada digitalmente",
       "verificado_em": "2026-09-10",
       "situacao": "em_revisao",
-      "observacoes": "Carta de serviços da JFRJ (eproc): PDF até 11 MB por arquivo. Uma FAQ mais antiga da JFRJ (publicada em 2014, modificada em 2024) ainda fala em 5 MB por arquivo e até 50 arquivos por petição. Se o sistema recusar, use 5 MB."
+      "observacoes": "Carta de serviços da JFRJ (eproc): PDF até 11 MB por arquivo na petição inicial. Uma FAQ mais antiga da JFRJ (publicada em 2014, modificada em 2024) ainda fala em 5 MB por arquivo e até 50 arquivos por petição. 2º grau, JFES e petições intermediárias não foram confirmados em fonte própria. Se o sistema recusar, use 5 MB.",
+      "motivo_revisao": "fontes oficiais divergem (11 MB × 5 MB)"
     },
     {
       "id": "trf4-eproc",
       "tribunal_sigla": "TRF4",
       "tribunal_nome": "Tribunal Regional Federal da 4ª Região (JFRS)",
       "sistema": "eproc",
-      "instancia": "ambos",
-      "tipo_peticionamento": "geral",
+      "instancia": "1º grau",
+      "tipo_peticionamento": "inicial",
       "formato": "PDF",
       "limite_valor": 11,
       "limite_unidade": "MB",
@@ -141,9 +163,10 @@
       "fonte_trecho": "Após, clique em ESCOLHER ARQUIVO. Podem ser juntados arquivos em formato PDF, JPEG, JPG ou PNG, até o limite de 11MB.",
       "verificado_em": "2026-09-10",
       "situacao": "em_revisao",
-      "observacoes": "Tutoriais oficiais da JFRS e da JFPR (2020): PDF, JPEG e PNG até 11 MB por arquivo. O portal de tutoriais do eproc TRF4 indica 10 MB por arquivo para advogados, e uma FAQ antiga (Eproc V2) ainda cita 3 MB. Por causa dessa divergência, a meta segura desta regra é 90% (fica abaixo de 10 MB). O valor atual aparece na própria tela de anexar do eproc.",
+      "observacoes": "A ferramenta mira abaixo de 10 MB (meta de 90 %) porque as fontes oficiais divergem: tutoriais da JFRS e da JFPR (2020, distribuição de ação, inclusive JEF) dizem 11 MB por arquivo (PDF, JPEG, PNG), enquanto o portal de tutoriais do eproc TRF4 indica 10 MB para advogados; uma FAQ antiga (Eproc V2) ainda cita 3 MB. 2º grau e petições intermediárias não foram confirmados em fonte própria; o valor atual aparece na tela de anexar do eproc.",
       "data_fonte": "2020-07-08",
-      "meta_segura_percentual": 90
+      "meta_segura_percentual": 90,
+      "motivo_revisao": "fontes oficiais divergem (11 MB × 10 MB)"
     },
     {
       "id": "tjam-esaj",
@@ -160,7 +183,9 @@
       "fonte_trecho": "8. Há limites para o tamanho dos arquivos enviados no peticionamento eletrônico? Sim, os limites são: ● 150 KB por página; ● 1 MB por peça (arquivo); ● 2 MB por lote (soma de todos os arquivos enviados). Vale lembrar que os arquivos devem estar no formato .pdf.",
       "verificado_em": "2026-09-10",
       "situacao": "vigente",
-      "observacoes": "FAQ do peticionamento eletrônico SAJ do TJAM: 150 KB por página, 1 MB por arquivo e 2 MB por lote (soma de todos os arquivos da petição). Dica oficial: digitalizar em tons de cinza a 100–150 dpi."
+      "observacoes": "FAQ do peticionamento eletrônico SAJ do TJAM: 150 KB por página, 1 MB por arquivo e 2 MB por lote (soma de todos os arquivos da petição). Dica oficial: digitalizar em tons de cinza a 100–150 dpi.",
+      "limite_por_pagina_kb": 150,
+      "limite_total_peticao_mb": 2
     },
     {
       "id": "tjac-esaj",
@@ -178,7 +203,9 @@
       "verificado_em": "2026-09-10",
       "situacao": "vigente",
       "observacoes": "Tutorial oficial do TJAC (e-SAJ, atualizado em 23/05/2024): 250 KB por página, 3 MB por arquivo e 20 MB no total da petição.",
-      "data_fonte": "2024-05-23"
+      "data_fonte": "2024-05-23",
+      "limite_por_pagina_kb": 250,
+      "limite_total_peticao_mb": 20
     },
     {
       "id": "tjrj-portal-2grau-inicial",
@@ -196,7 +223,8 @@
       "verificado_em": "2026-09-10",
       "situacao": "vigente",
       "observacoes": "Petição inicial eletrônica de 2ª instância no Portal de Serviços do TJRJ (sistema próprio, não PJe): cada PDF (petição/recurso e cada anexo) até 6 MB; acima disso o sistema recusa e o documento deve ser fragmentado. Petição principal assinada digitalmente.",
-      "data_fonte": "2024-08-29"
+      "data_fonte": "2024-08-29",
+      "sistema_rotulo": "Portal de Serviços (petição eletrônica)"
     },
     {
       "id": "tjrj-portal-intercorrente",
@@ -214,7 +242,8 @@
       "verificado_em": "2026-09-10",
       "situacao": "vigente",
       "observacoes": "Petição eletrônica intercorrente no Portal de Serviços do TJRJ: arquivos em PDF com no máximo 6 MB cada (petição e anexos).",
-      "data_fonte": "2020-09-09"
+      "data_fonte": "2020-09-09",
+      "sistema_rotulo": "Portal de Serviços (petição eletrônica)"
     },
     {
       "id": "tjmg-pje-principal",
@@ -222,7 +251,7 @@
       "tribunal_nome": "Tribunal de Justiça do Estado de Minas Gerais",
       "sistema": "PJe",
       "instancia": "ambos",
-      "tipo_peticionamento": "documento principal (opção Arquivo PDF)",
+      "tipo_peticionamento": "principal",
       "formato": "PDF",
       "limite_valor": 1.5,
       "limite_unidade": "MB",
@@ -303,7 +332,8 @@
       "verificado_em": "2026-09-10",
       "situacao": "em_revisao",
       "observacoes": "Manual do PJe do TJES de junho/2025: PDF até 10 MB por arquivo (texto 10 MB; imagem 5 MB; áudio 10 MB; áudio e vídeo 50 MB). Um manual de 2022 para usuário externo ainda cita 3 MB para arquivos digitalizados. Se o sistema recusar, use 3 MB.",
-      "data_fonte": "2025-06-01"
+      "data_fonte": "2025-06-01",
+      "motivo_revisao": "fontes oficiais divergem (10 MB em 2025 × 3 MB em 2022)"
     },
     {
       "id": "tjma-pje",
@@ -365,7 +395,7 @@
       "tribunal_nome": "Tribunal de Justiça do Estado do Ceará",
       "sistema": "PJe",
       "instancia": "ambos",
-      "tipo_peticionamento": "documento principal (opção Arquivo PDF)",
+      "tipo_peticionamento": "principal",
       "formato": "PDF",
       "limite_valor": 1.5,
       "limite_unidade": "MB",
@@ -404,32 +434,13 @@
       "formato": "PDF",
       "limite_valor": 50,
       "limite_unidade": "MB",
-      "fonte_url": "https://www.tjro.jus.br/otrs/public.pl?Action=PublicFAQZoom&ItemID=14",
+      "fonte_url": "https://poraqui.tjro.jus.br/otrs/public.pl?Action=PublicFAQZoom&ItemID=14",
       "fonte_titulo": "Arquivos permitidos para uploads no PJe - FAQ - PorAqui (Sistema de Atendimento ao Usuário TJRO)",
       "fonte_trecho": "Arquivos suportados e tamanho máximo permitido: Arquivo \".html\"-1.5MB Arquivo \"image/png\"-1.5MB Arquivo \"application/pdf\"-50.0MB Arquivo \".ogv\"-50.0MB Arquivo \"audio/vorbis\"-50.0MB [...] Arquivo \".pdf\"-50.0MB [...] Arquivo \"video/mp4\"-50.0MB",
       "verificado_em": "2026-09-10",
       "situacao": "vigente",
-      "observacoes": "FAQ do atendimento do TJRO (atualizada em 08/09/2025, conteúdo publicado como imagem da tela de configuração): PDF, áudio e vídeo até 50 MB; PNG e HTML 1,5 MB. O passo a passo do peticionamento inteligente confirma \"cada arquivo PDF com tamanho máximo de 50 MB\".",
-      "data_fonte": "2025-09-08",
+      "observacoes": "FAQ \"Arquivos permitidos para uploads no PJe\" do atendimento do TJRO. O conteúdo é uma imagem da tela de configuração do PJe (valores transcritos da captura): PDF, áudio e vídeo até 50 MB; PNG e HTML 1,5 MB. O passo a passo do peticionamento inteligente confirma \"cada arquivo PDF com tamanho máximo de 50 MB\". A página não mostra data de atualização.",
       "trecho_em_imagem": true
-    },
-    {
-      "id": "csjt-pje-jt",
-      "tribunal_sigla": "CSJT",
-      "tribunal_nome": "Justiça do Trabalho — todos os TRTs e o TST (PJe-JT)",
-      "sistema": "PJe-JT",
-      "instancia": "ambos",
-      "tipo_peticionamento": "geral",
-      "formato": "PDF",
-      "limite_valor": 10,
-      "limite_unidade": "MB",
-      "fonte_url": "https://juslaboris.tst.jus.br/bitstream/handle/20.500.12178/196092/2021_atc0048_tst_csjt.pdf?sequence=1&isAllowed=y",
-      "fonte_titulo": "Ato Conjunto TST.CSJT.GP.SG.SETIC nº 48/2021 – Define o tamanho máximo dos arquivos e extensões suportados pelo PJe (JusLaboris)",
-      "fonte_trecho": "Art. 1º Fica definido que o tamanho máximo dos arquivos no PJe será de 10 (dez) megabytes no formato PDF, exceto para arquivos de áudio e vídeo, que deverão ter o tamanho máximo de 200 (duzentos) megabytes.",
-      "verificado_em": "2026-09-10",
-      "situacao": "vigente",
-      "observacoes": "Ato Conjunto TST.CSJT.GP.SG.SETIC nº 48/2021 (DEJT 09/12/2021), válido em todo o PJe da Justiça do Trabalho: PDF até 10 MB por arquivo; áudio e vídeo (MP3/MP4) até 200 MB. O ato admite dividir PDFs em partes desde que cada uma respeite o limite. Em petições iniciais o PDF deve estar no padrão PDF/A (Res. CSJT 185/2017); digitalizações com no máximo 300 dpi, A4 retrato (Res. CSJT 94/2012). Revogou o Ato 89/2017 (3 MB).",
-      "data_fonte": "2021-12-09"
     },
     {
       "id": "trt15-pje-jt",
@@ -446,7 +457,8 @@
       "fonte_trecho": "O tamanho máximo atual de cada arquivo a ser anexado é 10 MBytes para arquivos PDF e 200 MBytes para arquivos MP3 (áudio) ou MP4 (vídeo) (Ato Conjunto n. 48/TST.CSJT.GP.SG.SETIC, de 9 de dezembro de 2021);",
       "verificado_em": "2026-09-10",
       "situacao": "vigente",
-      "observacoes": "Página de peticionamento do TRT da 15ª Região: 10 MB por arquivo PDF e 200 MB para MP3/MP4 (Ato Conjunto 48/2021). Em petições iniciais o PDF deve estar no padrão PDF/A (Resolução CSJT 185)."
+      "observacoes": "Página de peticionamento do TRT da 15ª Região: 10 MB por arquivo PDF e 200 MB para MP3/MP4 (Ato Conjunto 48/2021). Em petições iniciais o PDF deve estar no padrão PDF/A (Resolução CSJT 185).",
+      "exige_pdfa": true
     },
     {
       "id": "trt4-pje-jt",
@@ -464,25 +476,8 @@
       "verificado_em": "2026-09-10",
       "situacao": "vigente",
       "observacoes": "Notícia oficial do TRT4 sobre a versão 2.7.3 do PJe (17/02/2022): anexos em PDF de até 10 MB, alinhado ao Ato Conjunto 48/2021.",
-      "data_fonte": "2022-02-17"
-    },
-    {
-      "id": "trt2-pje-jt",
-      "tribunal_sigla": "TRT2",
-      "tribunal_nome": "Tribunal Regional do Trabalho da 2ª Região (SP)",
-      "sistema": "PJe-JT",
-      "instancia": "ambos",
-      "tipo_peticionamento": "geral",
-      "formato": "PDF",
-      "limite_valor": 10,
-      "limite_unidade": "MB",
-      "fonte_url": "https://basis.trt2.jus.br/bitstream/handle/123456789/10432/Port_GPCR_09_17.html?sequence=12&isAllowed=y",
-      "fonte_titulo": "Portaria GP/CR nº 09/2017 (texto compilado, com redação da Portaria n. 4/GP.CR de 14/12/2021) – Basis TRT2",
-      "fonte_trecho": "§ 1º Os arquivos deverão ser juntados observando-se as extensões e tamanho de arquivos suportados pelo Sistema PJe, nos termos do Ato Conjunto TST.CSJT.GP.SG.SETIC nº 48, de 9 de dezembro de 2021, ou de outro que vier a substituí-lo.",
-      "verificado_em": "2026-09-10",
-      "situacao": "vigente",
-      "observacoes": "A Portaria GP/CR nº 09/2017 do TRT2 (redação de 14/12/2021) remete aos limites do Ato Conjunto TST.CSJT 48/2021: 10 MB por PDF e 200 MB para MP3/MP4. Guias antigos do TRT2 ainda citam 3 MB (regra revogada).",
-      "data_fonte": "2021-12-14"
+      "data_fonte": "2022-02-17",
+      "exige_pdfa": true
     },
     {
       "id": "trf1-pje",
@@ -535,7 +530,8 @@
       "verificado_em": "2026-09-10",
       "situacao": "vigente",
       "observacoes": "Carta de serviços do peticionamento eletrônico do STF (e-STF, atualizada em 14/05/2025): petições e anexos com no máximo 10 MB por arquivo, obrigatoriamente em PDF (Resolução STF 427/2010). A FAQ recomenda digitalizar a 200 dpi em preto e branco.",
-      "data_fonte": "2025-05-14"
+      "data_fonte": "2025-05-14",
+      "sistema_rotulo": "e-STF (peticionamento eletrônico)"
     },
     {
       "id": "tjpr-projudi",
@@ -570,7 +566,12 @@
       "fonte_trecho": "O tamanho máximo permitido para arquivos anexos: 3,0 MB;",
       "verificado_em": "2026-09-10",
       "situacao": "vigente",
-      "observacoes": "Manual do PJD/Projudi do TJGO: 3 MB por arquivo anexo. Aviso de 27/08/2020: PDFs com 30 páginas ou mais podem ter até 6 MB."
+      "observacoes": "Manual do PJD/Projudi do TJGO: 3 MB por arquivo anexo. Aviso oficial de 27/08/2020: PDFs com 30 páginas ou mais podem ter até 6 MB — a ferramenta aplica esse limite maior automaticamente quando o arquivo tem 30 páginas ou mais.",
+      "limite_condicional": {
+        "min_paginas": 30,
+        "limite_valor": 6,
+        "limite_unidade": "MB"
+      }
     },
     {
       "id": "tjam-projudi",
@@ -588,7 +589,8 @@
       "verificado_em": "2026-09-10",
       "situacao": "em_revisao",
       "observacoes": "Aviso do Projudi do TJAM (13/03/2017): petições em PDF com até 1,4 MB. Único valor publicado; várias comarcas migraram para o e-SAJ.",
-      "data_fonte": "2017-03-13"
+      "data_fonte": "2017-03-13",
+      "motivo_revisao": "única fonte é de 2017; comarcas migrando para o e-SAJ"
     },
     {
       "id": "tjba-projudi",
@@ -601,12 +603,13 @@
       "limite_valor": 5,
       "limite_unidade": "MB",
       "fonte_url": "https://www.tjba.jus.br/portal/wp-content/uploads/2017/10/manual_projudi_novoassinador.pdf",
-      "fonte_titulo": "Manual do Usuário – PROJUDI – Processo Judicial Digital – Novo Assinador (TJBA)",
+      "fonte_titulo": "Manual do Usuário – PROJUDI – Novo Assinador (TJBA, 2013)",
       "fonte_trecho": "Novidade: Tamanho máximo por documento é de 5MB!",
       "verificado_em": "2026-09-10",
       "situacao": "em_revisao",
-      "observacoes": "Manual do Projudi do TJBA (novo assinador): 5 MB por documento. O guia de 06/07/2026 para partes sem advogado nos Juizados indica 30 MB por arquivo; se o sistema aceitar mais, ajuste o limite manualmente.",
-      "data_fonte": "2017-10-01"
+      "observacoes": "Manual do Projudi do TJBA de 2013 (publicado no portal em 2017): 5 MB por documento. A fonte mais recente do próprio Projudi-BA (comunicado 278, \"Guia fácil\", 06/07/2026, voltado a partes sem advogado) informa 30 MB por arquivo. A base mantém 5 MB por prudência até confirmação para o perfil de advogado; se o sistema aceitar mais, ajuste o limite manualmente.",
+      "data_fonte": "2013-11-08",
+      "motivo_revisao": "fonte antiga (2013); guia de 2026 para partes cita 30 MB"
     },
     {
       "id": "tjrr-projudi",

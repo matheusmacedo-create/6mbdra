@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { DEFAULT_SETTINGS, deriveKind, isBusy, type Settings, type OutputFile, type Job } from './lib/types'
+import { DEFAULT_SETTINGS, deriveKind, isBusy, isStale as isStaleJob, type Settings, type OutputFile, type Job } from './lib/types'
 import { useJobQueue, type EngineStatus } from './hooks/useJobQueue'
 import { DropZone } from './components/DropZone'
 import { RuleSelector } from './components/RuleSelector'
@@ -26,7 +26,11 @@ function loadSettings(): Settings {
   // ?regra=<id> vindo das páginas de tribunal
   try {
     const q = new URLSearchParams(window.location.search).get('regra')
-    if (q && regraPorId(q)) s = { ...s, ruleId: q }
+    const r = q ? regraPorId(q) : undefined
+    if (r) {
+      s = { ...s, ruleId: r.id }
+      track('regra_selecionada', { tribunal: r.tribunal_sigla, sistema: r.sistema, origem: 'pagina' })
+    }
   } catch {
     // sem window (SSR) ou URL inválida
   }
@@ -49,7 +53,7 @@ export default function App() {
     }
   }, [settings])
 
-  const kinds = jobs.map((j) => deriveKind(j, process.targetBytes))
+  const kinds = jobs.map((j) => deriveKind(j, process))
   const counts = {
     ready: kinds.filter((k) => k === 'ready').length,
     unchanged: kinds.filter((k) => k === 'unchanged').length,
@@ -59,8 +63,9 @@ export default function App() {
     done: kinds.filter((k) => k === 'done').length,
     error: kinds.filter((k) => k === 'error').length,
   }
+  // A análise prévia faz parte da revisão do lote (§5 etapa 3); "processing" é só o processamento de fato.
   const phase: Phase =
-    jobs.length === 0 ? 'config' : counts.busy > 0 || counts.analyzing > 0 ? 'processing' : counts.ready === 0 && counts.done + counts.error > 0 ? 'result' : 'review'
+    jobs.length === 0 ? 'config' : counts.busy > 0 ? 'processing' : counts.analyzing === 0 && counts.ready === 0 && counts.done + counts.error > 0 ? 'result' : 'review'
 
   const onFiles = useCallback(
     (files: File[]) => {
@@ -83,7 +88,7 @@ export default function App() {
   const capacity = deviceCapacityWarning(jobs.map((j) => ({ size: j.originalSize })))
 
   /** Resultado preparado para outra meta e que não cabe na atual: fica fora do ZIP até reprocessar. */
-  const isStale = (j: Job) => j.status === 'done' && j.targetBytes !== undefined && j.targetBytes !== process.targetBytes && j.outputs.some((o) => o.size > process.targetBytes)
+  const isStale = (j: Job) => isStaleJob(j, process)
   const [zipping, setZipping] = useState(false)
   /** Tudo que vai no ZIP: resultados prontos + originais mantidos, na ordem do lote. */
   const collectZip = async () => {
@@ -92,7 +97,7 @@ export default function App() {
     try {
       const files: OutputFile[] = []
       for (const j of jobs) {
-        const k = deriveKind(j, process.targetBytes)
+        const k = deriveKind(j, process)
         if (isStale(j)) continue
         if (k === 'done' && j.outputs.length > 0) files.push(...j.outputs)
         else if (k === 'unchanged' || (k === 'done' && j.outputs.length === 0)) {
@@ -108,10 +113,17 @@ export default function App() {
     }
   }
   const zipCount = jobs.filter((j) => {
-    const k = deriveKind(j, process.targetBytes)
+    const k = deriveKind(j, process)
     return (k === 'done' || k === 'unchanged') && !isStale(j)
   }).length
   const staleCount = jobs.filter(isStale).length
+
+  // Limite da soma dos arquivos de uma petição (e-SAJ): a ferramenta não divide petições, só avisa.
+  const batchBytes = jobs.reduce((a, j) => {
+    if (j.status === 'done' && j.outputs.length) return a + j.outputs.reduce((x, o) => x + o.size, 0)
+    return a + j.originalSize
+  }, 0)
+  const overPetition = process.totalPetitionBytes !== undefined && batchBytes > process.totalPetitionBytes
 
   const processedDone = jobs.filter((j) => j.status === 'done')
   const totalIn = processedDone.reduce((a, j) => a + j.originalSize, 0)
@@ -165,8 +177,8 @@ export default function App() {
             </span>
             <span className="spacer" />
             {phase === 'review' && (
-              <button className="btn" onClick={() => start()} disabled={counts.ready === 0 || engine.state === 'loading'} data-testid="start">
-                Preparar {counts.ready} arquivo{counts.ready === 1 ? '' : 's'}
+              <button className="btn" onClick={() => start()} disabled={counts.ready === 0 || counts.analyzing > 0 || engine.state === 'loading'} data-testid="start">
+                {counts.analyzing > 0 ? 'Analisando…' : `Preparar ${counts.ready} arquivo${counts.ready === 1 ? '' : 's'}`}
               </button>
             )}
             {phase === 'processing' && counts.busy > 0 && (
@@ -198,6 +210,17 @@ export default function App() {
           )}
 
           {capacity && phase !== 'result' && <div className="note warn" role="status">{capacity}</div>}
+          {overPetition && (
+            <div className="note warn" role="status">
+              Este sistema também limita a soma dos arquivos de uma petição a {formatBytes(process.totalPetitionBytes!)} (já com a margem). O lote tem{' '}
+              {formatBytes(batchBytes)}: será preciso protocolar em mais de uma petição.
+            </div>
+          )}
+          {process.exigePdfa && phase !== 'config' && (
+            <div className="note info" role="status">
+              Este sistema exige PDF/A na petição inicial. Os arquivos preparados aqui saem em PDF comum: converta para PDF/A depois de compactar e antes de assinar.
+            </div>
+          )}
           {phase === 'review' && counts.ready > 0 && (
             <p className="hint">
               Ao clicar em <strong>Preparar</strong>, os arquivos marcados "será otimizado" são comprimidos (e divididos, se preciso). Os demais ficam como estão.
@@ -210,7 +233,7 @@ export default function App() {
             </p>
           )}
 
-          <BatchList jobs={jobs} targetBytes={process.targetBytes} onRemove={remove} onRetry={retry} onAllowSigned={allowSigned} />
+          <BatchList jobs={jobs} process={process} onRemove={remove} onRetry={retry} onAllowSigned={allowSigned} />
         </section>
       )}
     </div>
