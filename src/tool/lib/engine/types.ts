@@ -26,6 +26,7 @@ export type EngineErrorCode =
   | 'INVALID' // PDF corrompido / não é PDF
   | 'OOM' // memória insuficiente
   | 'TIMEOUT' // motor sem progresso por tempo demais
+  | 'PAGES_MISMATCH' // saída com menos páginas que a entrada (motor não preservou tudo)
   | 'ABORTED'
   | 'UNKNOWN'
 

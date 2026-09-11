@@ -33,6 +33,8 @@ export function JobRow({ job, targetBytes, onRemove, onRetry, onAllowSigned }: P
   const level = job.level ? LEVELS.find((l) => l.id === job.level) : undefined
   const elapsed = job.startedAt && job.finishedAt ? formatDuration(job.finishedAt - job.startedAt) : null
   const pages = job.analysis?.pages
+  /** Resultado feito para outra meta e que não cabe na meta atual. */
+  const stale = kind === 'done' && job.targetBytes !== undefined && job.targetBytes !== targetBytes && job.outputs.some((o) => o.size > targetBytes)
 
   return (
     <div className="job" data-testid="job" data-kind={kind}>
@@ -43,7 +45,7 @@ export function JobRow({ job, targetBytes, onRemove, onRetry, onAllowSigned }: P
             {formatBytes(job.originalSize)}
             {pages ? ` · ${pages} página${pages === 1 ? '' : 's'}` : ''}
             {kind === 'done' && level ? ` · compressão ${level.label.toLowerCase()}${level.dpi ? ` (${level.dpi} dpi)` : ''}` : ''}
-            {kind === 'done' && job.contentUntouched && job.outputs.length > 0 ? ' · conteúdo intacto' : ''}
+            {kind === 'done' && job.contentUntouched && job.outputs.length > 0 ? ' · páginas copiadas sem recompressão' : ''}
             {elapsed && (kind === 'done' || kind === 'error') ? ` · ${elapsed}` : ''}
           </div>
         </div>
@@ -95,7 +97,7 @@ export function JobRow({ job, targetBytes, onRemove, onRetry, onAllowSigned }: P
           <span aria-hidden="true">→</span>
           <span className="to">{job.outputs.length > 1 ? `${job.outputs.length} partes, ${formatBytes(totalOut)} no total` : formatBytes(totalOut)}</span>
           {!job.contentUntouched && <span className="pct">−{formatReduction(job.originalSize, totalOut)}</span>}
-          {job.outputs.every((o) => o.size <= (job.targetBytes ?? targetBytes)) && <span className="badge ok">dentro da meta</span>}
+          {!stale && job.outputs.every((o) => o.size <= targetBytes) && <span className="badge ok">dentro da meta</span>}
         </div>
       )}
 
@@ -135,6 +137,14 @@ export function JobRow({ job, targetBytes, onRemove, onRetry, onAllowSigned }: P
       )}
       {kind === 'invalid' && (
         <div className="note err">Não foi possível ler este arquivo como PDF. {job.analysis?.reason ? `(${job.analysis.reason})` : ''}</div>
+      )}
+      {stale && (
+        <div className="note warn">
+          Este arquivo foi preparado para a meta de {formatBytes(job.targetBytes!)}; a meta atual é {formatBytes(targetBytes)} e o resultado não cabe nela.{' '}
+          <button className="btn small secondary" onClick={() => onRetry(job.id)} data-testid="reprocess">
+            Reprocessar com a meta atual
+          </button>
+        </div>
       )}
       {kind === 'done' && job.warnings.map((w) => <div className="note warn" key={w}>{w}</div>)}
       {kind === 'error' && <div className="note err">{job.error}</div>}

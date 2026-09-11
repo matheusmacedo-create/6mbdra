@@ -23,15 +23,19 @@ function fakeEngine(factors: Record<number, number>, opts: { fail?: EngineError;
   }
 }
 
-function deps(engine: CompressionEngine | null, pages = 10, opts: { splitPageTooBig?: boolean } = {}): PipelineDeps {
+function deps(engine: CompressionEngine | null, pages = 10, opts: { splitPageTooBig?: boolean; avisos?: string[]; abortDuringSplit?: AbortController } = {}): PipelineDeps {
   return {
     engine,
     countPages: async () => pages,
-    split: async (bytes, maxBytes) => {
+    split: async (bytes, maxBytes, _onProgress, signal) => {
       if (opts.splitPageTooBig) throw new SplitError('A página 1 sozinha não cabe.', 'PAGE_TOO_BIG')
+      if (opts.abortDuringSplit) {
+        opts.abortDuringSplit.abort()
+        if (signal?.aborted) throw new SplitError('Cancelado.', 'ABORTED')
+      }
       const n = Math.ceil(bytes.byteLength / maxBytes)
       const per = Math.ceil(bytes.byteLength / n)
-      return Array.from({ length: n }, (_, i) => ({ bytes: new Uint8Array(per), size: per, from: i + 1, to: i + 1 }))
+      return { parts: Array.from({ length: n }, (_, i) => ({ bytes: new Uint8Array(per), size: per, from: i + 1, to: i + 1 })), avisos: opts.avisos ?? [] }
     },
   }
 }
@@ -101,7 +105,7 @@ describe('processPdf', () => {
     expect(r.contentUntouched).toBe(true)
     expect(r.level).toBeUndefined()
     expect(r.outputs.length).toBe(3)
-    expect(r.warnings.join(' ')).toMatch(/sem alteração de conteúdo/)
+    expect(r.warnings.join(' ')).toMatch(/sem recompressão/)
   })
 
   it('splits the original when the engine crashes', async () => {
@@ -132,16 +136,71 @@ describe('processPdf', () => {
     await expect(processPdf(new Uint8Array(10 * MB), 'a.pdf', settings, deps(fakeEngine({}, { fail: new EngineError('ruim', 'INVALID') })))).rejects.toMatchObject({ code: 'INVALID' })
   })
 
-  it('rejects an output with fewer pages than the input', async () => {
+  it('never delivers an output with fewer pages than the input as compressed', async () => {
     const eng = fakeEngine({ 1: 0.5, 2: 0.3, 3: 0.2, 4: 0.1, 5: 0.05, 6: 0.02 })
     const d = deps(eng, 10)
     d.countPages = async (bytes) => (bytes.byteLength === 10 * MB ? 10 : 1) // saída: 1 página em branco
-    await expect(processPdf(new Uint8Array(10 * MB), 'a.pdf', settings, d)).rejects.toMatchObject({ code: 'INVALID' })
+    const r = await processPdf(new Uint8Array(10 * MB), 'a.pdf', settings, d)
+    expect(r.contentUntouched).toBe(true) // caiu na divisão do original
+    expect(r.level).toBeUndefined()
   })
 
-  it('explains when a single page cannot fit the limit', async () => {
+  it('returns "over" with the best attempt (not an error) when a single page cannot fit', async () => {
+    const eng = fakeEngine({ 1: 0.9, 2: 0.6, 3: 0.55, 4: 0.5, 5: 0.5, 6: 0.5 })
+    const r = await processPdf(new Uint8Array(20 * MB), 'a.pdf', settings, deps(eng, 3, { splitPageTooBig: true }))
+    expect(r.status).toBe('over')
+    expect(r.outputs).toHaveLength(1)
+    expect(r.outputs[0].size).toBe(10 * MB)
+    expect(r.warnings.join(' ')).toMatch(/página 1/)
+  })
+
+  it('returns "over" with no output when nothing helped and a page cannot fit', async () => {
     const eng = fakeEngine({ 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 })
-    await expect(processPdf(new Uint8Array(12 * MB), 'a.pdf', settings, deps(eng, 1, { splitPageTooBig: true }))).rejects.toThrow(/página 1/)
+    const r = await processPdf(new Uint8Array(12 * MB), 'a.pdf', settings, deps(eng, 1, { splitPageTooBig: true }))
+    expect(r.status).toBe('over')
+    expect(r.outputs).toHaveLength(0)
+  })
+
+  it('stops the ladder early when two consecutive levels give the same size (bilevel scans)', async () => {
+    const calls: CompressOptions[] = []
+    const eng = fakeEngine({ 1: 1.0, 2: 1.0, 3: 1.0, 4: 1.0, 5: 1.0, 6: 1.0 }, { calls })
+    const r = await processPdf(new Uint8Array(12 * MB), 'pb.pdf', settings, deps(eng))
+    expect(calls.length).toBe(2) // nível inicial + um a mais, depois divide
+    expect(r.status).toBe('done')
+    expect(r.contentUntouched).toBe(true)
+  })
+
+  it('splits the original when the engine drops pages (PAGES_MISMATCH)', async () => {
+    const eng = fakeEngine({ 1: 0.5, 2: 0.3, 3: 0.2, 4: 0.1, 5: 0.05, 6: 0.02 })
+    const d = deps(eng, 10)
+    d.countPages = async (bytes) => (bytes.byteLength === 12 * MB ? 10 : 9)
+    const r = await processPdf(new Uint8Array(12 * MB), 'a.pdf', settings, d)
+    expect(r.status).toBe('done')
+    expect(r.contentUntouched).toBe(true)
+    expect(r.warnings.join(' ')).toMatch(/não preservou todas as páginas/)
+  })
+
+  it('surfaces split warnings about dropped bookmarks/forms', async () => {
+    const eng = fakeEngine({ 1: 0.95, 2: 0.9, 3: 0.8, 4: 0.7, 5: 0.6, 6: 0.5 })
+    const r = await processPdf(new Uint8Array(40 * MB), 'g.pdf', settings, deps(eng, 10, { avisos: ['As partes não mantêm marcadores (índice) do original.'] }))
+    expect(r.warnings.join(' ')).toMatch(/marcadores/)
+  })
+
+  it('aborts cleanly when cancelled during the split', async () => {
+    const ctrl = new AbortController()
+    const eng = fakeEngine({ 1: 0.95, 2: 0.9, 3: 0.8, 4: 0.7, 5: 0.6, 6: 0.5 })
+    await expect(processPdf(new Uint8Array(40 * MB), 'g.pdf', settings, deps(eng, 10, { abortDuringSplit: ctrl }), { signal: ctrl.signal })).rejects.toMatchObject({ code: 'ABORTED' })
+  })
+
+  it('aborts when cancelled while verifying a level that fit', async () => {
+    const ctrl = new AbortController()
+    const eng = fakeEngine({ 1: 0.5, 2: 0.3, 3: 0.2 })
+    const d = deps(eng, 10)
+    d.countPages = async () => {
+      ctrl.abort()
+      return 10
+    }
+    await expect(processPdf(new Uint8Array(7 * MB), 'a.pdf', settings, d, { signal: ctrl.signal, pages: 10 })).rejects.toMatchObject({ code: 'ABORTED' })
   })
 
   it('uses the page count from the preliminary analysis and reports stages', async () => {

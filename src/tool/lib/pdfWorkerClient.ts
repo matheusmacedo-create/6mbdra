@@ -1,7 +1,7 @@
 import { RpcClient, RpcRemoteError } from './rpc'
-import { SplitError, type SplitPart } from './split'
+import { SplitError, type SplitResult } from './split'
 import type { Analysis } from './analyze'
-import type { SplitResultPart } from '../workers/pdf.worker'
+import type { SplitResultMessage } from '../workers/pdf.worker'
 
 /** Cliente do worker de pdf-lib (análise, contagem de páginas e divisão em partes). */
 export class PdfWorkerClient {
@@ -17,10 +17,10 @@ export class PdfWorkerClient {
     return this.client.call<number>('count', { input: buf }, { transfer: [buf], signal, inactivityMs: 5 * 60_000 })
   }
 
-  async split(bytes: Uint8Array, maxBytes: number, onProgress?: (done: number, total: number) => void, signal?: AbortSignal): Promise<SplitPart[]> {
+  async split(bytes: Uint8Array, maxBytes: number, onProgress?: (done: number, total: number) => void, signal?: AbortSignal): Promise<SplitResult> {
     const buf = bytes.slice().buffer as ArrayBuffer
     try {
-      const parts = await this.client.call<SplitResultPart[]>(
+      const r = await this.client.call<SplitResultMessage>(
         'split',
         { input: buf, maxBytes },
         {
@@ -34,7 +34,7 @@ export class PdfWorkerClient {
           },
         },
       )
-      return parts.map((p) => ({ bytes: new Uint8Array(p.bytes), size: p.bytes.byteLength, from: p.from, to: p.to }))
+      return { parts: r.parts.map((p) => ({ bytes: new Uint8Array(p.bytes), size: p.bytes.byteLength, from: p.from, to: p.to })), avisos: r.avisos }
     } catch (e) {
       if (e instanceof RpcRemoteError && (e.remote.code === 'PAGE_TOO_BIG' || e.remote.code === 'EMPTY' || e.remote.code === 'LOAD')) {
         throw new SplitError(e.remote.message, e.remote.code)

@@ -95,7 +95,7 @@ export class GhostscriptEngine implements CompressionEngine {
       throw classifyFailure(r)
     }
     if (opts.pages && r.pagesProcessed < opts.pages) {
-      throw new EngineError(`O motor processou só ${r.pagesProcessed} de ${opts.pages} páginas; o arquivo pode estar danificado.`, 'INVALID', r.stderr.slice(-2000))
+      throw new EngineError(`O motor processou só ${r.pagesProcessed} de ${opts.pages} páginas.`, 'PAGES_MISMATCH', r.stderr.slice(-2000))
     }
     return { bytes: out, pages: r.pagesProcessed, warnings: collectWarnings(r), log: r.stderr }
   }

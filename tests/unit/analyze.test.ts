@@ -56,3 +56,17 @@ describe('analyzePdf', () => {
     expect(hasPdfHeader(new TextEncoder().encode('junk\n%PDF-1.7'))).toBe(true)
   })
 })
+
+import { splitPdf } from '../../src/tool/lib/split'
+
+describe('splitPdf', () => {
+  it('warns when the original has forms or bookmarks and stops on abort', async () => {
+    const bytes = await signedPdf() // tem AcroForm
+    const r = await splitPdf(bytes, { maxBytes: 10_000_000 })
+    expect(r.parts).toHaveLength(1)
+    expect(r.avisos.join(' ')).toMatch(/formulário/)
+    const ctrl = new AbortController()
+    ctrl.abort()
+    await expect(splitPdf(await simplePdf(3), { maxBytes: 10_000_000, signal: ctrl.signal })).rejects.toMatchObject({ code: 'ABORTED' })
+  })
+})

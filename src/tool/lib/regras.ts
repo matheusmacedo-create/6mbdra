@@ -22,6 +22,8 @@ export interface Regra {
   fonte_trecho?: string
   /** O trecho está numa imagem da página (o monitor não confere o texto) */
   trecho_em_imagem?: boolean
+  /** Página com conteúdo dinâmico: o monitor só confere se o trecho continua presente */
+  monitor_so_trecho?: boolean
   data_fonte?: string
   verificado_em: string
   situacao: Situacao

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { DEFAULT_SETTINGS, deriveKind, isBusy, type Settings, type OutputFile } from './lib/types'
+import { DEFAULT_SETTINGS, deriveKind, isBusy, type Settings, type OutputFile, type Job } from './lib/types'
 import { useJobQueue, type EngineStatus } from './hooks/useJobQueue'
 import { DropZone } from './components/DropZone'
 import { RuleSelector } from './components/RuleSelector'
@@ -82,25 +82,36 @@ export default function App() {
 
   const capacity = deviceCapacityWarning(jobs.map((j) => ({ size: j.originalSize })))
 
+  /** Resultado preparado para outra meta e que não cabe na atual: fica fora do ZIP até reprocessar. */
+  const isStale = (j: Job) => j.status === 'done' && j.targetBytes !== undefined && j.targetBytes !== process.targetBytes && j.outputs.some((o) => o.size > process.targetBytes)
+  const [zipping, setZipping] = useState(false)
   /** Tudo que vai no ZIP: resultados prontos + originais mantidos, na ordem do lote. */
-  const zipFiles: OutputFile[] = []
   const collectZip = async () => {
-    for (const j of jobs) {
-      const k = deriveKind(j, process.targetBytes)
-      if (k === 'done' && j.outputs.length > 0) zipFiles.push(...j.outputs)
-      else if (k === 'unchanged' || (k === 'done' && j.outputs.length === 0)) {
-        zipFiles.push({ name: safeFileName(j.name), bytes: new Uint8Array(await j.file.arrayBuffer()), size: j.originalSize, kind: 'original' })
+    if (zipping) return
+    setZipping(true)
+    try {
+      const files: OutputFile[] = []
+      for (const j of jobs) {
+        const k = deriveKind(j, process.targetBytes)
+        if (isStale(j)) continue
+        if (k === 'done' && j.outputs.length > 0) files.push(...j.outputs)
+        else if (k === 'unchanged' || (k === 'done' && j.outputs.length === 0)) {
+          files.push({ name: safeFileName(j.name), bytes: new Uint8Array(await j.file.arrayBuffer()), size: j.originalSize, kind: 'original' })
+        }
       }
-    }
-    if (zipFiles.length) {
-      downloadZip(zipFiles)
-      track('download', { tipo: 'zip', arquivos: zipFiles.length })
+      if (files.length) {
+        downloadZip(files)
+        track('download', { tipo: 'zip', arquivos: files.length })
+      }
+    } finally {
+      setZipping(false)
     }
   }
   const zipCount = jobs.filter((j) => {
     const k = deriveKind(j, process.targetBytes)
-    return k === 'done' || k === 'unchanged'
+    return (k === 'done' || k === 'unchanged') && !isStale(j)
   }).length
+  const staleCount = jobs.filter(isStale).length
 
   const processedDone = jobs.filter((j) => j.status === 'done')
   const totalIn = processedDone.reduce((a, j) => a + j.originalSize, 0)
@@ -164,8 +175,8 @@ export default function App() {
               </button>
             )}
             {phase === 'result' && zipCount > 0 && (
-              <button className="btn" onClick={collectZip} data-testid="download-all">
-                Baixar tudo (.zip)
+              <button className="btn" onClick={collectZip} disabled={zipping} data-testid="download-all">
+                {zipping ? 'Montando o ZIP…' : 'Baixar tudo (.zip)'}
               </button>
             )}
             {counts.busy === 0 && (
@@ -195,6 +206,7 @@ export default function App() {
           {phase === 'result' && (
             <p className="hint">
               Confira cada PDF antes de protocolar. O ZIP inclui os arquivos preparados e os que já cabiam, na ordem do lote.
+              {staleCount > 0 ? ` ${staleCount} arquivo${staleCount === 1 ? ' foi preparado' : 's foram preparados'} para outra meta e ${staleCount === 1 ? 'fica' : 'ficam'} fora do ZIP até ser${staleCount === 1 ? '' : 'em'} reprocessado${staleCount === 1 ? '' : 's'}.` : ''}
             </p>
           )}
 

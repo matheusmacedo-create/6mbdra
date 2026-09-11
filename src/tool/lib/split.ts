@@ -1,4 +1,4 @@
-import { PDFDocument } from 'pdf-lib'
+import { PDFDocument, PDFName } from 'pdf-lib'
 
 export interface SplitPart {
   bytes: Uint8Array
@@ -13,12 +13,17 @@ export interface SplitOptions {
   maxBytes: number
   /** Chamado a cada parte concluída (para progresso) */
   onProgress?: (pagesDone: number, totalPages: number) => void
-  /** Senha do PDF, se necessário */
-  password?: string
+  signal?: AbortSignal
+}
+
+export interface SplitResult {
+  parts: SplitPart[]
+  /** Recursos do documento que não acompanham as partes (marcadores, formulários…) */
+  avisos: string[]
 }
 
 export class SplitError extends Error {
-  constructor(message: string, public readonly code: 'PAGE_TOO_BIG' | 'EMPTY' | 'LOAD') {
+  constructor(message: string, public readonly code: 'PAGE_TOO_BIG' | 'EMPTY' | 'LOAD' | 'ABORTED') {
     super(message)
     this.name = 'SplitError'
   }
@@ -48,16 +53,32 @@ async function buildRange(src: PDFDocument, from: number, to: number): Promise<U
  * monta a parte, mede o tamanho real e ajusta (recursos compartilhados como fontes
  * e imagens fazem o tamanho real não ser exatamente proporcional).
  */
-export async function splitPdf(bytes: Uint8Array, opts: SplitOptions): Promise<SplitPart[]> {
+/** Estruturas do catálogo que copyPages não leva junto (spec: avisar em vez de prometer "intacto"). */
+function droppedFeatures(src: PDFDocument): string[] {
+  const has = (k: string) => src.catalog.has(PDFName.of(k))
+  const out: string[] = []
+  if (has('AcroForm')) out.push('campos de formulário')
+  if (has('Outlines')) out.push('marcadores (índice)')
+  if (has('Dests') || has('Names')) out.push('links internos entre páginas')
+  return out
+}
+
+export async function splitPdf(bytes: Uint8Array, opts: SplitOptions): Promise<SplitResult> {
   const src = await loadDoc(bytes)
   const total = src.getPageCount()
   if (total === 0) throw new SplitError('O PDF não tem páginas.', 'EMPTY')
+  const dropped = droppedFeatures(src)
+  const avisos = dropped.length ? [`As partes não mantêm ${dropped.join(', ')} do original; cada parte contém só as páginas copiadas.`] : []
+  const checkAbort = () => {
+    if (opts.signal?.aborted) throw new SplitError('Cancelado.', 'ABORTED')
+  }
 
   const avgPerPage = bytes.byteLength / total
   const parts: SplitPart[] = []
   let from = 0
 
   while (from < total) {
+    checkAbort()
     // Chute inicial conservador (90% do que caberia pela média).
     let count = Math.max(1, Math.floor((opts.maxBytes / avgPerPage) * 0.9))
     count = Math.min(count, total - from)
@@ -97,7 +118,7 @@ export async function splitPdf(bytes: Uint8Array, opts: SplitOptions): Promise<S
     opts.onProgress?.(from, total)
   }
 
-  return parts
+  return { parts, avisos }
 }
 
 /** Conta páginas com pdf-lib (usa ignoreEncryption para PDFs com senha de dono). */

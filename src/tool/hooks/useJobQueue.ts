@@ -52,6 +52,8 @@ function describeError(e: unknown): string {
         return 'Não foi possível ler este arquivo. Ele pode estar corrompido ou não ser um PDF de verdade.'
       case 'OOM':
         return 'Este arquivo é grande demais para a memória do navegador. Feche outras abas ou divida o PDF antes.'
+      case 'PAGES_MISMATCH':
+        return 'A compressão não preservou todas as páginas deste arquivo e a divisão também falhou. Tente dividir o PDF no programa de origem.'
       case 'TIMEOUT':
         return 'O processamento deste arquivo demorou demais e foi interrompido. Tente dividir o PDF em partes menores no programa de origem.'
       case 'UNSUPPORTED':
@@ -80,14 +82,18 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
   const abortRef = useRef<Map<string, AbortController>>(new Map())
   const batchRef = useRef<{ startedAt: number; count: number } | null>(null)
 
-  const deps = useMemo<PipelineDeps & { pdf: PdfWorkerClient }>(() => {
+  // Dois workers de pdf-lib: um só para análise prévia (nunca é abortado) e outro para o
+  // processamento (contagem de verificação + divisão), que o cancelamento pode encerrar.
+  const deps = useMemo<PipelineDeps & { pdfAnalyze: PdfWorkerClient; pdfWork: PdfWorkerClient }>(() => {
     const engine = createEngine()
-    const pdf = new PdfWorkerClient()
+    const pdfAnalyze = new PdfWorkerClient()
+    const pdfWork = new PdfWorkerClient()
     return {
       engine,
-      pdf,
-      countPages: (bytes) => pdf.countPages(bytes),
-      split: (bytes, maxBytes, onProgress) => pdf.split(bytes, maxBytes, onProgress),
+      pdfAnalyze,
+      pdfWork,
+      countPages: (bytes, signal) => pdfWork.countPages(bytes, signal),
+      split: (bytes, maxBytes, onProgress, signal) => pdfWork.split(bytes, maxBytes, onProgress, signal),
     }
   }, [])
 
@@ -105,7 +111,8 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
     )
     return () => {
       deps.engine?.dispose?.()
-      deps.pdf.dispose()
+      deps.pdfAnalyze.dispose()
+      deps.pdfWork.dispose()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deps])
@@ -116,7 +123,7 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
       const patch = (p: Partial<Job>) => dispatch({ type: 'patch', id: job.id, patch: p })
       try {
         const bytes = new Uint8Array(await job.file.arrayBuffer())
-        const analysis: Analysis = await deps.pdf.analyze(bytes)
+        const analysis: Analysis = await deps.pdfAnalyze.analyze(bytes)
         patch({ status: 'analyzed', analysis })
       } catch (e) {
         patch({ status: 'analyzed', analysis: { valid: false, pages: 0, encrypted: false, signed: false, reason: describeError(e) } })
@@ -166,7 +173,8 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
   const start = useCallback(
     (ids?: string[]) => {
       const target = processRef.current.targetBytes
-      const chosen = jobs.filter((j) => (ids ? ids.includes(j.id) : true) && (isProcessable(j, target) || (ids && j.status === 'error')))
+      // Sem ids: todos os prontos. Com ids (tentar de novo / reprocessar): também os com erro ou já concluídos.
+      const chosen = jobs.filter((j) => (ids ? ids.includes(j.id) : true) && (isProcessable(j, target) || (ids && (j.status === 'error' || j.status === 'done'))))
       if (chosen.length === 0) return 0
       batchRef.current = { startedAt: Date.now(), count: chosen.length }
       track('lote_iniciado', { arquivos: chosen.length, meta_mb: Math.round(target / 100_000) / 10 })
@@ -209,7 +217,8 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
     const settings = processRef.current
 
     ;(async () => {
-      patch({ status: 'compressing', stage: 'Preparando…', progress: 0, startedAt: Date.now(), targetBytes: settings.targetBytes })
+      const startedAt = Date.now()
+      patch({ status: 'compressing', stage: 'Preparando…', progress: 0, startedAt, targetBytes: settings.targetBytes })
       try {
         const bytes = new Uint8Array(await next.file.arrayBuffer())
         const result = await processPdf(bytes, next.name, settings, deps, {
@@ -218,6 +227,10 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
           onStage: (stage, progress) => patch({ stage, progress, status: /Dividindo/.test(stage) ? 'splitting' : 'compressing' }),
         })
         const finishedAt = Date.now()
+        if (controller.signal.aborted) {
+          patch({ status: 'analyzed', stage: '', progress: 0 })
+          return
+        }
         if (result.status === 'unchanged') {
           patch({ status: 'done', stage: 'Mantido', progress: 1, finishedAt, outputs: [], warnings: [], contentUntouched: true })
         } else if (result.status === 'over') {
@@ -230,7 +243,7 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
             faixa: sizeBucket(next.originalSize),
             nivel: result.level ?? 0,
             partes: result.outputs.length,
-            segundos: Math.round((finishedAt - (next.startedAt ?? finishedAt)) / 1000),
+            segundos: Math.round((finishedAt - startedAt) / 1000),
           })
         }
       } catch (e) {

@@ -2,13 +2,12 @@ import type { OutputFile, ProcessSettings } from '../types'
 import { compressedName, partName } from '../naming'
 import { LEVELS, pickStartLevel, nextLevel, prevLevel, type Level } from './levels'
 import { EngineError, type CompressionEngine } from './types'
-import type { SplitPart } from '../split'
-import { SplitError } from '../split'
+import { SplitError, type SplitResult } from '../split'
 
 export interface PipelineDeps {
   engine: CompressionEngine | null
-  countPages: (bytes: Uint8Array) => Promise<number>
-  split: (bytes: Uint8Array, maxBytes: number, onProgress?: (done: number, total: number) => void) => Promise<SplitPart[]>
+  countPages: (bytes: Uint8Array, signal?: AbortSignal) => Promise<number>
+  split: (bytes: Uint8Array, maxBytes: number, onProgress?: (done: number, total: number) => void, signal?: AbortSignal) => Promise<SplitResult>
 }
 
 export interface PipelineCallbacks {
@@ -70,8 +69,9 @@ export async function processPdf(
   if (pages === undefined) {
     stage('Lendo o arquivo…', 0)
     try {
-      pages = await deps.countPages(input)
-    } catch {
+      pages = await deps.countPages(input, signal)
+    } catch (e) {
+      if (signal?.aborted) throw new EngineError('Cancelado.', 'ABORTED')
       pages = undefined
     }
   }
@@ -88,6 +88,7 @@ export async function processPdf(
       fits = r.fits
     } catch (e) {
       if (e instanceof EngineError && (e.code === 'ABORTED' || e.code === 'PASSWORD' || e.code === 'INVALID')) throw e
+      // PAGES_MISMATCH, TIMEOUT, OOM, UNKNOWN…: o original é dividido sem compressão.
       engineFailure = e instanceof EngineError ? e : new EngineError('A compressão falhou.', 'UNKNOWN', e instanceof Error ? e.message : String(e))
       if (import.meta.env.DEV) console.warn('[6MB] motor falhou; o arquivo será dividido sem compressão:', engineFailure, engineFailure.detail ?? '')
       else console.warn('[6MB] motor falhou; o arquivo será dividido sem compressão:', engineFailure.code)
@@ -143,23 +144,39 @@ export async function processPdf(
   if (contentUntouched) {
     warnings.push(
       engineFailure
-        ? 'A compressão não pôde ser aplicada a este arquivo; ele foi dividido sem nenhuma alteração de conteúdo.'
-        : 'A compressão não reduziria este arquivo (imagens já otimizadas ou em preto e branco); ele foi dividido sem alteração de conteúdo.',
+        ? engineFailure.code === 'PAGES_MISMATCH'
+          ? 'A compressão não preservou todas as páginas deste arquivo; ele foi dividido sem recompressão (páginas copiadas do original).'
+          : 'A compressão não pôde ser aplicada a este arquivo; ele foi dividido sem recompressão (páginas copiadas do original).'
+        : 'A compressão não reduziria este arquivo (imagens já otimizadas ou em preto e branco); ele foi dividido sem recompressão (páginas copiadas do original).',
     )
   } else if (best) {
     warnings.push(...best.warnings)
   }
 
   stage('Dividindo em partes…', 0.9)
-  let parts: SplitPart[]
+  let split: SplitResult
   try {
-    parts = await deps.split(source, target, (done, total) => stage(`Dividindo em partes… (página ${done} de ${total})`, 0.9 + 0.1 * (done / total)))
+    split = await deps.split(source, target, (done, total) => stage(`Dividindo em partes… (página ${done} de ${total})`, 0.9 + 0.1 * (done / total)), signal)
   } catch (e) {
+    if (signal?.aborted || (e instanceof SplitError && e.code === 'ABORTED')) throw new EngineError('Cancelado.', 'ABORTED')
     if (e instanceof SplitError && e.code === 'PAGE_TOO_BIG') {
-      throw new EngineError(`${e.message} Reduza essa página no programa de origem (ou digitalize-a novamente em resolução menor).`, 'UNKNOWN', e.message)
+      // Não descarta o melhor resultado: entrega-o como "acima do limite" com a explicação.
+      const explain = `${e.message} Reduza essa página no programa de origem (ou digitalize-a novamente em resolução menor).`
+      return {
+        status: 'over',
+        outputs: best && compressionHelped ? [{ name: compressedName(fileName), bytes: best.bytes, size: best.bytes.byteLength, kind: 'compressed' }] : [],
+        level: best && compressionHelped ? best.level.id : undefined,
+        pages,
+        warnings: [...warnings, explain],
+        bestSize: best?.bytes.byteLength,
+        contentUntouched,
+      }
     }
     throw e
   }
+  throwIfAborted(signal)
+  const parts = split.parts
+  warnings.push(...split.avisos)
   if (parts.length === 1) {
     // Cabia afinal (o pdf-lib reescreveu mais compacto): entrega como arquivo único.
     return {
@@ -219,7 +236,8 @@ async function compressUntilFits(
       signal,
       onProgress: (f, detail) => stage(`${label}${detail ? ' ' + detail : ''}`, base + span * f),
     })
-    await verifyIntegrity(res.bytes, res.pages, pages, deps)
+    await verifyIntegrity(res.bytes, res.pages, pages, deps, signal)
+    throwIfAborted(signal)
     return { bytes: res.bytes, level, warnings: res.warnings }
   }
 
@@ -247,7 +265,10 @@ async function compressUntilFits(
       }
       return { attempts, fits: chosen }
     }
-    // Se este nível já não reduziu nada em relação à entrada, os próximos tampouco vão (bilevel/JBIG2).
+    // Dois níveis seguidos com o mesmo tamanho (±0,5 %) = nada reamostrável (bilevel/JBIG2):
+    // os próximos níveis seriam idênticos, então vai direto para a divisão.
+    const prev = attempts[attempts.length - 2]
+    if (prev && Math.abs(attempt.bytes.byteLength - prev.bytes.byteLength) <= prev.bytes.byteLength * 0.005) return { attempts }
     const nxt = nextLevel(level)
     if (!nxt) return { attempts }
     level = nxt
@@ -258,17 +279,19 @@ async function compressUntilFits(
  * Garante que a saída é um PDF legível com o mesmo número de páginas da entrada.
  * Protege contra motores que "terminam com sucesso" devolvendo um PDF vazio.
  */
-async function verifyIntegrity(output: Uint8Array, reportedPages: number | undefined, inputPages: number | undefined, deps: PipelineDeps) {
+async function verifyIntegrity(output: Uint8Array, reportedPages: number | undefined, inputPages: number | undefined, deps: PipelineDeps, signal?: AbortSignal) {
   if (output.byteLength < 100) throw new EngineError('O resultado saiu vazio; o arquivo pode estar danificado.', 'INVALID')
   let outPages: number
   try {
-    outPages = await deps.countPages(output)
+    outPages = await deps.countPages(output, signal)
   } catch {
+    if (signal?.aborted) throw new EngineError('Cancelado.', 'ABORTED')
     throw new EngineError('O resultado não pôde ser lido; o arquivo original pode estar danificado.', 'INVALID')
   }
   if (outPages === 0) throw new EngineError('O resultado ficou sem páginas; o arquivo original pode estar danificado.', 'INVALID')
   const expected = inputPages ?? reportedPages
   if (expected && outPages < expected) {
-    throw new EngineError(`O resultado ficou com ${outPages} de ${expected} páginas; o arquivo original pode estar danificado.`, 'INVALID')
+    // Não é o PDF que está ilegível: o motor é que não preservou tudo. O chamador divide o original.
+    throw new EngineError(`O resultado ficou com ${outPages} de ${expected} páginas.`, 'PAGES_MISMATCH')
   }
 }

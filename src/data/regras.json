@@ -35,7 +35,8 @@
       "fonte_trecho": "Tamanho máximo dos arquivos a serem anexados no sistema, legíveis e em formato PDF: 300 KB por página; 30 MB por arquivo; 80 MB por petição (pacote completo, incluindo arquivos digitalizados).",
       "verificado_em": "2026-09-10",
       "situacao": "vigente",
-      "observacoes": "Peticionamento pelo e-SAJ (Portaria 8.755/13): 30 MB por arquivo, 300 KB por página e 80 MB por petição (soma dos arquivos). O limite por página (300 KB) é o que mais pega em digitalizações: confira o resultado dividindo o tamanho pelo número de páginas."
+      "observacoes": "Peticionamento pelo e-SAJ (Portaria 8.755/13): 30 MB por arquivo, 300 KB por página e 80 MB por petição (soma dos arquivos). O limite por página (300 KB) é o que mais pega em digitalizações: confira o resultado dividindo o tamanho pelo número de páginas.",
+      "monitor_so_trecho": true
     },
     {
       "id": "tjsc-eproc",

@@ -131,8 +131,10 @@ for (const url of urls) {
     hash = sha(slice)
   }
 
+  // Páginas com conteúdo dinâmico (formulários, tokens) só são vigiadas pela presença do trecho.
+  const soTrecho = affected.some((x) => x.monitor_so_trecho)
   if (missing.length) findings.push({ url, tipo: 'trecho_nao_encontrado', detalhe: 'o trecho citado não aparece mais no texto visível', regras: missing })
-  else if (prev.hash && prev.hash !== hash) findings.push({ url, tipo: 'mudou', detalhe: `conteúdo em volta do trecho mudou (${prev.hash.slice(0, 8)} → ${hash.slice(0, 8)})`, regras: ids })
+  else if (!soTrecho && prev.hash && prev.hash !== hash) findings.push({ url, tipo: 'mudou', detalhe: `conteúdo em volta do trecho mudou (${prev.hash.slice(0, 8)} → ${hash.slice(0, 8)})`, regras: ids })
 
   newLock[url] = { hash, verificado_em: TODAY, falhas: 0 }
 }
