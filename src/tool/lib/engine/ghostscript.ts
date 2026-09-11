@@ -1,4 +1,4 @@
-import { RpcAborted, RpcClient, RpcRemoteError } from '../rpc'
+import { RpcAborted, RpcClient, RpcRemoteError, RpcTimeout } from '../rpc'
 import { buildGsArgs } from './gsArgs'
 import type { GsRunParams, GsRunResult } from './gsProtocol'
 import { EngineError, type CompressionEngine, type CompressOptions, type CompressResult } from './types'
@@ -72,9 +72,16 @@ export class GhostscriptEngine implements CompressionEngine {
     const params: GsRunParams = { input: buffer, args, pages: opts.pages }
     let r: GsRunResult
     try {
-      r = await this.client.call<GsRunResult>('run', params, { transfer: [buffer], onProgress: opts.onProgress, signal: opts.signal })
+      // Progresso chega por página; sem nenhuma mensagem por 3 min (ou 6 min no primeiro passe, que inclui
+      // a inicialização) o worker é encerrado e o arquivo segue para a divisão.
+      const inactivityMs = (opts.pages ? 3 : 6) * 60_000
+      r = await this.client.call<GsRunResult>('run', params, { transfer: [buffer], onProgress: opts.onProgress, signal: opts.signal, inactivityMs })
     } catch (e) {
       if (e instanceof RpcAborted) throw new EngineError('Cancelado.', 'ABORTED')
+      if (e instanceof RpcTimeout) {
+        this.initPromise = null
+        throw new EngineError('O motor ficou sem progresso por tempo demais neste arquivo.', 'TIMEOUT', e.message)
+      }
       // Worker morreu ou falhou fora do fluxo normal: força reinício na próxima chamada.
       this.client.terminate()
       this.initPromise = null

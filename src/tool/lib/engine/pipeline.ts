@@ -89,7 +89,8 @@ export async function processPdf(
     } catch (e) {
       if (e instanceof EngineError && (e.code === 'ABORTED' || e.code === 'PASSWORD' || e.code === 'INVALID')) throw e
       engineFailure = e instanceof EngineError ? e : new EngineError('A compressão falhou.', 'UNKNOWN', e instanceof Error ? e.message : String(e))
-      console.warn('[6MB] motor falhou; o arquivo será dividido sem compressão:', engineFailure, engineFailure.detail ?? '')
+      if (import.meta.env.DEV) console.warn('[6MB] motor falhou; o arquivo será dividido sem compressão:', engineFailure, engineFailure.detail ?? '')
+      else console.warn('[6MB] motor falhou; o arquivo será dividido sem compressão:', engineFailure.code)
     }
   }
 

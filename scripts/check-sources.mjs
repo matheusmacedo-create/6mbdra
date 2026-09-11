@@ -15,7 +15,7 @@ const lockPath = join(root, 'src', 'data', 'fontes.lock.json')
 const update = process.argv.includes('--update')
 const TODAY = new Date().toISOString().slice(0, 10)
 const FAILURES_BEFORE_REPORT = 2
-const WINDOW = 1500
+const WINDOW = 200
 
 const rules = JSON.parse(readFileSync(rulesPath, 'utf8')).regras
 const lock = existsSync(lockPath) ? JSON.parse(readFileSync(lockPath, 'utf8')) : {}
@@ -32,16 +32,47 @@ function normalize(s) {
     .trim()
 }
 
+const ENTITIES = {
+  nbsp: ' ', amp: '&', quot: '"', apos: "'", lt: '<', gt: '>',
+  aacute: 'á', agrave: 'à', atilde: 'ã', acirc: 'â', auml: 'ä', eacute: 'é', egrave: 'è', ecirc: 'ê', euml: 'ë',
+  iacute: 'í', igrave: 'ì', icirc: 'î', iuml: 'ï', oacute: 'ó', ograve: 'ò', otilde: 'õ', ocirc: 'ô', ouml: 'ö',
+  uacute: 'ú', ugrave: 'ù', ucirc: 'û', uuml: 'ü', ccedil: 'ç', ntilde: 'ñ', ordm: 'º', ordf: 'ª', deg: '°',
+  ndash: '–', mdash: '—', hellip: '…', laquo: '«', raquo: '»', ldquo: '“', rdquo: '”', lsquo: '‘', rsquo: '’',
+}
+
+/** Decodifica entidades HTML numéricas e as nomeadas mais comuns em português (portais antigos usam &ccedil; etc.). */
+function decodeEntities(s) {
+  return s
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
+    .replace(/&([a-z]+);/gi, (m, name) => {
+      const k = name.toLowerCase()
+      const v = ENTITIES[k]
+      if (v === undefined) return m
+      return name[0] === name[0].toUpperCase() && k !== name ? v.toUpperCase() : v
+    })
+}
+
 function visibleText(html) {
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<!--[\s\S]*?-->/g, ' ')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;|&apos;/g, "'")
+  return decodeEntities(
+    html
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<!--[\s\S]*?-->/g, ' ')
+      .replace(/<[^>]+>/g, ' '),
+  )
+}
+
+/** Decodifica respeitando o charset (muitos portais antigos ainda usam ISO-8859-1). */
+function decodeHtml(buf, contentType) {
+  const head = buf.subarray(0, 4096).toString('latin1')
+  const m = /charset=["']?([\w-]+)/i.exec(contentType) ?? /charset=["']?([\w-]+)/i.exec(head)
+  const charset = (m?.[1] ?? 'utf-8').toLowerCase()
+  try {
+    return new TextDecoder(charset === 'iso-8859-1' ? 'windows-1252' : charset).decode(buf)
+  } catch {
+    return buf.toString('utf8')
+  }
 }
 
 async function fetchSource(url) {
@@ -59,7 +90,7 @@ async function fetchSource(url) {
     if (/pdf/i.test(type) || buf.subarray(0, 5).toString() === '%PDF-') {
       return { ok: true, kind: 'pdf', text: '', hash: sha(buf) }
     }
-    return { ok: true, kind: 'html', text: normalize(visibleText(buf.toString('utf8'))) }
+    return { ok: true, kind: 'html', text: normalize(visibleText(decodeHtml(buf, type))) }
   } catch (e) {
     return { ok: false, detail: e?.name === 'AbortError' ? 'timeout' : String(e?.message ?? e) }
   } finally {

@@ -9,12 +9,12 @@ export class PdfWorkerClient {
 
   async analyze(bytes: Uint8Array, signal?: AbortSignal): Promise<Analysis> {
     const buf = bytes.slice().buffer as ArrayBuffer
-    return this.client.call<Analysis>('analyze', { input: buf }, { transfer: [buf], signal })
+    return this.client.call<Analysis>('analyze', { input: buf }, { transfer: [buf], signal, inactivityMs: 5 * 60_000 })
   }
 
   async countPages(bytes: Uint8Array, signal?: AbortSignal): Promise<number> {
     const buf = bytes.slice().buffer as ArrayBuffer
-    return this.client.call<number>('count', { input: buf }, { transfer: [buf], signal })
+    return this.client.call<number>('count', { input: buf }, { transfer: [buf], signal, inactivityMs: 5 * 60_000 })
   }
 
   async split(bytes: Uint8Array, maxBytes: number, onProgress?: (done: number, total: number) => void, signal?: AbortSignal): Promise<SplitPart[]> {
@@ -26,6 +26,7 @@ export class PdfWorkerClient {
         {
           transfer: [buf],
           signal,
+          inactivityMs: 5 * 60_000,
           onProgress: (_f, detail) => {
             if (!detail) return
             const [d, t] = detail.split('/').map(Number)

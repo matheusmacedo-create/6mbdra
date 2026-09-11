@@ -84,6 +84,13 @@ Conferência local do build com os cabeçalhos: `node scripts/serve-dist.mjs 432
 Analytics: nenhum provedor vem ativo. `src/tool/lib/analytics.ts` expõe `track()` com eventos
 agregados (sem nome/conteúdo de arquivo); para ligar um provedor, defina `window.__analytics`.
 
+## Navegadores suportados
+
+O build usa o alvo padrão do Vite ("baseline widely available": Chrome/Edge 107+, Firefox 104+, Safari 16+,
+todos de 2022 em diante). Requisitos de execução: WebAssembly, Web Workers em módulo e `File.arrayBuffer()`.
+Sem WebAssembly a página avisa e a divisão em partes continua funcionando. Testado automaticamente só em
+Chromium; Firefox e Safari precisam de conferência manual antes do lançamento (spec §15.1).
+
 ## Licença
 
 AGPL-3.0 (veja `LICENSE`). O motor é o Ghostscript (AGPL-3.0, Artifex Software), executado no

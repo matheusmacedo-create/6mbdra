@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 import { PDFDocument } from 'pdf-lib'
 import { readFileSync, statSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { ensureFixtures, type Fixtures } from './fixtures'
 
 const MB = 1_000_000
@@ -134,18 +135,30 @@ test('cancelar interrompe o lote e devolve os arquivos ao estado revisado', asyn
 })
 
 test('nenhuma requisição de rede transporta os documentos (RF06)', async ({ page }) => {
-  const requests: { url: string; method: string; hasBody: boolean }[] = []
-  page.on('request', (r) => requests.push({ url: r.url(), method: r.method(), hasBody: r.postData() !== null && r.postData() !== undefined }))
+  const requests: { url: string; method: string; hasBody: boolean; headers: Record<string, string> }[] = []
+  const sockets: string[] = []
+  page.on('request', (r) => requests.push({ url: r.url(), method: r.method(), hasBody: r.postData() !== null && r.postData() !== undefined, headers: r.headers() }))
+  page.on('websocket', (ws) => sockets.push(ws.url()))
   await openApp(page, 6)
   await addAndPrepare(page, [fx.scanBig])
   await page.getByTestId('start').click()
   await waitFinished(page, 1)
   const origin = new URL(page.url()).origin
+  const fileBytes = readFileSync(fx.scanBig)
+  const size = String(fileBytes.length)
+  const sha = createHash('sha256').update(fileBytes).digest('hex')
+  const allowed = /^\/(\?regra=[a-z0-9-]+)?$|^\/_astro\/[\w.-]+\.(js|css|wasm)$|^\/favicon\.svg$/
+  expect(sockets, 'nenhum WebSocket').toHaveLength(0)
   for (const r of requests) {
     expect(r.method, `método em ${r.url}`).toBe('GET')
     expect(r.hasBody, `corpo em ${r.url}`).toBe(false)
-    expect(r.url.startsWith(origin) || r.url.startsWith('blob:') || r.url.startsWith('data:'), `origem externa: ${r.url}`).toBe(true)
-    expect(r.url).not.toMatch(/scan_big/)
+    expect(r.url.startsWith(origin), `origem externa: ${r.url}`).toBe(true)
+    expect(new URL(r.url).pathname + new URL(r.url).search, `URL fora da lista permitida: ${r.url}`).toMatch(allowed)
+    const all = r.url + JSON.stringify(r.headers)
+    expect(all).not.toMatch(/scan_big/)
+    expect(all).not.toContain(sha)
+    expect(all).not.toContain(sha.slice(0, 16))
+    expect(all).not.toContain(size)
   }
 })
 

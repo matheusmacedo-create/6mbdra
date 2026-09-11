@@ -25,6 +25,7 @@ export type EngineErrorCode =
   | 'PASSWORD' // PDF exige senha
   | 'INVALID' // PDF corrompido / não é PDF
   | 'OOM' // memória insuficiente
+  | 'TIMEOUT' // motor sem progresso por tempo demais
   | 'ABORTED'
   | 'UNKNOWN'
 

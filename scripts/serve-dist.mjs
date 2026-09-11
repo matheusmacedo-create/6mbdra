@@ -13,19 +13,25 @@ const MIME = {
   '.wasm': 'application/wasm', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.txt': 'text/plain; charset=utf-8',
   '.xml': 'application/xml', '.pdf': 'application/pdf', '.webmanifest': 'application/manifest+json',
 }
-// Reaproveita os cabeçalhos de public/_headers para o bloco "/*" (CSP etc.), para o e2e rodar com a CSP real.
+// Reaproveita os blocos de public/_headers (padrão Cloudflare/Netlify) para o e2e rodar com os cabeçalhos reais.
 const headersFile = join(root, '_headers')
-const globalHeaders = []
+const blocks = [] // [{ test: (path) => boolean, headers: [[k, v]] }]
 if (existsSync(headersFile)) {
-  let inGlobal = false
+  let current = null
   for (const line of readFileSync(headersFile, 'utf8').split('\n')) {
-    if (/^\S/.test(line)) inGlobal = line.trim() === '/*'
-    else if (inGlobal && line.includes(':')) {
+    if (/^\s*#/.test(line) || !line.trim()) continue
+    if (/^\S/.test(line)) {
+      const pattern = line.trim()
+      const re = new RegExp('^' + pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$')
+      current = { test: (p) => re.test(p), headers: [] }
+      blocks.push(current)
+    } else if (current && line.includes(':')) {
       const i = line.indexOf(':')
-      globalHeaders.push([line.slice(0, i).trim(), line.slice(i + 1).trim()])
+      current.headers.push([line.slice(0, i).trim(), line.slice(i + 1).trim()])
     }
   }
 }
+const headersFor = (path) => blocks.filter((b) => b.test(path)).flatMap((b) => b.headers)
 
 createServer((req, res) => {
   let path = decodeURIComponent(new URL(req.url, 'http://x').pathname)
@@ -38,9 +44,8 @@ createServer((req, res) => {
       res.statusCode = 404
     }
     const body = readFileSync(file)
-    for (const [k, v] of globalHeaders) res.setHeader(k, v)
+    for (const [k, v] of headersFor(path)) res.setHeader(k, v)
     res.setHeader('Content-Type', MIME[extname(file).toLowerCase()] ?? 'application/octet-stream')
-    if (path.startsWith('/_astro/')) res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
     res.end(body)
   } catch {
     res.statusCode = 500

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { baseName, compressedName, partName, uniqueNames } from '../../src/tool/lib/naming'
+import { baseName, compressedName, partName, uniqueNames, safeFileName } from '../../src/tool/lib/naming'
 import { formatBytes, formatReduction, formatDate } from '../../src/tool/lib/format'
 
 describe('naming (spec §8.2)', () => {
@@ -12,6 +12,13 @@ describe('naming (spec §8.2)', () => {
     expect(compressedName('contrato.pdf')).toBe('contrato_otimizado.pdf')
     expect(partName('laudo.pdf', 1, 3)).toBe('laudo_parte_01.pdf')
     expect(partName('laudo.pdf', 12, 120)).toBe('laudo_parte_012.pdf')
+  })
+  it('neutralizes path traversal and control characters in original names', () => {
+    expect(safeFileName('..\\..\\x.pdf')).toBe('x.pdf')
+    expect(safeFileName('../evil.pdf')).toBe('evil.pdf')
+    expect(safeFileName('contrato: final.pdf')).toBe('contrato final.pdf')
+    expect(safeFileName('a\u0000b.pdf')).toBe('a b.pdf')
+    expect(safeFileName('...pdf')).toBe('documento.pdf')
   })
   it('makes names unique with a sequential number', () => {
     expect(uniqueNames(['a.pdf', 'a.pdf', 'b.pdf', 'A.pdf'])).toEqual(['a.pdf', 'a_2.pdf', 'b.pdf', 'A_3.pdf'])

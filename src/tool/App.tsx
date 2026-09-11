@@ -9,6 +9,7 @@ import { formatBytes } from './lib/format'
 import { deviceCapacityWarning, resolveSettings } from './lib/limits'
 import { regraPorId } from './lib/regras'
 import { downloadZip } from './lib/download'
+import { safeFileName } from './lib/naming'
 import { track } from './lib/analytics'
 import './tool.css'
 
@@ -88,7 +89,7 @@ export default function App() {
       const k = deriveKind(j, process.targetBytes)
       if (k === 'done' && j.outputs.length > 0) zipFiles.push(...j.outputs)
       else if (k === 'unchanged' || (k === 'done' && j.outputs.length === 0)) {
-        zipFiles.push({ name: j.name, bytes: new Uint8Array(await j.file.arrayBuffer()), size: j.originalSize, kind: 'original' })
+        zipFiles.push({ name: safeFileName(j.name), bytes: new Uint8Array(await j.file.arrayBuffer()), size: j.originalSize, kind: 'original' })
       }
     }
     if (zipFiles.length) {

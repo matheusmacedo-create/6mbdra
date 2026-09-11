@@ -17,7 +17,7 @@ export default defineConfig({
       algorithm: 'SHA-256',
       directives: [
         "default-src 'self'",
-        "worker-src 'self' blob:",
+        "worker-src 'self'",
         "connect-src 'self'",
         "img-src 'self' data:",
         "font-src 'self'",
@@ -27,7 +27,7 @@ export default defineConfig({
         'upgrade-insecure-requests',
       ],
       scriptDirective: { resources: ["'self'", "'wasm-unsafe-eval'"] },
-      styleDirective: { resources: ["'self'", "'unsafe-inline'"] },
+      styleDirective: { resources: ["'self'"] },
     },
   },
   vite: {

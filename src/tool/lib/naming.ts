@@ -3,9 +3,17 @@ export function baseName(fileName: string): string {
   const withoutExt = fileName.replace(/\.pdf$/i, '')
   const cleaned = withoutExt
     .replace(/[\\/:*?"<>|]/g, ' ')
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/\.{2,}/g, '.')
     .replace(/\s+/g, ' ')
-    .trim()
+    .replace(/^[\s.]+|[\s.]+$/g, '')
   return cleaned || 'documento'
+}
+
+/** Nome seguro para um arquivo mantido como está (mesma sanitização dos gerados). */
+export function safeFileName(fileName: string): string {
+  return `${baseName(fileName)}.pdf`
 }
 
 /** contrato.pdf -> contrato_otimizado.pdf (spec §8.2) */

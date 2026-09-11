@@ -52,6 +52,8 @@ function describeError(e: unknown): string {
         return 'Não foi possível ler este arquivo. Ele pode estar corrompido ou não ser um PDF de verdade.'
       case 'OOM':
         return 'Este arquivo é grande demais para a memória do navegador. Feche outras abas ou divida o PDF antes.'
+      case 'TIMEOUT':
+        return 'O processamento deste arquivo demorou demais e foi interrompido. Tente dividir o PDF em partes menores no programa de origem.'
       case 'UNSUPPORTED':
         return 'Seu navegador não conseguiu carregar o motor de compressão. Tente o Chrome, Edge, Firefox ou Safari atualizados.'
       case 'ABORTED':
@@ -236,7 +238,9 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
           patch({ status: 'analyzed', stage: '', progress: 0 })
           return
         }
-        console.error(`[6MB] Falha ao processar um arquivo:`, e, e instanceof EngineError ? e.detail : '')
+        // Em produção não registramos o detalhe (cauda do log do motor pode ecoar metadados do documento).
+        if (import.meta.env.DEV) console.error('[6MB] Falha ao processar um arquivo:', e, e instanceof EngineError ? e.detail : '')
+        else console.error('[6MB] Falha ao processar um arquivo:', e instanceof EngineError ? e.code : 'UNKNOWN')
         const code = e instanceof EngineError ? e.code : e instanceof SplitError ? e.code : 'UNKNOWN'
         track('erro', { categoria: code, faixa: sizeBucket(next.originalSize) })
         patch({ status: 'error', stage: 'Erro', progress: 0, finishedAt: Date.now(), error: describeError(e) })

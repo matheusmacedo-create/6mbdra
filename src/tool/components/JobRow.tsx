@@ -2,6 +2,7 @@ import { deriveKind, type Job } from '../lib/types'
 import { formatBytes, formatDuration, formatReduction } from '../lib/format'
 import { downloadFile, downloadZip } from '../lib/download'
 import { LEVELS } from '../lib/engine/levels'
+import { baseName } from '../lib/naming'
 
 interface Props {
   job: Job
@@ -54,7 +55,7 @@ export function JobRow({ job, targetBytes, onRemove, onRetry, onAllowSigned }: P
             </button>
           )}
           {kind === 'done' && job.outputs.length > 1 && (
-            <button className="btn small" onClick={() => downloadZip(job.outputs, `${job.name.replace(/\.pdf$/i, '')}_partes.zip`)}>
+            <button className="btn small" onClick={() => downloadZip(job.outputs, `${baseName(job.name)}_partes.zip`)}>
               Baixar as {job.outputs.length} partes (.zip)
             </button>
           )}

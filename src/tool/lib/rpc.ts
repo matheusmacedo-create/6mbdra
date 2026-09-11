@@ -18,6 +18,15 @@ export interface RpcCallOptions {
   transfer?: Transferable[]
   onProgress?: (fraction: number, detail?: string) => void
   signal?: AbortSignal
+  /** Sem resposta nem progresso por este tempo (ms) → RpcTimeout e o worker é encerrado. */
+  inactivityMs?: number
+}
+
+export class RpcTimeout extends Error {
+  constructor(ms: number) {
+    super(`Sem resposta do worker por ${Math.round(ms / 1000)} s.`)
+    this.name = 'RpcTimeout'
+  }
 }
 
 export class RpcAborted extends Error {
@@ -75,18 +84,36 @@ export class RpcClient {
     const id = ++this.seq
     const w = this.ensure()
     return new Promise<T>((resolve, reject) => {
+      let timer: ReturnType<typeof setTimeout> | undefined
+      const cleanup = () => {
+        opts.signal?.removeEventListener('abort', onAbort)
+        if (timer) clearTimeout(timer)
+      }
       const onAbort = () => {
         this.pending.delete(id)
+        cleanup()
         // Cancelar = matar o worker (o trabalho é síncrono lá dentro).
         this.terminate()
         reject(new RpcAborted())
       }
+      // Watchdog: um PDF patológico não pode deixar o lote parado para sempre.
+      const arm = () => {
+        if (!opts.inactivityMs) return
+        if (timer) clearTimeout(timer)
+        timer = setTimeout(() => {
+          this.pending.delete(id)
+          cleanup()
+          this.terminate()
+          reject(new RpcTimeout(opts.inactivityMs!))
+        }, opts.inactivityMs)
+      }
       opts.signal?.addEventListener('abort', onAbort, { once: true })
       this.pending.set(id, {
-        resolve: (v) => { opts.signal?.removeEventListener('abort', onAbort); resolve(v as T) },
-        reject: (e) => { opts.signal?.removeEventListener('abort', onAbort); reject(e) },
-        onProgress: opts.onProgress,
+        resolve: (v) => { cleanup(); resolve(v as T) },
+        reject: (e) => { cleanup(); reject(e) },
+        onProgress: (f, d) => { arm(); opts.onProgress?.(f, d) },
       })
+      arm()
       const msg: RpcOutbound = { id, method, params }
       w.postMessage(msg, opts.transfer ?? [])
     })

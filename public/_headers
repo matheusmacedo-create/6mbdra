@@ -9,3 +9,5 @@
   Strict-Transport-Security: max-age=31536000; includeSubDomains
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
+  # A CSP em <meta> não governa Web Workers; o cabeçalho abaixo vale para os scripts dos workers.
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; connect-src 'self'; worker-src 'self'; object-src 'none'
