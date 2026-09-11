@@ -1,0 +1,70 @@
+---
+import { SITE } from '../config/site'
+import '../styles/global.css'
+
+interface Props {
+  title: string
+  description: string
+  /** Caminho canônico começando com /, ex.: /guias/ */
+  path?: string
+  noindex?: boolean
+}
+const { title, description, path = Astro.url.pathname, noindex = false } = Astro.props
+const canonical = new URL(path, SITE.url).href
+const fullTitle = path === '/' ? `${SITE.name} — ${title}` : `${title} · ${SITE.name}`
+const current = (p: string) => (path === p || (p !== '/' && path.startsWith(p)) ? 'page' : undefined)
+---
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f3d3e" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content="pt_BR" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="inner">
+        <a class="brand" href="/" aria-label={`${SITE.name} — página inicial`}>
+          <span class="logo" aria-hidden="true">{SITE.name}</span>
+          <span>Preparador de PDFs</span>
+        </a>
+        <nav class="site-nav" aria-label="Principal">
+          <a href="/" aria-current={current('/')}>Ferramenta</a>
+          <a href="/tribunais/" aria-current={current('/tribunais/')}>Limites por tribunal</a>
+          <a href="/guias/" aria-current={current('/guias/')}>Guias</a>
+          <a href="/metodologia/" aria-current={current('/metodologia/')}>Metodologia</a>
+        </nav>
+      </div>
+    </header>
+    <slot />
+    <footer class="site-footer">
+      <div class="inner">
+        <nav aria-label="Rodapé">
+          <a href="/privacidade/">Privacidade e segurança</a>
+          <a href="/termos/">Termos de uso</a>
+          <a href="/metodologia/">Metodologia</a>
+          <a href="/contato/">Contato</a>
+        </nav>
+        <p>
+          {SITE.name} é um serviço independente, gratuito e sem cadastro. Não é oficial nem vinculado a nenhum tribunal ou ao CNJ. Os limites publicados
+          vêm de fontes oficiais e podem mudar: confira sempre no sistema do tribunal.
+        </p>
+        <p>
+          Software livre (AGPL-3.0). O motor de compressão é o <a href="https://www.ghostscript.com/" rel="noreferrer noopener" target="_blank">Ghostscript</a>,
+          executado em WebAssembly no seu navegador. Nenhum documento é enviado à internet.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

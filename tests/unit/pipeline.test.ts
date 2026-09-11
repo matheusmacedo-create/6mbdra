@@ -1,33 +1,34 @@
 import { describe, it, expect } from 'vitest'
-import { processPdf, type PipelineDeps } from '../../src/lib/engine/pipeline'
-import { EngineError, type CompressionEngine, type CompressOptions } from '../../src/lib/engine/types'
-import { DEFAULT_SETTINGS, type Settings } from '../../src/lib/types'
-import { LEVELS } from '../../src/lib/engine/levels'
+import { processPdf, type PipelineDeps } from '../../src/tool/lib/engine/pipeline'
+import { EngineError, type CompressionEngine, type CompressOptions } from '../../src/tool/lib/engine/types'
+import type { ProcessSettings } from '../../src/tool/lib/types'
+import { SplitError } from '../../src/tool/lib/split'
 
-const MB = 1024 * 1024
+const MB = 1_000_000
+const settings: ProcessSettings = { limitBytes: 6 * MB, targetBytes: 5.7 * MB, autoSplit: true, grayscale: false }
 
-/** Motor falso: tamanho de saída = entrada * fator do nível. */
-function fakeEngine(factors: Record<number, number>, opts: { id?: 'ghostscript' | 'raster'; fail?: EngineError; calls?: CompressOptions[] } = {}): CompressionEngine {
+/** Motor falso: tamanho de saída = entrada × fator do nível (ids 1..6). */
+function fakeEngine(factors: Record<number, number>, opts: { fail?: EngineError; calls?: CompressOptions[]; pages?: number } = {}): CompressionEngine {
   return {
-    id: opts.id ?? 'ghostscript',
+    id: 'ghostscript',
     label: 'fake',
-    preservesText: (opts.id ?? 'ghostscript') === 'ghostscript',
     async compress(input, o) {
       opts.calls?.push(o)
       if (opts.fail) throw opts.fail
-      const size = Math.round(input.byteLength * factors[o.level.id])
-      const bytes = new Uint8Array(size)
+      const f = factors[o.level.id] ?? 1
+      const bytes = new Uint8Array(Math.round(input.byteLength * f))
       bytes[0] = o.level.id
-      return { bytes, pages: 10 }
+      return { bytes, pages: opts.pages ?? 10, warnings: [] }
     },
   }
 }
 
-function deps(engines: CompressionEngine[], pages = 10): PipelineDeps {
+function deps(engine: CompressionEngine | null, pages = 10, opts: { splitPageTooBig?: boolean } = {}): PipelineDeps {
   return {
-    engines,
+    engine,
     countPages: async () => pages,
     split: async (bytes, maxBytes) => {
+      if (opts.splitPageTooBig) throw new SplitError('A página 1 sozinha não cabe.', 'PAGE_TOO_BIG')
       const n = Math.ceil(bytes.byteLength / maxBytes)
       const per = Math.ceil(bytes.byteLength / n)
       return Array.from({ length: n }, (_, i) => ({ bytes: new Uint8Array(per), size: per, from: i + 1, to: i + 1 }))
@@ -35,118 +36,125 @@ function deps(engines: CompressionEngine[], pages = 10): PipelineDeps {
   }
 }
 
-const settings: Settings = { ...DEFAULT_SETTINGS, limitBytes: 6 * MB }
-
 describe('processPdf', () => {
-  it('skips files already under the limit', async () => {
-    const r = await processPdf(new Uint8Array(5 * MB), 'a.pdf', settings, deps([fakeEngine({ 1: 0.5 })]))
-    expect(r.status).toBe('skipped')
+  it('leaves files already under the target untouched', async () => {
+    const r = await processPdf(new Uint8Array(5 * MB), 'a.pdf', settings, deps(fakeEngine({ 1: 0.5 })))
+    expect(r.status).toBe('unchanged')
     expect(r.outputs).toHaveLength(0)
+    expect(r.contentUntouched).toBe(true)
   })
 
-  it('stops at the lightest level that fits', async () => {
+  it('tries structural optimization first when the file is barely over', async () => {
     const calls: CompressOptions[] = []
-    const eng = fakeEngine({ 1: 0.5, 2: 0.3, 3: 0.1, 4: 0.05 }, { calls })
-    const r = await processPdf(new Uint8Array(10 * MB), 'a.pdf', settings, deps([eng]))
-    expect(r.status).toBe('done')
-    expect(r.level).toBe(1) // 10 MB * 0.5 = 5 MB <= 6 MB * 0.97
-    expect(r.outputs[0].name).toBe('a - compactado.pdf')
+    const eng = fakeEngine({ 1: 0.9, 2: 0.7 }, { calls })
+    const r = await processPdf(new Uint8Array(6 * MB), 'a.pdf', settings, deps(eng))
     expect(calls.map((c) => c.level.id)).toEqual([1])
+    expect(r.status).toBe('done')
+    expect(r.level).toBe(1)
+    expect(r.outputs[0].name).toBe('a_otimizado.pdf')
+    expect(r.outputs[0].kind).toBe('compressed')
   })
 
   it('escalates levels until it fits', async () => {
     const calls: CompressOptions[] = []
-    // pickStartLevel(20 MB, 5.82 MB): 20*0.45=9 > 5.82; 20*0.22=4.4 <= 5.82 -> starts at 2
-    const eng = fakeEngine({ 1: 0.9, 2: 0.5, 3: 0.4, 4: 0.2 }, { calls })
-    const r = await processPdf(new Uint8Array(20 * MB), 'a.pdf', settings, deps([eng]))
-    expect(r.status).toBe('done')
-    expect(calls.map((c) => c.level.id)).toEqual([2, 3, 4])
-    expect(r.level).toBe(4)
+    // 20 MB: começa no nível 4 (0.25*20=5 <= 5.7)
+    const eng = fakeEngine({ 1: 0.99, 2: 0.9, 3: 0.6, 4: 0.5, 5: 0.4, 6: 0.2 }, { calls })
+    const r = await processPdf(new Uint8Array(20 * MB), 'a.pdf', settings, deps(eng))
+    expect(calls.map((c) => c.level.id)).toEqual([4, 5, 6])
+    expect(r.level).toBe(6)
   })
 
-  it('refines to a lighter level when it fits with a lot of room', async () => {
+  it('refines upward while there is a lot of room', async () => {
     const calls: CompressOptions[] = []
-    // starts at level 2 (20 MB), level 2 gives 2 MB (< 55% of target) -> tries level 1 -> 5 MB fits
-    const eng = fakeEngine({ 1: 0.25, 2: 0.1, 3: 0.05, 4: 0.02 }, { calls })
-    const r = await processPdf(new Uint8Array(20 * MB), 'a.pdf', settings, deps([eng]))
-    expect(calls.map((c) => c.level.id)).toEqual([2, 1])
-    expect(r.level).toBe(1)
+    // 40 MB: começa no nível 5 (0.19*40=7.6 > 5.7; 0.12*40=4.8 -> nível 6)
+    // Cada nível cabe com muita folga (< 55% da meta), então sobe até o nível 1 não caber.
+    const eng = fakeEngine({ 1: 0.5, 2: 0.07, 3: 0.06, 4: 0.05, 5: 0.03, 6: 0.02 }, { calls })
+    const r = await processPdf(new Uint8Array(40 * MB), 'a.pdf', settings, deps(eng))
+    expect(calls.map((c) => c.level.id)).toEqual([6, 5, 4, 3, 2, 1])
+    expect(r.level).toBe(2) // nível 1 daria 20 MB, não cabe
   })
 
-  it('keeps refining upward while there is room (start at 3, end at 1)', async () => {
+  it('stops refining as soon as a lighter level does not fit', async () => {
     const calls: CompressOptions[] = []
-    // 40 MB: 40*0.45=18, 40*0.22=8.8, 40*0.12=4.8 <= 5.82 -> starts at 3
-    const eng = fakeEngine({ 1: 0.1, 2: 0.05, 3: 0.02, 4: 0.01 }, { calls })
-    const r = await processPdf(new Uint8Array(40 * MB), 'a.pdf', settings, deps([eng]))
-    expect(calls.map((c) => c.level.id)).toEqual([3, 2, 1])
-    expect(r.level).toBe(1)
+    const eng = fakeEngine({ 1: 0.9, 2: 0.9, 3: 0.9, 4: 0.9, 5: 0.9, 6: 0.02 }, { calls })
+    const r = await processPdf(new Uint8Array(40 * MB), 'a.pdf', settings, deps(eng))
+    expect(calls.map((c) => c.level.id)).toEqual([6, 5])
+    expect(r.level).toBe(6)
   })
 
-  it('rejects an output with fewer pages than the input', async () => {
-    const eng = fakeEngine({ 1: 0.5, 2: 0.3, 3: 0.1, 4: 0.05 })
-    const d = deps([eng], 10)
-    d.countPages = async (bytes) => (bytes.byteLength === 10 * MB ? 10 : 0) // entrada: 10 páginas; saída: 0
-    await expect(processPdf(new Uint8Array(10 * MB), 'a.pdf', settings, d)).rejects.toMatchObject({ code: 'INVALID' })
-  })
-
-  it('keeps the tighter level when refinement does not fit', async () => {
-    const calls: CompressOptions[] = []
-    const eng = fakeEngine({ 1: 0.5, 2: 0.1, 3: 0.05, 4: 0.02 }, { calls })
-    const r = await processPdf(new Uint8Array(20 * MB), 'a.pdf', settings, deps([eng]))
-    expect(calls.map((c) => c.level.id)).toEqual([2, 1])
-    expect(r.level).toBe(2)
-  })
-
-  it('splits when even the maximum level is over the limit', async () => {
-    const eng = fakeEngine({ 1: 0.9, 2: 0.8, 3: 0.7, 4: 0.5 })
-    const r = await processPdf(new Uint8Array(40 * MB), 'grande.pdf', settings, deps([eng]))
+  it('splits the compressed output when even the maximum level is over the limit', async () => {
+    const eng = fakeEngine({ 1: 0.95, 2: 0.9, 3: 0.8, 4: 0.7, 5: 0.6, 6: 0.5 })
+    const r = await processPdf(new Uint8Array(40 * MB), 'grande.pdf', settings, deps(eng))
     expect(r.status).toBe('done')
     expect(r.outputs.length).toBeGreaterThan(1)
-    expect(r.outputs[0].name).toBe(`grande - parte 1 de ${r.outputs.length}.pdf`)
-    expect(r.warning).toMatch(/dividido/i)
-    for (const o of r.outputs) expect(o.size).toBeLessThanOrEqual(6 * MB)
+    expect(r.outputs[0].name).toBe('grande_parte_01.pdf')
+    expect(r.outputs[0].kind).toBe('part')
+    expect(r.contentUntouched).toBe(false)
+    expect(r.warnings.join(' ')).toMatch(/dividido/i)
+    for (const o of r.outputs) expect(o.size).toBeLessThanOrEqual(settings.targetBytes)
+  })
+
+  it('splits the ORIGINAL when compression does not help (bilevel/JBIG2 scans)', async () => {
+    const eng = fakeEngine({ 1: 1.01, 2: 1.0, 3: 1.0, 4: 1.0, 5: 1.0, 6: 1.0 })
+    const r = await processPdf(new Uint8Array(12 * MB), 'pb.pdf', settings, deps(eng))
+    expect(r.status).toBe('done')
+    expect(r.contentUntouched).toBe(true)
+    expect(r.level).toBeUndefined()
+    expect(r.outputs.length).toBe(3)
+    expect(r.warnings.join(' ')).toMatch(/sem alteração de conteúdo/)
+  })
+
+  it('splits the original when the engine crashes', async () => {
+    const eng = fakeEngine({}, { fail: new EngineError('boom', 'UNKNOWN') })
+    const r = await processPdf(new Uint8Array(12 * MB), 'x.pdf', settings, deps(eng))
+    expect(r.status).toBe('done')
+    expect(r.contentUntouched).toBe(true)
+    expect(r.warnings.join(' ')).toMatch(/não pôde ser aplicada/)
+  })
+
+  it('works with no engine at all (split only)', async () => {
+    const r = await processPdf(new Uint8Array(12 * MB), 'x.pdf', settings, deps(null))
+    expect(r.status).toBe('done')
+    expect(r.outputs.length).toBe(3)
   })
 
   it('returns "over" with the best attempt when splitting is disabled', async () => {
-    const eng = fakeEngine({ 1: 0.9, 2: 0.8, 3: 0.7, 4: 0.5 })
-    const r = await processPdf(new Uint8Array(40 * MB), 'grande.pdf', { ...settings, autoSplit: false }, deps([eng]))
+    const eng = fakeEngine({ 1: 0.95, 2: 0.9, 3: 0.8, 4: 0.7, 5: 0.6, 6: 0.5 })
+    const r = await processPdf(new Uint8Array(40 * MB), 'grande.pdf', { ...settings, autoSplit: false }, deps(eng))
     expect(r.status).toBe('over')
     expect(r.outputs).toHaveLength(1)
     expect(r.outputs[0].size).toBe(20 * MB)
-    expect(r.level).toBe(4)
+    expect(r.level).toBe(6)
   })
 
-  it('falls back to the raster engine when ghostscript crashes', async () => {
-    const gs = fakeEngine({ 1: 0.5 }, { fail: new EngineError('boom', 'UNKNOWN') })
-    const raster = fakeEngine({ 1: 0.5, 2: 0.3, 3: 0.1, 4: 0.05 }, { id: 'raster' })
-    const r = await processPdf(new Uint8Array(10 * MB), 'a.pdf', settings, deps([gs, raster]))
-    expect(r.status).toBe('done')
-    expect(r.method).toBe('raster')
-    expect(r.warning).toMatch(/emergência/i)
+  it('propagates password and invalid errors', async () => {
+    await expect(processPdf(new Uint8Array(10 * MB), 'a.pdf', settings, deps(fakeEngine({}, { fail: new EngineError('senha', 'PASSWORD') })))).rejects.toMatchObject({ code: 'PASSWORD' })
+    await expect(processPdf(new Uint8Array(10 * MB), 'a.pdf', settings, deps(fakeEngine({}, { fail: new EngineError('ruim', 'INVALID') })))).rejects.toMatchObject({ code: 'INVALID' })
   })
 
-  it('does not use raster when the fallback is disabled', async () => {
-    const gs = fakeEngine({ 1: 0.5 }, { fail: new EngineError('boom', 'UNKNOWN') })
-    const raster = fakeEngine({ 1: 0.5 }, { id: 'raster' })
-    await expect(processPdf(new Uint8Array(10 * MB), 'a.pdf', { ...settings, allowRasterFallback: false }, deps([gs, raster]))).rejects.toThrow('boom')
+  it('rejects an output with fewer pages than the input', async () => {
+    const eng = fakeEngine({ 1: 0.5, 2: 0.3, 3: 0.2, 4: 0.1, 5: 0.05, 6: 0.02 })
+    const d = deps(eng, 10)
+    d.countPages = async (bytes) => (bytes.byteLength === 10 * MB ? 10 : 1) // saída: 1 página em branco
+    await expect(processPdf(new Uint8Array(10 * MB), 'a.pdf', settings, d)).rejects.toMatchObject({ code: 'INVALID' })
   })
 
-  it('propagates password errors without trying other engines', async () => {
-    const gs = fakeEngine({ 1: 0.5 }, { fail: new EngineError('senha', 'PASSWORD') })
-    const raster = fakeEngine({ 1: 0.5 }, { id: 'raster' })
-    await expect(processPdf(new Uint8Array(10 * MB), 'a.pdf', settings, deps([gs, raster]))).rejects.toMatchObject({ code: 'PASSWORD' })
+  it('explains when a single page cannot fit the limit', async () => {
+    const eng = fakeEngine({ 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1 })
+    await expect(processPdf(new Uint8Array(12 * MB), 'a.pdf', settings, deps(eng, 1, { splitPageTooBig: true }))).rejects.toThrow(/página 1/)
   })
 
-  it('reports stages and pages', async () => {
+  it('uses the page count from the preliminary analysis and reports stages', async () => {
     const stages: string[] = []
-    let pages = 0
-    const eng = fakeEngine({ 1: 0.5, 2: 0.3, 3: 0.1, 4: 0.05 })
-    await processPdf(new Uint8Array(10 * MB), 'a.pdf', settings, deps([eng], 42), { onStage: (s) => stages.push(s), onPages: (p) => (pages = p) })
-    expect(pages).toBe(42)
+    let counted = 0
+    // 7 MB começa no nível 2; 0.75 -> 5,25 MB cabe e não sobra folga para refinar
+    const d = deps(fakeEngine({ 1: 0.9, 2: 0.75, 3: 0.5 }), 10)
+    d.countPages = async () => {
+      counted++
+      return 10
+    }
+    await processPdf(new Uint8Array(7 * MB), 'a.pdf', settings, d, { pages: 10, onStage: (s) => stages.push(s) })
+    expect(counted).toBe(1) // só a verificação da saída
     expect(stages.some((s) => /Compactando/.test(s))).toBe(true)
-  })
-
-  it('has 4 levels in decreasing dpi order', () => {
-    for (let i = 1; i < LEVELS.length; i++) expect(LEVELS[i].colorDpi).toBeLessThan(LEVELS[i - 1].colorDpi)
   })
 })

@@ -1,91 +1,91 @@
-# 6MB — Compactador de PDF para o tribunal
+# 6MB — Preparador de PDFs para peticionamento eletrônico
 
-Ferramenta web, em português, para advogadas e advogados que precisam protocolar PDFs em sistemas
-com limite de tamanho por arquivo (PJe, e-SAJ, Projudi, eproc…). Você arrasta vários PDFs, escolhe o
-limite (6 MB por padrão) e baixa cada um já dentro do limite — ou dividido em partes numeradas quando
-nem a compressão máxima resolve.
+Site estático + ferramenta no navegador para advogadas, advogados e equipes que precisam deixar
+vários PDFs dentro do limite de tamanho por arquivo dos sistemas de peticionamento (PJe, eproc,
+e-SAJ, Projudi…). Escolha o tribunal (ou informe o limite), arraste os PDFs e baixe os arquivos
+prontos — comprimidos ou divididos em partes — sem que nenhum documento saia do computador.
 
-**Tudo roda no navegador.** Nenhum arquivo é enviado para servidor algum: o motor de compressão
-(Ghostscript) é executado em WebAssembly, dentro de um Web Worker, na máquina do usuário.
+Implementa a V1 descrita em `Especificação do Aplicativo de Preparação de PDFs Jurídicos`
+(gratuito, sem cadastro, processamento local, regras versionadas com fonte oficial, sem servidor).
 
 ## Como funciona
 
-1. **Análise**: o arquivo é lido e as páginas contadas. Se já cabe no limite, nada é feito.
-2. **Compressão em níveis**: o Ghostscript (`pdfwrite`) reamostra e recomprime as imagens do PDF
-   preservando texto, fontes, marcadores e a camada de OCR. Há 4 níveis (200 → 150 → 110 → 80 dpi);
-   o app começa pelo nível mais leve que provavelmente cabe e só aperta mais se precisar. Se sobrar
-   folga, tenta um nível mais leve para entregar mais nitidez.
-3. **Verificação**: a saída é conferida (é um PDF válido? tem o mesmo número de páginas?). Ghostscript
-   devolve "sucesso" com um PDF vazio para arquivos corrompidos ou com senha — a verificação pega isso.
-4. **Divisão** (opcional, ligada por padrão): se nem o nível máximo coube, o resultado é dividido em
-   partes sequenciais ("parte 1 de 3"), cada uma abaixo do limite, sem cortar páginas.
-5. **Modo de emergência** (opcional): se o Ghostscript falhar num arquivo, as páginas são renderizadas
-   como imagens JPEG (pdf.js + pdf-lib). Funciona com quase tudo, mas o texto deixa de ser pesquisável.
+1. **Configurar** — tribunal/sistema (com limite declarado, meta segura de 95 %, fonte e data de
+   conferência) ou limite manual em MB.
+2. **Revisar o lote** — cada PDF é analisado antes de qualquer alteração: tamanho, páginas, senha,
+   assinatura digital e integridade. Já cabe? Fica intacto. Assinado? Fica de fora por padrão.
+   Com senha ou corrompido? É apontado, sem travar os demais.
+3. **Preparar** — Ghostscript (WebAssembly, num Web Worker) tenta primeiro a otimização
+   estrutural e depois reduz as imagens em seis níveis (300 → 100 dpi), parando no primeiro que
+   cabe e voltando a um mais leve se sobrar folga. Texto, fontes e OCR são preservados; imagens
+   1 bit ficam em CCITT G4. A saída é verificada (PDF válido, mesmo número de páginas). Se nem o
+   nível máximo couber — ou a compressão não ajudar —, o arquivo é dividido por páginas inteiras.
+4. **Baixar** — um a um ou tudo em ZIP (inclui os que já cabiam), com nomes previsíveis:
+   `contrato_otimizado.pdf`, `laudo_parte_01.pdf`.
 
-O limite é aplicado com margem de segurança de 3 % (alguns sistemas contam 1 MB = 1.000.000 bytes).
+Detalhes e números da prova técnica: [`docs/decisoes-tecnicas.md`](docs/decisoes-tecnicas.md).
 
-## Rodando localmente
-
-```bash
-npm install
-npm run dev        # http://localhost:5173
-```
-
-Outros comandos:
+## Desenvolvimento
 
 ```bash
-npm run build      # typecheck + build de produção em dist/
-npm run preview    # serve o build em http://localhost:4173
-npm test           # testes unitários (vitest)
-npm run test:e2e   # testes end-to-end em Chromium (playwright) — gera PDFs de teste sozinho
+npm install          # .npmrc já define legacy-peer-deps (bug do npm com peers opcionais do vitest)
+npm run dev          # http://localhost:4321
+npm run build        # valida as regras + build estático em dist/
+npm run preview
+npm run check        # astro check (TypeScript nas páginas e na ferramenta)
+npm test             # unitários (vitest): pipeline com motor falso, análise, nomes, regras
+npm run test:e2e     # Playwright em Chromium: fluxo completo com PDFs gerados na hora, teste de rede
 ```
-
-Os scripts `predev`/`prebuild` copiam `gs.js` e `gs.wasm` de `node_modules/@jspawn/ghostscript-wasm`
-para `public/gs/` (ignorado pelo git; ~16 MB). O worker carrega esses arquivos em tempo de execução.
-
-## Deploy
-
-É um site estático: publique a pasta `dist/` em qualquer hospedagem (Vercel, Netlify, Cloudflare Pages,
-GitHub Pages, um bucket S3…). Não precisa de backend, banco ou variáveis de ambiente.
-
-- Vercel: importe o repositório; o `vercel.json` já configura cache longo para o motor WASM.
-- O site precisa ser servido por HTTPS (ou `localhost`) para Web Workers e WebAssembly funcionarem.
-- Sirva `gs.wasm` com `Content-Type: application/wasm` (padrão na maioria das hospedagens) para o
-  navegador compilar em streaming; sem isso ainda funciona, só um pouco mais devagar.
 
 ## Estrutura
 
 ```
 src/
-  App.tsx                 layout e estado geral
-  components/             DropZone, SettingsPanel, JobList, JobRow, Faq
-  hooks/useJobQueue.ts    fila de processamento (um arquivo por vez), cancelamento, retry
-  lib/
-    engine/pipeline.ts    estratégia: níveis → verificação → refinamento → divisão
-    engine/levels.ts      os 4 níveis (dpi, qualidade JPEG) e a heurística de nível inicial
-    engine/gsArgs.ts      linha de comando do Ghostscript por nível
-    engine/ghostscript.ts motor principal (fala com o worker)
-    engine/raster.ts      motor de emergência (pdf.js + pdf-lib)
-    split.ts              divisão em partes com pdf-lib (mede o tamanho real de cada parte)
-    rpc.ts                RPC mínimo sobre postMessage, com progresso e cancelamento
-  workers/
-    gs.worker.ts          carrega o Ghostscript WASM e executa cada compressão
-    pdf.worker.ts         contagem de páginas e divisão (pdf-lib) fora da thread principal
-tests/
-  unit/                   pipeline com motor falso, nomes, formatação
-  e2e/                    fluxo completo no Chromium com PDFs gerados na hora
+  pages/                 rotas Astro: início (ferramenta), tribunais/, guias/, metodologia, privacidade, termos, contato
+  layouts/Base.astro     cabeçalho, rodapé, metadados
+  content/guias/*.md     guias (coleção de conteúdo)
+  data/regras.json       base de regras dos tribunais (validada no build)
+  data/fontes.lock.json  hashes das fontes para o monitor semanal
+  config/site.mjs        nome público, URL, e-mail de contato, margem de segurança
+  tool/                  ilha React da ferramenta
+    App.tsx              quatro estados: configurar → revisar → preparar → baixar
+    hooks/useJobQueue.ts análise prévia, fila sequencial, cancelamento, reprocessar item
+    lib/engine/          níveis, argumentos do Ghostscript, pipeline, motor (worker)
+    lib/analyze.ts       validade, páginas, senha, assinatura (pdf-lib + busca de bytes)
+    lib/split.ts         divisão por páginas com medição real
+    lib/regras.ts        tipos e helpers da base de regras
+    workers/             gs.worker.ts (Ghostscript WASM) e pdf.worker.ts (pdf-lib)
+scripts/
+  validate-rules.mjs     falha o build se uma regra estiver incompleta ou sem fonte oficial
+  check-sources.mjs      monitor das fontes (hash do texto visível) — roda semanalmente no Actions
+tests/unit, tests/e2e
+docs/decisoes-tecnicas.md
 ```
 
-## Limites conhecidos
+## Regras dos tribunais
 
-- Navegadores muito antigos (sem WebAssembly ou Web Workers) não são suportados.
-- Arquivos gigantes (centenas de MB) podem esbarrar na memória do navegador, principalmente em celulares.
-- PDFs que exigem senha para abrir precisam ser destravados antes; PDFs com restrição apenas de
-  edição/impressão são processados normalmente (a restrição é removida no resultado).
-- O motor WASM usa Ghostscript 9.56. Os arquivos de saída são PDF 1.5.
+Só entram regras confirmadas em fonte oficial (`*.jus.br`, `*.gov.br`), com trecho literal, URL,
+data da fonte e data da conferência. O arquivo é `src/data/regras.json`; o build roda
+`scripts/validate-rules.mjs`. Toda segunda-feira `rules-monitor.yml` confere as fontes e abre
+uma issue se algo mudou. Depois de revisar, atualize a regra e rode
+`node scripts/check-sources.mjs --update` para gravar os novos hashes.
+
+## Deploy
+
+Site 100 % estático (`dist/`). Recomendado: **Cloudflare Pages** (plano gratuito compatível com uso
+comercial; o `gs.wasm` de 16 MB fica abaixo do teto de 25 MiB por arquivo). `public/_headers` define
+cache e cabeçalhos de segurança; a Content-Security-Policy é gerada pelo próprio Astro como
+`<meta http-equiv>` com os hashes dos scripts inline que ele emite (`security.csp` em
+`astro.config.mjs`), sem `unsafe-eval`. Vercel funciona (`vercel.json` equivalente), mas o plano Hobby
+não permite uso comercial. Ajuste `src/config/site.mjs` (nome, URL, e-mail) antes de publicar.
+
+Conferência local do build com os cabeçalhos: `node scripts/serve-dist.mjs 4329`.
+
+Analytics: nenhum provedor vem ativo. `src/tool/lib/analytics.ts` expõe `track()` com eventos
+agregados (sem nome/conteúdo de arquivo); para ligar um provedor, defina `window.__analytics`.
 
 ## Licença
 
-O código deste projeto é distribuído sob a licença **AGPL-3.0** (veja `LICENSE`), a mesma do
-Ghostscript, que é executado no navegador do usuário via `@jspawn/ghostscript-wasm`.
-Demais dependências: pdf-lib (MIT), pdf.js (Apache-2.0), fflate (MIT), React (MIT).
+AGPL-3.0 (veja `LICENSE`). O motor é o Ghostscript (AGPL-3.0, Artifex Software), executado no
+navegador do usuário via `@jspawn/ghostscript-wasm`. Demais dependências: pdf-lib (MIT), fflate
+(MIT), React (MIT), Astro (MIT).

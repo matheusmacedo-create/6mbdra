@@ -1,0 +1,25 @@
+---
+import Base from '../../layouts/Base.astro'
+import { getCollection, render } from 'astro:content'
+import { formatDate } from '../../tool/lib/format'
+
+export async function getStaticPaths() {
+  const guias = await getCollection('guias')
+  return guias.map((g) => ({ params: { slug: g.id }, props: { guia: g } }))
+}
+const { guia } = Astro.props
+const { Content } = await render(guia)
+const updated = guia.data.updated.toISOString().slice(0, 10)
+---
+<Base title={guia.data.title} description={guia.data.description} path={`/guias/${guia.id}/`}>
+  <main class="page prose">
+    <p><a href="/guias/">← Todos os guias</a></p>
+    <h1>{guia.data.title}</h1>
+    <p class="lead">{guia.data.description}</p>
+    <p><small>Atualizado em {formatDate(updated)}. {guia.data.tags.map((t) => <span class="tag">{t}</span>)}</small></p>
+    <Content />
+    <div class="callout">
+      Precisa preparar PDFs agora? Use a <a href="/">ferramenta gratuita</a>: ela compacta e divide os arquivos no seu navegador, sem enviar nada.
+    </div>
+  </main>
+</Base>

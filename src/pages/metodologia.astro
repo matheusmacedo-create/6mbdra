@@ -1,0 +1,50 @@
+---
+import Base from '../layouts/Base.astro'
+import { REGRAS } from '../tool/lib/regras'
+import { formatDate } from '../tool/lib/format'
+---
+<Base title="Metodologia: como cadastramos e atualizamos os limites dos tribunais" description="Como cada regra de tamanho de PDF entra na base, o que exigimos de fonte, como conferimos e o que fazer quando algo mudou." path="/metodologia/">
+  <main class="page prose">
+    <h1>Metodologia de cadastro e atualização das regras</h1>
+    <p class="lead">Não existe uma tabela nacional oficial com os limites de upload de todos os sistemas de peticionamento. Por isso mantemos uma base própria, pequena e verificável.</p>
+
+    <h2>O que entra na base</h2>
+    <ul>
+      <li>Somente regras confirmadas em uma <strong>fonte oficial identificável</strong>: página, manual, perguntas frequentes ou ato normativo publicado no domínio do próprio tribunal, do CNJ ou do sistema (por exemplo, <code>*.jus.br</code>).</li>
+      <li>Cada regra guarda: tribunal, sistema (PJe, eproc, e-SAJ, Projudi…), instância, tipo de peticionamento, formato, limite declarado (valor e unidade como aparece na fonte), o trecho literal da fonte, a URL, a data publicada na fonte (quando existe) e a data da nossa última conferência humana.</li>
+      <li>Blogs, escritórios e notícias podem nos ajudar a encontrar a página oficial, mas nunca são citados como fonte.</li>
+    </ul>
+
+    <h2>Meta segura</h2>
+    <p>
+      A ferramenta não mira exatamente no limite declarado: usa uma <strong>meta segura de {REGRAS.meta_segura_percentual_padrao}%</strong> (um limite de 6 MB vira uma meta de cerca de
+      5,7 MB). Isso absorve a diferença entre MB decimal (1.000.000 bytes) e MiB (1.048.576 bytes) e validações internas dos portais. Lemos "MB" sempre
+      como decimal, a interpretação mais conservadora. O percentual pode ser ajustado por regra quando a fonte for explícita.
+    </p>
+
+    <h2>Como conferimos e atualizamos</h2>
+    <ol>
+      <li>As regras ficam em um arquivo público e versionado no repositório do projeto (<code>src/data/regras.json</code>), validado automaticamente a cada publicação.</li>
+      <li>Uma rotina semanal automática visita cada fonte e compara o texto com a última versão vista. Se o texto mudou ou a página saiu do ar, abre-se uma tarefa de revisão humana.</li>
+      <li>A base só é alterada depois que alguém confirma o significado da mudança. Versões anteriores ficam no histórico do Git.</li>
+      <li>A rotina não acessa áreas autenticadas, não contorna bloqueios e não faz peticionamentos de teste.</li>
+    </ol>
+
+    <h2>Situação de cada regra</h2>
+    <ul>
+      <li><strong>Vigente:</strong> conferida e sem sinal de mudança.</li>
+      <li><strong>Em revisão:</strong> a fonte mudou ou está fora do ar; a regra continua visível com esse aviso até a conferência.</li>
+      <li><strong>Substituída:</strong> sai das listas, mas permanece no histórico.</li>
+    </ul>
+
+    <h2>Limitações</h2>
+    <p>
+      Um tribunal pode ter limites diferentes por vara, por tipo de documento ou por versão do sistema, e a página oficial pode estar desatualizada. Por
+      isso a ferramenta sempre permite informar um limite manual, e recomendamos conferir a tela de anexar documentos do sistema antes de protocolar.
+    </p>
+
+    <h2>Encontrou um erro ou uma regra que falta?</h2>
+    <p>Mande a página oficial pelo nosso <a href="/contato/">contato</a>. Não envie documentos de processos.</p>
+    <p><small>Base de regras versão {REGRAS.versao}, com {REGRAS.regras.length} regra(s). Última publicação: {formatDate(REGRAS.versao)}.</small></p>
+  </main>
+</Base>

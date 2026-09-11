@@ -1,0 +1,92 @@
+---
+import Base from '../layouts/Base.astro'
+import App from '../tool/App'
+import { REGRAS } from '../tool/lib/regras'
+import { getCollection } from 'astro:content'
+const guias = (await getCollection('guias')).sort((a, b) => a.data.title.localeCompare(b.data.title, 'pt-BR')).slice(0, 4)
+---
+<Base
+  title="Compacte e divida PDFs para o peticionamento eletrônico"
+  description="Prepare vários PDFs de uma vez para caberem no limite do tribunal (PJe, eproc, e-SAJ, Projudi). Grátis, sem cadastro e sem enviar arquivos: tudo roda no seu navegador."
+  path="/"
+>
+  <main class="page">
+    <section class="hero">
+      <h1>Deixe cada PDF dentro do limite do tribunal, sem enviar nada para a internet</h1>
+      <p class="lead">
+        Escolha o tribunal, arraste os PDFs e baixe os arquivos prontos para protocolar. Os documentos são comprimidos — ou divididos em partes — no seu
+        próprio computador. Grátis e sem cadastro.
+      </p>
+      <p class="privacy-pill"><span aria-hidden="true">🔒</span> Seus arquivos não saem do seu computador</p>
+    </section>
+
+    <App client:only="react" />
+
+    <div class="ad-slot" data-enabled="false" aria-hidden="true"></div>
+
+    <section class="prose" id="como-funciona">
+      <h2>Como funciona</h2>
+      <ol>
+        <li><strong>Configurar:</strong> escolha o tribunal e o sistema (ou informe o limite em MB). Mostramos o limite declarado, a meta segura, a fonte oficial e a data em que conferimos.</li>
+        <li><strong>Revisar o lote:</strong> cada PDF é analisado antes de qualquer alteração: tamanho, páginas, senha, assinatura digital e integridade. Arquivos que já cabem ficam intactos.</li>
+        <li><strong>Preparar:</strong> o motor primeiro remove redundâncias; só se precisar reduz a resolução das imagens, aos poucos, até caber. Texto, fontes, marcadores e a camada de OCR são preservados. Se nem a compressão máxima resolver, o arquivo é dividido em partes por páginas inteiras.</li>
+        <li><strong>Baixar:</strong> cada arquivo é medido de novo antes de aparecer como pronto. Baixe um a um ou tudo em um ZIP, com nomes previsíveis (<code>contrato_otimizado.pdf</code>, <code>laudo_parte_01.pdf</code>).</li>
+      </ol>
+      <p>
+        Regras cadastradas: {REGRAS.regras.length} (base versão {REGRAS.versao}). Veja o <a href="/tribunais/">diretório de limites por tribunal</a> e a{' '}
+        <a href="/metodologia/">metodologia de atualização</a>.
+      </p>
+    </section>
+
+    <section class="prose faq" id="perguntas">
+      <h2>Perguntas frequentes</h2>
+      <details>
+        <summary>Meus documentos são enviados para algum servidor?</summary>
+        <p>Não. A compressão roda dentro do seu navegador, com o processador do seu computador. Nenhum arquivo, nome de arquivo ou número de processo é transmitido. Você pode até desligar a internet depois que a página carregar.</p>
+      </details>
+      <details>
+        <summary>O texto continua pesquisável depois?</summary>
+        <p>Sim. O motor (Ghostscript) reduz apenas as imagens do PDF e mantém texto, fontes, marcadores e a camada de OCR de digitalizações. Se você já tinha texto selecionável, continua tendo.</p>
+      </details>
+      <details>
+        <summary>Como vocês decidem o quanto comprimir?</summary>
+        <p>Começamos pelo nível mais leve que provavelmente cabe e só apertamos se for necessário. Se sobra folga, voltamos a um nível mais leve. O piso é 100 dpi (ainda legível para números pequenos); abaixo disso preferimos dividir o arquivo.</p>
+      </details>
+      <details>
+        <summary>E se mesmo assim não couber?</summary>
+        <p>O arquivo é dividido em partes numeradas (parte_01, parte_02…), cada uma dentro da meta, sem cortar páginas. Você protocola cada parte como um documento.</p>
+      </details>
+      <details>
+        <summary>Por que a ferramenta recusa PDFs com senha e avisa sobre assinados?</summary>
+        <p>Não removemos proteções: destrave o PDF no programa de origem antes. Um PDF assinado digitalmente perde a assinatura se for alterado, então ele fica de fora por padrão — o certo é preparar o arquivo antes de assinar.</p>
+      </details>
+      <details>
+        <summary>Qual é o limite do meu tribunal?</summary>
+        <p>Varia bastante (entre cerca de 1,5 MB e 20 MB) por tribunal, sistema, instância e tipo de petição. Consulte o <a href="/tribunais/">diretório</a> ou a tela de anexar documentos do sistema e, se não achar, informe o limite manualmente.</p>
+      </details>
+    </section>
+
+    {guias.length > 0 && (
+      <section class="prose">
+        <h2>Guias</h2>
+        <ul class="grid-cards">
+          {guias.map((g) => (
+            <li>
+              <a href={`/guias/${g.id}/`}>{g.data.title}</a>
+              <p>{g.data.description}</p>
+            </li>
+          ))}
+        </ul>
+        <p><a href="/guias/">Ver todos os guias</a></p>
+      </section>
+    )}
+  </main>
+</Base>
+
+<style>
+  .hero h1 { font-family: var(--serif); font-size: 30px; line-height: 1.2; margin: 8px 0 10px; max-width: 760px; }
+  .hero .lead { max-width: 720px; margin: 0 0 10px; }
+  .privacy-pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: var(--ok-bg); color: var(--ok); font-weight: 600; font-size: 14px; margin: 0 0 18px; }
+  .prose { margin-top: 28px; }
+  code { background: var(--surface-2); padding: 1px 6px; border-radius: 6px; font-size: 0.92em; }
+</style>

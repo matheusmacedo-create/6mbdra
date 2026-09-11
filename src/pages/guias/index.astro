@@ -1,0 +1,20 @@
+---
+import Base from '../../layouts/Base.astro'
+import { getCollection } from 'astro:content'
+const guias = (await getCollection('guias')).sort((a, b) => a.data.title.localeCompare(b.data.title, 'pt-BR'))
+---
+<Base title="Guias de preparação de PDFs para o protocolo eletrônico" description="Como compactar, dividir e digitalizar documentos para o peticionamento eletrônico, em linguagem simples." path="/guias/">
+  <main class="page prose">
+    <h1>Guias</h1>
+    <p class="lead">Explicações práticas, sem jargão, para quem precisa protocolar sem dor de cabeça.</p>
+    {guias.length === 0 && <p>Em breve.</p>}
+    <ul class="grid-cards">
+      {guias.map((g) => (
+        <li>
+          <a href={`/guias/${g.id}/`}>{g.data.title}</a>
+          <p>{g.data.description}</p>
+        </li>
+      ))}
+    </ul>
+  </main>
+</Base>

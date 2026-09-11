@@ -1,0 +1,47 @@
+name: Monitor das fontes das regras
+
+on:
+  schedule:
+    - cron: '0 9 * * 1' # segundas, 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Conferir fontes
+        id: check
+        run: |
+          set +e
+          node scripts/check-sources.mjs > resultado.json
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+          cat resultado.json
+      - name: Abrir tarefa de revisão
+        if: steps.check.outputs.code == '2'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TITLE="Revisar regras: fontes mudaram ou estão fora do ar ($(date -u +%Y-%m-%d))"
+          BODY_FILE=$(mktemp)
+          {
+            echo "O monitor semanal encontrou diferenças nas fontes oficiais. Revise cada item, confirme o significado da mudança e só então atualize \`src/data/regras.json\` (e rode \`node scripts/check-sources.mjs --update\`)."
+            echo
+            echo '```json'
+            cat resultado.json
+            echo '```'
+          } > "$BODY_FILE"
+          EXISTING=$(gh issue list --label regras --state open --search "Revisar regras" --json number --jq '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body-file "$BODY_FILE"
+          else
+            gh issue create --title "$TITLE" --label regras --body-file "$BODY_FILE" || gh issue create --title "$TITLE" --body-file "$BODY_FILE"
+          fi

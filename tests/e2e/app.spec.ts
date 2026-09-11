@@ -3,24 +3,36 @@ import { PDFDocument } from 'pdf-lib'
 import { readFileSync, statSync } from 'node:fs'
 import { ensureFixtures, type Fixtures } from './fixtures'
 
-const MB = 1024 * 1024
+const MB = 1_000_000
 let fx: Fixtures
 
 test.beforeAll(async () => {
   fx = await ensureFixtures()
 })
 
-async function openApp(page: Page) {
+async function openApp(page: Page, limitMb?: number) {
   await page.goto('/')
   await expect(page.getByTestId('engine-status')).toHaveAttribute('data-state', 'ready', { timeout: 120_000 })
+  if (limitMb !== undefined) {
+    await page.locator('#regra').selectOption('custom')
+    await page.getByTestId('custom-limit').fill(String(limitMb).replace('.', ','))
+  }
 }
 
-async function waitJobs(page: Page, n: number) {
+async function addAndPrepare(page: Page, files: string[]) {
+  await page.getByTestId('file-input').setInputFiles(files)
+  // Espera a análise prévia terminar (nenhum job "analyzing")
+  await expect.poll(async () => page.locator('[data-testid="job"][data-kind="analyzing"]').count(), { timeout: 60_000 }).toBe(0)
+}
+
+async function waitFinished(page: Page, n: number) {
   await expect
-    .poll(async () => page.locator('[data-testid="job"][data-status="done"], [data-testid="job"][data-status="skipped"], [data-testid="job"][data-status="error"]').count(), {
+    .poll(async () => page.locator('[data-testid="job"][data-kind="done"], [data-testid="job"][data-kind="error"], [data-testid="job"][data-kind="unchanged"], [data-testid="job"][data-kind="invalid"], [data-testid="job"][data-kind="signed"]').count(), {
       timeout: 280_000,
     })
     .toBe(n)
+  await expect(page.locator('[data-testid="job"][data-kind="processing"]')).toHaveCount(0)
+  await expect(page.locator('[data-testid="job"][data-kind="queued"]')).toHaveCount(0)
 }
 
 async function pageCount(path: string): Promise<number> {
@@ -28,77 +40,122 @@ async function pageCount(path: string): Promise<number> {
   return doc.getPageCount()
 }
 
-test('compacta uma digitalização grande para dentro de 6 MB mantendo as páginas', async ({ page }) => {
+test('fluxo completo: revisar, preparar e baixar um scan grande dentro da meta', async ({ page }) => {
   expect(statSync(fx.scanBig).size).toBeGreaterThan(6 * MB)
-  await openApp(page)
-  await page.getByTestId('file-input').setInputFiles(fx.scanBig)
-  await waitJobs(page, 1)
+  await openApp(page, 6)
+  await addAndPrepare(page, [fx.scanBig])
   const job = page.getByTestId('job').first()
-  await expect(job).toHaveAttribute('data-status', 'done')
-  await expect(job).toContainText('dentro do limite')
+  await expect(job).toHaveAttribute('data-kind', 'ready')
+  await expect(page.getByTestId('summary')).toContainText('1 para otimizar')
+  await page.getByTestId('start').click()
+  await waitFinished(page, 1)
+  await expect(job).toHaveAttribute('data-kind', 'done')
+  await expect(job).toContainText('dentro da meta')
 
-  const [download] = await Promise.all([page.waitForEvent('download'), job.getByRole('button', { name: /^Baixar/ }).click()])
-  expect(download.suggestedFilename()).toBe('scan_big - compactado.pdf')
-  const out = await download.path()
-  expect(out).toBeTruthy()
-  const size = statSync(out!).size
-  expect(size).toBeLessThanOrEqual(6 * MB)
+  const [download] = await Promise.all([page.waitForEvent('download'), job.getByRole('button', { name: /^Baixar \(/ }).click()])
+  expect(download.suggestedFilename()).toBe('scan_big_otimizado.pdf')
+  const out = (await download.path())!
+  const size = statSync(out).size
+  expect(size).toBeLessThanOrEqual(5.7 * MB)
   expect(size).toBeLessThan(statSync(fx.scanBig).size)
-  expect(readFileSync(out!).subarray(0, 4).toString()).toBe('%PDF')
-  expect(await pageCount(out!)).toBe(3)
+  expect(readFileSync(out).subarray(0, 4).toString()).toBe('%PDF')
+  expect(await pageCount(out)).toBe(3)
 })
 
-test('arquivos já dentro do limite são apenas marcados', async ({ page }) => {
-  await openApp(page)
-  await page.getByTestId('file-input').setInputFiles(fx.text)
-  await waitJobs(page, 1)
-  await expect(page.getByTestId('job').first()).toHaveAttribute('data-status', 'skipped')
-  await expect(page.getByTestId('job').first()).toContainText('já está dentro do limite')
+test('arquivos já dentro da meta são mantidos e entram no zip como originais', async ({ page }) => {
+  await openApp(page, 6)
+  await addAndPrepare(page, [fx.text, fx.scanBig])
+  await expect(page.locator('[data-testid="job"][data-kind="unchanged"]')).toHaveCount(1)
+  await page.getByTestId('start').click()
+  await waitFinished(page, 2)
+  const [download] = await Promise.all([page.waitForEvent('download'), page.getByTestId('download-all').click()])
+  expect(download.suggestedFilename()).toBe('pdfs-preparados.zip')
+  const zip = readFileSync((await download.path())!).toString('latin1')
+  expect(zip.slice(0, 2)).toBe('PK')
+  expect(zip).toContain('text.pdf')
+  expect(zip).toContain('scan_big_otimizado.pdf')
 })
 
-test('arquivo corrompido mostra erro amigável e permite remover', async ({ page }) => {
-  await openApp(page)
-  await page.getByTestId('file-input').setInputFiles(fx.corrupt)
-  await waitJobs(page, 1)
+test('arquivo corrompido é apontado na análise, sem bloquear os demais', async ({ page }) => {
+  await openApp(page, 6)
+  await addAndPrepare(page, [fx.corrupt, fx.scanBig])
+  await expect(page.locator('[data-testid="job"][data-kind="invalid"]')).toHaveCount(1)
+  await expect(page.locator('[data-testid="job"][data-kind="invalid"]')).toContainText(/não foi possível ler/i)
+  await page.getByTestId('start').click()
+  await waitFinished(page, 2)
+  await expect(page.locator('[data-testid="job"][data-kind="done"]')).toHaveCount(1)
+  await page.locator('[data-testid="job"][data-kind="invalid"]').getByRole('button', { name: /Remover/ }).click()
+  await expect(page.getByTestId('job')).toHaveCount(1)
+})
+
+test('PDF assinado fica de fora por padrão e pode ser liberado', async ({ page }) => {
+  await openApp(page, 6)
+  await addAndPrepare(page, [fx.signedBig])
   const job = page.getByTestId('job').first()
-  await expect(job).toHaveAttribute('data-status', 'error')
-  await expect(job).toContainText(/corrompido|não ser um PDF/)
-  await job.getByRole('button', { name: /Remover/ }).click()
-  await expect(page.getByTestId('job')).toHaveCount(0)
+  await expect(job).toHaveAttribute('data-kind', 'signed')
+  await expect(page.getByTestId('start')).toBeDisabled()
+  await page.getByTestId('allow-signed').click()
+  await expect(job).toHaveAttribute('data-kind', 'ready')
+  await page.getByTestId('start').click()
+  await waitFinished(page, 1)
+  await expect(job).toHaveAttribute('data-kind', 'done')
 })
 
-test('divide em partes quando nem a compressão máxima cabe no limite', async ({ page }) => {
-  await openApp(page)
-  await page.locator('#limit').selectOption('custom')
-  await page.getByLabel('Limite em megabytes').fill('0.25')
-  await page.getByTestId('file-input').setInputFiles(fx.scanHuge)
-  await waitJobs(page, 1)
+test('divide em partes quando nem a compressão máxima cabe', async ({ page }) => {
+  await openApp(page, 0.5)
+  await addAndPrepare(page, [fx.scanHuge])
+  await page.getByTestId('start').click()
+  await waitFinished(page, 1)
   const job = page.getByTestId('job').first()
-  await expect(job).toHaveAttribute('data-status', 'done')
-  await expect(job).toContainText(/parte 1 de \d+/)
+  await expect(job).toHaveAttribute('data-kind', 'done')
+  await expect(job).toContainText(/_parte_01\.pdf/)
   const parts = job.locator('.part')
   const n = await parts.count()
   expect(n).toBeGreaterThan(1)
-  // Cada parte baixada deve caber no limite e ser um PDF válido; as páginas devem somar 12.
   let pagesTotal = 0
   for (let i = 0; i < n; i++) {
     const [download] = await Promise.all([page.waitForEvent('download'), parts.nth(i).getByRole('button', { name: 'Baixar' }).click()])
     const p = (await download.path())!
-    expect(statSync(p).size).toBeLessThanOrEqual(0.25 * MB)
+    expect(statSync(p).size).toBeLessThanOrEqual(0.5 * MB * 0.95)
     pagesTotal += await pageCount(p)
   }
   expect(pagesTotal).toBe(12)
 })
 
-test('processa vários arquivos em fila e oferece o zip', async ({ page }) => {
-  await openApp(page)
-  await page.getByTestId('file-input').setInputFiles([fx.scanBig, fx.text, fx.scanBig])
-  await waitJobs(page, 3)
-  await expect(page.locator('[data-testid="job"][data-status="done"]')).toHaveCount(2)
-  await expect(page.locator('[data-testid="job"][data-status="skipped"]')).toHaveCount(1)
-  const [download] = await Promise.all([page.waitForEvent('download'), page.getByTestId('download-all').click()])
-  expect(download.suggestedFilename()).toBe('pdfs-compactados.zip')
-  const zip = readFileSync((await download.path())!)
-  expect(zip.subarray(0, 2).toString()).toBe('PK')
-  expect(zip.toString('latin1')).toContain('scan_big - compactado (2).pdf')
+test('cancelar interrompe o lote e devolve os arquivos ao estado revisado', async ({ page }) => {
+  await openApp(page, 6)
+  await addAndPrepare(page, [fx.scanHuge, fx.scanBig])
+  await page.getByTestId('start').click()
+  await expect(page.getByTestId('cancel')).toBeVisible()
+  await page.getByTestId('cancel').click()
+  await expect(page.locator('[data-testid="job"][data-kind="processing"]')).toHaveCount(0, { timeout: 30_000 })
+  await expect(page.locator('[data-testid="job"][data-kind="queued"]')).toHaveCount(0)
+  await expect(page.getByTestId('start')).toBeVisible()
+})
+
+test('nenhuma requisição de rede transporta os documentos (RF06)', async ({ page }) => {
+  const requests: { url: string; method: string; hasBody: boolean }[] = []
+  page.on('request', (r) => requests.push({ url: r.url(), method: r.method(), hasBody: r.postData() !== null && r.postData() !== undefined }))
+  await openApp(page, 6)
+  await addAndPrepare(page, [fx.scanBig])
+  await page.getByTestId('start').click()
+  await waitFinished(page, 1)
+  const origin = new URL(page.url()).origin
+  for (const r of requests) {
+    expect(r.method, `método em ${r.url}`).toBe('GET')
+    expect(r.hasBody, `corpo em ${r.url}`).toBe(false)
+    expect(r.url.startsWith(origin) || r.url.startsWith('blob:') || r.url.startsWith('data:'), `origem externa: ${r.url}`).toBe(true)
+    expect(r.url).not.toMatch(/scan_big/)
+  }
+})
+
+test('páginas públicas respondem e apontam para a ferramenta', async ({ page }) => {
+  for (const path of ['/tribunais/', '/guias/', '/metodologia/', '/privacidade/', '/termos/', '/contato/']) {
+    const res = await page.goto(path)
+    expect(res?.status(), path).toBe(200)
+    await expect(page.locator('main h1')).toBeVisible()
+  }
+  await page.goto('/guias/')
+  const links = page.locator('.grid-cards a')
+  expect(await links.count()).toBeGreaterThanOrEqual(8)
 })

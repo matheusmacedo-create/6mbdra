@@ -1,0 +1,51 @@
+---
+import Base from '../../layouts/Base.astro'
+import { REGRAS, agruparPorTribunal, formatLimite, limiteBytes, metaBytes, regrasVigentes } from '../../tool/lib/regras'
+import { formatBytes, formatDate } from '../../tool/lib/format'
+const grupos = agruparPorTribunal(regrasVigentes())
+const contexto = (r: { instancia: string; tipo_peticionamento: string }) =>
+  [r.instancia, r.tipo_peticionamento].filter((x) => x && x !== 'não se aplica' && x !== 'geral').join(', ') || 'geral'
+---
+<Base
+  title="Limites de tamanho de PDF por tribunal e sistema"
+  description="Diretório dos limites por arquivo para anexar PDFs no PJe, eproc, e-SAJ, Projudi e outros sistemas, com fonte oficial e data de verificação."
+  path="/tribunais/"
+>
+  <main class="page prose">
+    <h1>Limites de PDF por tribunal e sistema</h1>
+    <p class="lead">
+      Cada regra abaixo vem de uma fonte oficial (página, manual ou ato do próprio tribunal), com a data em que conferimos. A meta segura é
+      {REGRAS.meta_segura_percentual_padrao}% do limite declarado, para o portal não recusar o arquivo por diferença de contagem (MB vs. MiB).
+    </p>
+    <div class="callout warn">
+      Regras mudam sem aviso. Antes de protocolar, confira o limite na tela de anexar documentos do sistema. Não achou seu tribunal? Use o
+      limite manual na <a href="/">ferramenta</a> e <a href="/contato/">nos avise</a>.
+    </div>
+    {REGRAS.regras.length === 0 && <p>A base de regras ainda está sendo montada. Enquanto isso, informe o limite manualmente na ferramenta.</p>}
+    {[...grupos.entries()].map(([grupo, lista]) => (
+      <section>
+        <h2>{grupo}</h2>
+        <div class="rules-table">
+          <table>
+            <thead>
+              <tr><th>Sistema</th><th>Contexto</th><th>Limite declarado</th><th>Meta segura</th><th>Verificado em</th><th></th></tr>
+            </thead>
+            <tbody>
+              {lista.map((r) => (
+                <tr>
+                  <td>{r.sistema}</td>
+                  <td>{contexto(r)}</td>
+                  <td>{formatLimite(r)} <span class="tag">{formatBytes(limiteBytes(r))}</span></td>
+                  <td>{formatBytes(metaBytes(r))}</td>
+                  <td>{formatDate(r.verificado_em)}{r.situacao === 'em_revisao' ? ' (em revisão)' : ''}</td>
+                  <td><a href={`/tribunais/${r.id}/`}>detalhes</a></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    ))}
+    <p>Base de regras versão {REGRAS.versao}. Veja a <a href="/metodologia/">metodologia de atualização</a>.</p>
+  </main>
+</Base>

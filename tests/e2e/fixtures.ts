@@ -1,6 +1,6 @@
-import { PDFDocument, StandardFonts, rgb, pushGraphicsState, popGraphicsState, concatTransformationMatrix, drawObject } from 'pdf-lib'
+import { PDFDocument, PDFHexString, PDFName, PDFString, StandardFonts, rgb, pushGraphicsState, popGraphicsState, concatTransformationMatrix, drawObject } from 'pdf-lib'
 import { zlibSync } from 'fflate'
-import { mkdirSync, writeFileSync, existsSync } from 'node:fs'
+import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 export const FIXTURE_DIR = join(process.cwd(), 'test-results', 'fixtures')
@@ -72,18 +72,30 @@ export async function makeTextPdf(path: string, pages: number): Promise<void> {
 export interface Fixtures {
   scanBig: string
   scanHuge: string
+  signedBig: string
   text: string
   corrupt: string
+}
+
+/** Cópia do scan grande com um campo de assinatura mínimo (/FT /Sig + /ByteRange). */
+export async function makeSignedCopy(src: string, path: string): Promise<void> {
+  const doc = await PDFDocument.load(readFileSync(src))
+  const sigValue = doc.context.obj({ Type: 'Sig', Filter: 'Adobe.PPKLite', SubFilter: 'adbe.pkcs7.detached', ByteRange: [0, 0, 0, 0], Contents: PDFHexString.of('00') })
+  const field = doc.context.obj({ FT: 'Sig', T: PDFString.of('Assinatura1'), V: doc.context.register(sigValue) })
+  doc.catalog.set(PDFName.of('AcroForm'), doc.context.obj({ Fields: [doc.context.register(field)], SigFlags: 3 }))
+  writeFileSync(path, await doc.save({ useObjectStreams: false }))
 }
 
 export async function ensureFixtures(): Promise<Fixtures> {
   mkdirSync(FIXTURE_DIR, { recursive: true })
   const scanBig = join(FIXTURE_DIR, 'scan_big.pdf')
   const scanHuge = join(FIXTURE_DIR, 'scan_huge.pdf')
+  const signedBig = join(FIXTURE_DIR, 'scan_signed.pdf')
   const text = join(FIXTURE_DIR, 'text.pdf')
   const corrupt = join(FIXTURE_DIR, 'corrupt.pdf')
   if (!existsSync(scanBig)) await makeScanPdf(scanBig, 3)
   if (!existsSync(scanHuge)) await makeScanPdf(scanHuge, 12)
+  if (!existsSync(signedBig)) await makeSignedCopy(scanBig, signedBig)
   if (!existsSync(text)) await makeTextPdf(text, 20)
   if (!existsSync(corrupt)) {
     const junk = new Uint8Array(7 * 1024 * 1024)
@@ -94,5 +106,5 @@ export async function ensureFixtures(): Promise<Fixtures> {
     }
     writeFileSync(corrupt, Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.from(junk)]))
   }
-  return { scanBig, scanHuge, text, corrupt }
+  return { scanBig, scanHuge, signedBig, text, corrupt }
 }

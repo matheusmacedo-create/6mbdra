@@ -1,36 +1,37 @@
 {
   "name": "6mbdra",
   "private": true,
-  "version": "0.1.0",
-  "description": "Compactador de PDFs para o limite de 6 MB dos tribunais brasileiros. Roda 100% no navegador, sem enviar arquivos para nenhum servidor.",
+  "version": "0.2.0",
+  "description": "Preparador de PDFs para peticionamento eletrônico: compacta e divide PDFs no navegador para caberem no limite do tribunal.",
   "type": "module",
   "scripts": {
-    "predev": "node scripts/copy-gs.mjs",
-    "dev": "vite",
-    "prebuild": "node scripts/copy-gs.mjs",
-    "build": "tsc --noEmit && vite build",
-    "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
+    "dev": "astro dev",
+    "build": "npm run validate:rules && astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "typecheck": "astro check",
+    "validate:rules": "node scripts/validate-rules.mjs",
+    "check:sources": "node scripts/check-sources.mjs",
     "test": "vitest run",
-    "pretest:e2e": "node scripts/copy-gs.mjs",
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@astrojs/react": "^6.0.5",
+    "@astrojs/sitemap": "^3.7.4",
     "@jspawn/ghostscript-wasm": "0.0.2",
+    "astro": "^7.3.2",
     "fflate": "^0.8.2",
     "pdf-lib": "^1.17.1",
-    "pdfjs-dist": "^6.3.289",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.6",
     "@playwright/test": "1.56.0",
     "@types/node": "^22.18.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^5.2.0",
     "typescript": "^5.9.2",
-    "vite": "^7.3.6",
-    "vitest": "^3.2.7"
+    "vitest": "^4.1.11"
   }
 }

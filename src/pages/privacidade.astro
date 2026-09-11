@@ -1,0 +1,52 @@
+---
+import Base from '../layouts/Base.astro'
+import { SITE } from '../config/site'
+---
+<Base title="Privacidade e segurança" description="O que acontece com seus PDFs ao usar a ferramenta: nada sai do seu computador. Entenda como o processamento local funciona e o que medimos." path="/privacidade/">
+  <main class="page prose">
+    <h1>Privacidade e segurança</h1>
+    <p class="lead">Documentos jurídicos contêm dados pessoais, financeiros e, muitas vezes, sigilosos. A regra número um deste serviço é: <strong>o conteúdo dos seus documentos não sai do seu dispositivo.</strong></p>
+
+    <h2>Como o processamento local funciona</h2>
+    <ul>
+      <li>A página é um site estático. O motor de compressão (Ghostscript) é baixado uma vez para o seu navegador e executado ali, em WebAssembly, dentro de um Web Worker.</li>
+      <li>Os PDFs que você seleciona são lidos pelo navegador e ficam apenas na memória do seu dispositivo durante o processamento. Não existe upload: nenhuma requisição de rede carrega bytes, nomes de arquivo, hashes ou texto dos documentos.</li>
+      <li>Os arquivos gerados são montados no próprio navegador e baixados de lá. Ao fechar ou recarregar a página, a memória é liberada e nada permanece.</li>
+      <li>Você pode testar: depois que a página terminar de carregar, desconecte a internet e use a ferramenta normalmente.</li>
+    </ul>
+
+    <h2>O que guardamos no seu navegador</h2>
+    <p>
+      Só as suas preferências (tribunal ou limite escolhido, opções de divisão e tons de cinza), em armazenamento local do navegador, para você não
+      precisar configurar de novo. Nada disso identifica você nem seus documentos, e você pode apagar limpando os dados do site.
+    </p>
+
+    <h2>O que medimos</h2>
+    <p>
+      Para saber se a ferramenta funciona e o que melhorar, podemos registrar eventos <strong>agregados e anônimos</strong>: quantidade de lotes
+      iniciados e concluídos, quantidade de arquivos por lote, faixa de tamanho (por exemplo "5–20 MB"), tempo de processamento, categorias
+      genéricas de erro, downloads e qual tribunal/sistema foi escolhido. Esses eventos <strong>nunca</strong> incluem nome de arquivo, conteúdo,
+      número de processo ou texto extraído — o código da ferramenta bloqueia esses campos na origem. No momento, nenhum provedor de
+      medição está ativo.
+    </p>
+
+    <h2>Cookies e terceiros</h2>
+    <p>
+      Não usamos cookies. Se um dia houver publicidade, o código de anúncios ficará isolado do processador de PDFs e não terá acesso aos seus
+      arquivos; esta página será atualizada antes de qualquer ativação.
+    </p>
+
+    <h2>Segurança</h2>
+    <ul>
+      <li>Versões das dependências fixadas e revisadas antes de cada publicação.</li>
+      <li>Política de segurança de conteúdo (CSP) que impede scripts de terceiros e conexões para fora do próprio site.</li>
+      <li>PDFs com senha são recusados (não tentamos remover proteções) e PDFs assinados digitalmente ficam de fora por padrão, com aviso.</li>
+      <li>Código-fonte aberto sob licença AGPL-3.0, para qualquer pessoa auditar o que a ferramenta faz.</li>
+    </ul>
+
+    <h2>Seus direitos</h2>
+    <p>
+      Como não coletamos dados pessoais, não há o que exportar ou apagar do nosso lado. Dúvidas sobre esta política: <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>.
+    </p>
+  </main>
+</Base>

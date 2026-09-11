@@ -1,0 +1,21 @@
+---
+import Base from '../layouts/Base.astro'
+import { SITE } from '../config/site'
+---
+<Base title="Contato" description="Fale com a equipe do site: erros, sugestões e regras de tribunais que faltam ou mudaram." path="/contato/">
+  <main class="page prose">
+    <h1>Contato</h1>
+    <p class="lead">Encontrou um limite errado, uma regra que falta ou um problema na ferramenta? Escreva para a gente.</p>
+    <p><a class="cta" href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a></p>
+    <h2>O que ajuda no e-mail</h2>
+    <ul>
+      <li>Para regras: o tribunal, o sistema e o link da página oficial onde o limite aparece.</li>
+      <li>Para problemas na ferramenta: o navegador, o tamanho aproximado e o número de páginas do PDF, e a mensagem exibida.</li>
+    </ul>
+    <div class="callout warn">
+      <strong>Não envie documentos de processos.</strong> Não precisamos deles e não queremos recebê-los. Se for indispensável reproduzir um problema,
+      use um PDF de teste sem dados pessoais.
+    </div>
+    <p>O código-fonte é aberto: correções e regras também podem ser propostas diretamente no repositório do projeto.</p>
+  </main>
+</Base>

@@ -1,0 +1,37 @@
+---
+import Base from '../layouts/Base.astro'
+import { SITE } from '../config/site'
+---
+<Base title="Termos de uso" description="Condições de uso da ferramenta gratuita de preparação de PDFs para peticionamento eletrônico." path="/termos/">
+  <main class="page prose">
+    <h1>Termos de uso</h1>
+    <p class="lead">Ao usar o {SITE.name}, você concorda com os termos abaixo. Eles são simples porque o serviço também é.</p>
+
+    <h2>1. O que é o serviço</h2>
+    <p>Uma ferramenta gratuita, sem cadastro, que comprime e divide arquivos PDF no seu próprio navegador, além de páginas informativas sobre limites de tamanho em sistemas de peticionamento eletrônico.</p>
+
+    <h2>2. Não somos oficiais</h2>
+    <p>O {SITE.name} é um projeto independente. <strong>Não é vinculado, endossado ou mantido por nenhum tribunal, pelo CNJ, pela OAB ou por qualquer órgão público.</strong> Os nomes de sistemas e tribunais são citados apenas para identificar as regras publicadas por eles.</p>
+
+    <h2>3. As regras podem estar desatualizadas</h2>
+    <p>Fazemos o possível para manter os limites corretos e indicamos a fonte e a data de conferência de cada um, mas os tribunais mudam suas regras sem aviso. A responsabilidade por conferir o limite vigente e o documento final antes do protocolo é sua.</p>
+
+    <h2>4. Conferência dos documentos</h2>
+    <p>Comprimir um PDF reduz a resolução de imagens. Antes de protocolar, abra cada arquivo gerado e confira a legibilidade das páginas, a quantidade de páginas e a ordem das partes. A ferramenta não substitui essa conferência.</p>
+
+    <h2>5. Assinaturas e proteções</h2>
+    <p>Arquivos assinados digitalmente ficam de fora do processamento por padrão; se você optar por processá-los mesmo assim, a assinatura será invalidada e caberá a você assinar novamente. PDFs com senha não são processados.</p>
+
+    <h2>6. Sem garantias</h2>
+    <p>O serviço é fornecido "como está", sem garantia de disponibilidade, de resultado ou de aceitação do arquivo por qualquer sistema. Na medida permitida pela lei, não respondemos por prazos perdidos, arquivos recusados ou danos decorrentes do uso da ferramenta.</p>
+
+    <h2>7. Uso aceitável</h2>
+    <p>Não use o serviço para tentar contornar proteções de documentos de terceiros nem de forma que prejudique o funcionamento do site.</p>
+
+    <h2>8. Software livre</h2>
+    <p>O código do {SITE.name} é distribuído sob a licença AGPL-3.0. O motor de compressão é o Ghostscript (AGPL-3.0, Artifex Software), executado no seu navegador.</p>
+
+    <h2>9. Alterações</h2>
+    <p>Estes termos podem mudar; a versão vigente é sempre a publicada nesta página. Dúvidas: <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>.</p>
+  </main>
+</Base>
