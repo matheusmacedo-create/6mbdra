@@ -1,1 +1,167 @@
-{}
+{
+  "https://www.tjsp.jus.br/download/EPROC/ManuaisPublicoExterno/1-4%20-%20EPROC%20CARTORIOS%20EXTRAJUD%20-%20Prazos%20e%20peticionamento_19-11-2025.pdf": {
+    "hash": "6823b1bfa491df29f91f2d7608d04934437f0450bc3f5dc748b71c98a17964e2",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://www.tjsp.jus.br/PeticionamentoJEC/PeticionamentoJEC/Pedido": {
+    "hash": "8e376f139230b3c0cb830dff0a12b001353b87bc7a6552b5ec724579db45aa99",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://www.tjsc.jus.br/web/processo-eletronico-eproc/perguntas-frequentes": {
+    "hash": "f5185b686945297c28bb3582626eb76abd12bfb2c3314660258f916d376d1ef1",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://www.tjse.jus.br/portal/arquivos/documentos/eproc/manuais/entidades/peticionamento_inicial.pdf": {
+    "hash": "e98ed74013732ed9d09c2eb17abb63bc8eda3a6d96bfc37e8198df8bf198b4c9",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://www.tjmg.jus.br/data/files/EA/26/F3/D9/831D7910D19B8C79B808CCA8/MANUAL%20DA%20UNIDADE%20EXTERNA%20-%20Jul%2025.pdf": {
+    "falhas": 1,
+    "ultima_falha": "2026-09-11 HTTP 403"
+  },
+  "https://wwa.tjto.jus.br/elegis/Home/Imprimir/423": {
+    "falhas": 1,
+    "ultima_falha": "2026-09-11 HTTP 503"
+  },
+  "https://www.trf2.jus.br/jfrj/carta-de-servicos/peticionamento-eletronico": {
+    "hash": "9bd8c4ed7946e0bc8d77cc70358b7b6ad2453ba86f70d6c84c9074bc9414bbda",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://www2.jfrs.jus.br/wp-content/uploads/2020/07/Distribuindo-uma-a%C3%A7%C3%A3o-no-eproc.pdf": {
+    "hash": "506da164aac74abee8350edecb4e556b54c70001a71c8f1dfa130706c7e74ef0",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://www.tjam.jus.br/index.php/e-saj-portal-de-servicos/257-sistemas/e-saj/ajuda-saj/997-faq-peticionamento-eletronico": {
+    "hash": "21d011e0d60f6a7441ea77319cbee7a2d7cf0a95e76b194c07f5f9d38693220f",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://www.tjac.jus.br/servicos/e-saj/tutorial-sobre-o-peticionamento-eletronico/": {
+    "falhas": 1,
+    "ultima_falha": "2026-09-11 timeout"
+  },
+  "https://www.tjrj.jus.br/documents/d/guest/manual_do_usuario-peticao_inicial_eletronica_de_2a_instancia_petinicelet-portal_de_servicos_v_1-7": {
+    "falhas": 1,
+    "ultima_falha": "2026-09-11 HTTP 503"
+  },
+  "https://www.tjrj.jus.br/documents/10136/33017/manual-peticao-eletronica-intercorrente.pdf/87234c72-e8ee-4fe5-8bb0-cba9611ab06f?version=1.8": {
+    "falhas": 1,
+    "ultima_falha": "2026-09-11 HTTP 503"
+  },
+  "https://www.tjmg.jus.br/portal-tjmg/acoes-e-programas/gestao-de-primeira/processo-judicial-eletronico-fluxo-unificado-civel/anexar-arquivosno-pje.htm": {
+    "falhas": 1,
+    "ultima_falha": "2026-09-11 HTTP 403"
+  },
+  "https://www.tjmg.jus.br/portal-tjmg/informes/pje-ampliacao-da-extensao-e-do-tamanho-dos-arquivos.htm": {
+    "falhas": 1,
+    "ultima_falha": "2026-09-11 HTTP 403"
+  },
+  "https://portal.tjpe.jus.br/web/processo-judicial-eletronico/informacoes-auxiliares": {
+    "hash": "cd0dec79925a92b39146daf9238030ba1dd86a68b7c9d32f3cd467971f7e0567",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://www.tjdft.jus.br/informacoes/perguntas-mais-frequentes/processo-judicial-eletronico-pje": {
+    "hash": "ad5dd58c63ef1494df0257cca88fc149594c068e3c713412757fcae108d9551b",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://www.tjes.jus.br/wp-content/uploads/manual-PJe-CIASE.pdf": {
+    "falhas": 1,
+    "ultima_falha": "2026-09-11 HTTP 403"
+  },
+  "https://www.tjma.jus.br/midia/tj/noticia/504128": {
+    "hash": "7bcd3673f2781144b03635bd2589eb82ad6d80bb80e9345dc513ff54434774d7",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://www.tjpa.jus.br/PortalExterno/imprensa/noticias/Homenagens/1740190-pje-tem-capacidade-ampliada-para-upload-de-peticoes-e-midias.xhtml": {
+    "hash": "01bade8aef37fdb6eddae537c7592bd0bbb8904ee619e7475356d5e11fcc45e1",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://portalpje-mc.tjmt.jus.br/ppje-arquivos-prod/cms/Portaria_369_2020_PRES_Aumento_Tamanho_Arquivos_P_Je_cbad7f07ca.pdf": {
+    "hash": "826c3dbf9908cc97d61fb9781199f8669f9cbbfe0cc716d150e4e63f9ccd5b93",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://portal.tjce.jus.br/uploads/2022/01/MELHORIAS-DA-NOVA-VERSAO-PARA-USUARIOS-EXTERNOS-PJE.pdf": {
+    "hash": "38d83327e446616f1bbb49499abda39207e7a0f4ee8767ee9e7b87635b8aa92f",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://www.tjce.jus.br/pje/duvidas-frequentes/": {
+    "hash": "51bb0b3db96d67b50271ff9e2843ed2ff6b381a745838d05f5bf44445f69e35b",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://www.tjro.jus.br/otrs/public.pl?Action=PublicFAQZoom&ItemID=14": {
+    "hash": "3c9083784bd4d649b5b1f0ecdc2df15e5e095523af7b07f1755f14f342f5e393",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://juslaboris.tst.jus.br/bitstream/handle/20.500.12178/196092/2021_atc0048_tst_csjt.pdf?sequence=1&isAllowed=y": {
+    "hash": "49c5f6a44a002db0987ebf22dda594341d4ae459cf8565db760431c1600fd19d",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://trt15.jus.br/pje/peticionamento": {
+    "hash": "1af9864248bbad8b6275c35eba2a94214f32f112d26f894efb9a22ff08de9543",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://www.trt4.jus.br/portais/trt4/modulos/noticias/492460": {
+    "falhas": 1,
+    "ultima_falha": "2026-09-11 HTTP 403"
+  },
+  "https://basis.trt2.jus.br/bitstream/handle/123456789/10432/Port_GPCR_09_17.html?sequence=12&isAllowed=y": {
+    "falhas": 1,
+    "ultima_falha": "2026-09-11 HTTP 403"
+  },
+  "https://www.trf1.jus.br/trf1/pje/perguntas-frequentes": {
+    "hash": "6d9a91fc56f2ca2956af3124d809f297b50553a8fdf9298b3aa4e4b54ad854d2",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://www.trf5.jus.br/index.php/faq": {
+    "hash": "03c6e92931e1fd8d722fbeb33c01752aa0f42e856e448fbb520213f0cd16331f",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://cms.stf.jus.br/post-ouvidoria/peticionamento-eletronico/": {
+    "hash": "03f71ef06ba3b06342882690ac037aaa6ab552002cd806d499c88d32adbe1b45",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://projudi.tjpr.jus.br/projudi/noticias.jsp": {
+    "hash": "03f88ff56ecf9aa39e787a011a94ccf4d1fa9ddf8618cde30bba8e8309c8b921",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://pjd.tjgo.jus.br/manualPJD/indexManual.html": {
+    "hash": "1cd3da362e54dd56a63beb03afbd95cdb6526e6093f3db1b476f152799b94181",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://projudi.tjam.jus.br/projudi/noticias.jsp": {
+    "hash": "85d985b3a096873a02b6ec666d34be8744ff2346961e8e317eebc47b0b289a60",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://www.tjba.jus.br/portal/wp-content/uploads/2017/10/manual_projudi_novoassinador.pdf": {
+    "hash": "75fb808ca49fe8d910ed7c7af05baeec150ba74d49c562fa1a8a199f059494ef",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  },
+  "https://projudi.tjrr.jus.br/projudi/noticias.jsp": {
+    "hash": "03a47412a15d65775d58c788634960cb1c9ba5134b85dc2348f8d5ba793f6238",
+    "verificado_em": "2026-09-11",
+    "falhas": 0
+  }
+}

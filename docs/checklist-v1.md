@@ -30,3 +30,16 @@ Estado em 11/09/2026. "Onde" aponta o código ou o teste que comprova.
 | §15.1 Navegadores: Chrome/Edge/Firefox/Safari | Parcial | Testado só em Chromium headless; Firefox/Safari pendentes de teste manual |
 | §15.3 Piloto com profissionais | Pendente | Depende de pessoas reais |
 | §19 Nome público, domínio, e-mail de contato, ferramenta de analytics | Pendente (decisão do dono) | `src/config/site.mjs` |
+
+## Regras pesquisadas mas não cadastradas (fonte oficial inacessível ou não confirmada)
+
+Pesquisa feita em 10/09/2026 com verificação independente. Ficam fora da base até uma conferência humana:
+
+- **TJRJ · PJe** — indícios de 5 MB por PDF (dicas de sistema do PJe-RJ, 2022); os PDFs do portal não puderam ser baixados (TLS).
+- **TJRS · eproc** — indícios de 11 MB (padrão do eproc); site recusou conexão.
+- **TJRN · PJe** — indícios de 5 MB (Portaria Conjunta 33/2020, feitos criminais); hosts com HTTP 403.
+- **TRF3 · PJe / PEPWEB (JEFs)** — indícios de 10 MB por arquivo e ~250 KB por página; hosts com HTTP 503.
+- **TJMS · e-SAJ** — indícios de 30 MB por arquivo, 300 KB por página, 90 MB por petição; só fonte da OAB/MS.
+- **STJ · e-STJ** — indícios de 30 MB (documento principal) e 100 MB (anexos), total 500 MB; folder oficial devolveu 403.
+- **TSE/TREs · PJe** — Portaria TSE 886/2017 define limites; site bloqueia acesso automatizado.
+- **TRT1 · PJe-JT** — 10 MB (Ato Conjunto 48/2021), coberto pela regra nacional "CSJT"; página própria com HTTP 403.

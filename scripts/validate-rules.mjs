@@ -37,6 +37,7 @@ for (const [i, r] of (data.regras ?? []).entries()) {
   if (!SITUACOES.has(r.situacao)) errors.push(`${where}: situacao inválida`)
   if (!SISTEMAS.has(r.sistema)) errors.push(`${where}: sistema deve ser um de ${[...SISTEMAS].join(', ')}`)
   if (r.fonte_trecho && r.fonte_trecho.length > 600) errors.push(`${where}: fonte_trecho longo demais (máx. 600)`)
+  if (r.trecho_em_imagem !== undefined && typeof r.trecho_em_imagem !== 'boolean') errors.push(`${where}: trecho_em_imagem deve ser booleano`)
 }
 
 if (errors.length) {

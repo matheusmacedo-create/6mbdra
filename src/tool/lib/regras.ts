@@ -20,6 +20,8 @@ export interface Regra {
   fonte_titulo: string
   /** Trecho literal da fonte que declara o limite */
   fonte_trecho?: string
+  /** O trecho está numa imagem da página (o monitor não confere o texto) */
+  trecho_em_imagem?: boolean
   data_fonte?: string
   verificado_em: string
   situacao: Situacao

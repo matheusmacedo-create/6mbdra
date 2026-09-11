@@ -139,9 +139,10 @@
       "fonte_titulo": "Distribuindo uma ação no eproc – Justiça Federal do Rio Grande do Sul (JFRS)",
       "fonte_trecho": "Após, clique em ESCOLHER ARQUIVO. Podem ser juntados arquivos em formato PDF, JPEG, JPG ou PNG, até o limite de 11MB.",
       "verificado_em": "2026-09-10",
-      "situacao": "vigente",
-      "observacoes": "Tutoriais oficiais da JFRS e da JFPR (2020): PDF, JPEG e PNG até 11 MB por arquivo. Uma FAQ antiga do TRF4 (Eproc V2) ainda cita 3 MB; o valor atual aparece na própria tela de anexar do eproc.",
-      "data_fonte": "2020-07-08"
+      "situacao": "em_revisao",
+      "observacoes": "Tutoriais oficiais da JFRS e da JFPR (2020): PDF, JPEG e PNG até 11 MB por arquivo. O portal de tutoriais do eproc TRF4 indica 10 MB por arquivo para advogados, e uma FAQ antiga (Eproc V2) ainda cita 3 MB. Por causa dessa divergência, a meta segura desta regra é 90% (fica abaixo de 10 MB). O valor atual aparece na própria tela de anexar do eproc.",
+      "data_fonte": "2020-07-08",
+      "meta_segura_percentual": 90
     },
     {
       "id": "tjam-esaj",
@@ -408,7 +409,8 @@
       "verificado_em": "2026-09-10",
       "situacao": "vigente",
       "observacoes": "FAQ do atendimento do TJRO (atualizada em 08/09/2025, conteúdo publicado como imagem da tela de configuração): PDF, áudio e vídeo até 50 MB; PNG e HTML 1,5 MB. O passo a passo do peticionamento inteligente confirma \"cada arquivo PDF com tamanho máximo de 50 MB\".",
-      "data_fonte": "2025-09-08"
+      "data_fonte": "2025-09-08",
+      "trecho_em_imagem": true
     },
     {
       "id": "csjt-pje-jt",
@@ -425,7 +427,7 @@
       "fonte_trecho": "Art. 1º Fica definido que o tamanho máximo dos arquivos no PJe será de 10 (dez) megabytes no formato PDF, exceto para arquivos de áudio e vídeo, que deverão ter o tamanho máximo de 200 (duzentos) megabytes.",
       "verificado_em": "2026-09-10",
       "situacao": "vigente",
-      "observacoes": "Ato Conjunto TST.CSJT.GP.SG.SETIC nº 48/2021 (DEJT 09/12/2021), válido em todo o PJe da Justiça do Trabalho: PDF até 10 MB por arquivo; áudio e vídeo (MP3/MP4) até 200 MB. O ato admite dividir PDFs em partes desde que cada uma respeite o limite. Revogou o Ato 89/2017 (3 MB).",
+      "observacoes": "Ato Conjunto TST.CSJT.GP.SG.SETIC nº 48/2021 (DEJT 09/12/2021), válido em todo o PJe da Justiça do Trabalho: PDF até 10 MB por arquivo; áudio e vídeo (MP3/MP4) até 200 MB. O ato admite dividir PDFs em partes desde que cada uma respeite o limite. Em petições iniciais o PDF deve estar no padrão PDF/A (Res. CSJT 185/2017); digitalizações com no máximo 300 dpi, A4 retrato (Res. CSJT 94/2012). Revogou o Ato 89/2017 (3 MB).",
       "data_fonte": "2021-12-09"
     },
     {
@@ -513,7 +515,7 @@
       "fonte_trecho": "17. Qual o formato e o tamanho máximo a serem utilizados para anexar os arquivos ao processo? Poderão ser anexados documentos no formato PDF (Portable Document Format), ou seja, com a extensão *.pdf. O tamanho máximo de cada arquivo é 5 MB (megabyte).",
       "verificado_em": "2026-09-10",
       "situacao": "vigente",
-      "observacoes": "FAQ do PJe do TRF5 (atualizada em 29/11/2024): documentos em PDF com no máximo 5 MB por arquivo. Uma página antiga do ambiente PJe ainda cita 2 MB.",
+      "observacoes": "FAQ do PJe do TRF5 (atualizada em 29/11/2024): documentos em PDF com no máximo 5 MB por arquivo. A Resolução TRF5 nº 10/2016 recomenda digitalizar com pelo menos 100 dpi e manter arquivos de até 2 MB, dividindo e numerando em sequência quando maiores. Uma página antiga do ambiente PJe ainda cita 2 MB.",
       "data_fonte": "2024-11-29"
     },
     {

@@ -43,6 +43,13 @@ import { formatDate } from '../tool/lib/format'
       isso a ferramenta sempre permite informar um limite manual, e recomendamos conferir a tela de anexar documentos do sistema antes de protocolar.
     </p>
 
+    <h2>Tribunais ainda sem regra cadastrada</h2>
+    <p>
+      Alguns tribunais publicam o limite, mas não conseguimos confirmar a fonte oficial na última rodada (sites que bloqueiam acesso automatizado,
+      certificados inválidos ou páginas fora do ar): TJRJ (PJe), TJRS (eproc), TJRN, TRF3, TJMS (e-SAJ), STJ e Justiça Eleitoral. Para eles, informe o
+      limite manualmente conforme a tela de anexar do sistema. A lista completa está no repositório (<code>docs/checklist-v1.md</code>).
+    </p>
+
     <h2>Encontrou um erro ou uma regra que falta?</h2>
     <p>Mande a página oficial pelo nosso <a href="/contato/">contato</a>. Não envie documentos de processos.</p>
     <p><small>Base de regras versão {REGRAS.versao}, com {REGRAS.regras.length} regra(s). Última publicação: {formatDate(REGRAS.versao)}.</small></p>
