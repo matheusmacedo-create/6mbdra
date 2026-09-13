@@ -78,6 +78,8 @@ Para rodar localmente atrás de proxy: `NODE_USE_ENV_PROXY=1 node scripts/check-
 
 ## Deploy
 
+V0 no ar em **https://6mb.6mb-app.workers.dev** (Worker `6mb`, publicado com `npm run deploy`).
+
 Site 100 % estático (`dist/`), publicado como **Cloudflare Worker com arquivos estáticos**
 (`wrangler.jsonc`; plano gratuito compatível com uso comercial; o `gs.wasm` de 16 MB fica abaixo do
 teto de 25 MiB por arquivo). `public/_headers` define cache e cabeçalhos de segurança; a
