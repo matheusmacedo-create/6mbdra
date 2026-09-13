@@ -7,9 +7,12 @@ import { BatchList } from './components/BatchList'
 import { Stepper, type Phase } from './components/Stepper'
 import { formatBytes } from './lib/format'
 import { deviceCapacityWarning, resolveSettings } from './lib/limits'
-import { regraPorId } from './lib/regras'
-import { downloadZip } from './lib/download'
+import { formatLimite, regraPorId, rotuloSistema } from './lib/regras'
+import { downloadZipEntries } from './lib/download'
 import { safeFileName } from './lib/naming'
+import { planZip, type ZipDoc, type ZipExcluded } from './lib/zipPlan'
+import { LEVELS } from './lib/engine/levels'
+import { SITE } from '../config/site.mjs'
 import { track } from './lib/analytics'
 import './tool.css'
 
@@ -39,6 +42,19 @@ function loadSettings(): Settings {
 }
 
 const plural = (n: number, um: string, varios: string) => (n === 1 ? um : varios)
+
+/** Por que um arquivo ficou fora do pacote (texto do LEIA-ME). */
+const EXCLUDED_REASON: Partial<Record<ReturnType<typeof deriveKind>, string>> = {
+  signed: 'assinado digitalmente: nao processado (prepare antes de assinar, ou libere na ferramenta)',
+  restricted: 'com restricoes de edicao: nao processado (libere na ferramenta se nao houver problema)',
+  protected: 'exige senha para abrir: salve uma copia sem senha no programa de origem',
+  invalid: 'nao e um PDF legivel',
+  error: 'nao deu certo (veja o aviso na ferramenta)',
+  ready: 'ainda nao processado',
+  queued: 'ainda nao processado',
+  processing: 'ainda nao processado',
+  analyzing: 'ainda nao processado',
+}
 
 export default function App() {
   const [settings, setSettings] = useState<Settings>(loadSettings)
@@ -124,21 +140,53 @@ export default function App() {
   /** Resultado preparado para outra meta e que não cabe na atual: fica fora do ZIP até reprocessar. */
   const isStale = (j: Job) => isStaleJob(j, process)
   const [zipping, setZipping] = useState(false)
-  /** Tudo que vai no ZIP: resultados prontos + originais mantidos, na ordem do lote. */
+  /**
+   * Pacote completo do lote: um ZIP com pasta raiz, arquivos numerados na ordem do lote,
+   * partes em pasta própria, pastas por petição quando o sistema limita a soma, e LEIA-ME.txt.
+   */
   const collectZip = async () => {
     if (zipping) return
     setZipping(true)
     try {
-      const files: OutputFile[] = []
+      const docs: ZipDoc[] = []
+      const excluded: ZipExcluded[] = []
       for (const j of jobs) {
         const k = deriveKind(j, process)
-        if (isStale(j)) continue
-        if (k === 'done' && j.outputs.length > 0) files.push(...j.outputs)
-        else if (k === 'unchanged' || (k === 'done' && j.outputs.length === 0)) {
-          files.push({ name: safeFileName(j.name), bytes: new Uint8Array(await j.file.arrayBuffer()), size: j.originalSize, kind: 'original' })
+        if (isStale(j)) {
+          excluded.push({ name: j.name, reason: 'preparado para outra meta; reprocesse com a meta atual' })
+          continue
+        }
+        if (k === 'done' && j.outputs.length > 0) {
+          const level = j.level ? LEVELS.find((l) => l.id === j.level) : undefined
+          docs.push({
+            name: j.name,
+            originalSize: j.originalSize,
+            status: j.outputs.length > 1 ? 'split' : 'compressed',
+            files: j.outputs,
+            detail: j.contentUntouched ? 'paginas copiadas sem recompressao' : level ? `compressao ${level.label.toLowerCase()}${level.dpi ? ` (${level.dpi} dpi)` : ''}` : undefined,
+            warnings: j.warnings,
+          })
+        } else if (k === 'unchanged' || (k === 'done' && j.outputs.length === 0)) {
+          const bytes = new Uint8Array(await j.file.arrayBuffer())
+          const file: OutputFile = { name: safeFileName(j.name), bytes, size: j.originalSize, kind: 'original' }
+          docs.push({ name: j.name, originalSize: j.originalSize, status: 'kept', files: [file] })
+        } else {
+          excluded.push({ name: j.name, reason: EXCLUDED_REASON[k] ?? j.error ?? 'nao processado' })
         }
       }
-      if (files.length) downloadZip(files) // o evento 'download' é emitido por downloadZip
+      if (docs.length === 0) return
+      const regra = settings.ruleId ? regraPorId(settings.ruleId) : undefined
+      const plan = planZip({
+        docs,
+        excluded,
+        when: new Date(),
+        tribunal: regra ? { sigla: regra.tribunal_sigla, sistema: rotuloSistema(regra), limite: formatLimite(regra) } : undefined,
+        limitBytes: process.limitBytes,
+        targetBytes: process.targetBytes,
+        petitionBytes: process.totalPetitionBytes,
+        siteUrl: SITE.url,
+      })
+      downloadZipEntries(plan.entries, plan.zipName, plan.fileCount)
     } finally {
       setZipping(false)
     }
@@ -237,7 +285,7 @@ export default function App() {
             )}
             {phase === 'result' && zipCount > 0 && (
               <button className={`btn${counts.stale > 0 ? ' secondary' : ''}`} onClick={collectZip} disabled={zipping} data-testid="download-all">
-                {zipping ? 'Montando o ZIP…' : `Baixar ${zipCount} arquivo${zipCount === 1 ? '' : 's'} (.zip)`}
+                {zipping ? 'Montando o pacote…' : `Baixar tudo em um ZIP (${zipCount} arquivo${zipCount === 1 ? '' : 's'})`}
               </button>
             )}
             {counts.busy === 0 && (
@@ -276,8 +324,10 @@ export default function App() {
           )}
           {phase === 'result' && (
             <p className="hint">
-              Confira cada PDF antes de protocolar. O ZIP inclui os arquivos preparados e os que já cabiam, na ordem do lote
-              {zipExcluded > 0 ? `; ${zipExcluded === 1 ? 'fica de fora o arquivo' : `ficam de fora os ${zipExcluded} arquivos`} com erro, com aviso ou fora da meta atual` : ''}.
+              Confira cada PDF antes de protocolar. O ZIP vem com os arquivos numerados na ordem do lote (01_, 02_…), sem acentos nem espaços,
+              documentos divididos em pasta própria{process.totalPetitionBytes !== undefined ? ', pastas por petição quando a soma passa do permitido' : ''} e um
+              LEIA-ME.txt com o resumo
+              {zipExcluded > 0 ? `; ${zipExcluded === 1 ? 'fica de fora o arquivo' : `ficam de fora os ${zipExcluded} arquivos`} com erro, com aviso ou fora da meta atual (listados no LEIA-ME)` : ''}.
             </p>
           )}
 

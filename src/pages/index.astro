@@ -32,7 +32,7 @@ const guias = (await getCollection('guias')).sort((a, b) => a.data.title.localeC
         <li><strong>Configurar:</strong> escolha o tribunal e o sistema (ou informe o limite em MB). Mostramos o limite declarado, a meta segura, a fonte oficial e a data em que conferimos.</li>
         <li><strong>Revisar o lote:</strong> cada PDF é analisado antes de qualquer alteração: tamanho, páginas, senha, assinatura digital e integridade. Arquivos que já cabem ficam intactos.</li>
         <li><strong>Preparar:</strong> o motor primeiro remove redundâncias; só se precisar reduz a resolução das imagens, aos poucos, até caber. Ao comprimir, texto, fontes, marcadores e a camada de OCR são preservados. Se nem a compressão máxima resolver, o arquivo é dividido em partes por páginas inteiras — nesse caso marcadores, links internos e campos de formulário não acompanham as partes, e a ferramenta avisa.</li>
-        <li><strong>Baixar:</strong> cada arquivo é medido de novo antes de aparecer como pronto. Baixe um a um ou tudo em um ZIP, com nomes previsíveis (<code>contrato_otimizado.pdf</code>, <code>laudo_parte_01.pdf</code>).</li>
+        <li><strong>Baixar:</strong> cada arquivo é medido de novo antes de aparecer como pronto. Baixe um a um (<code>contrato_otimizado.pdf</code>, <code>laudo_parte_01_de_03.pdf</code>) ou tudo em um único ZIP, já organizado: arquivos numerados na ordem do lote, sem acentos nem espaços, partes em pasta própria, pastas por petição quando o sistema limita a soma dos anexos, e um LEIA-ME com o resumo.</li>
       </ol>
       <p>
         Regras cadastradas: {REGRAS.regras.length} (base versão {REGRAS.versao}). Veja o <a href="/tribunais/">diretório de limites por tribunal</a> e a{' '}
@@ -58,7 +58,7 @@ const guias = (await getCollection('guias')).sort((a, b) => a.data.title.localeC
       </details>
       <details>
         <summary>E se mesmo assim não couber?</summary>
-        <p>O arquivo é dividido em partes numeradas (parte_01, parte_02…), cada uma dentro da meta, sem cortar páginas. Você protocola cada parte como um documento.</p>
+        <p>O arquivo é dividido em partes numeradas (parte_01_de_03, parte_02_de_03…), cada uma dentro da meta, sem cortar páginas. Você protocola cada parte como um documento.</p>
       </details>
       <details>
         <summary>Por que a ferramenta recusa PDFs com senha e avisa sobre assinados?</summary>

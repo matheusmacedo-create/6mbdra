@@ -14,14 +14,14 @@ Estado em 11/09/2026, após revisão adversarial (corretude, privacidade, regras
 | RF08 Dividir por páginas respeitando a meta e a ordem | Feito | `split.ts` (orçamento por parte segue limite por página e condicional), `pipeline.ts`; e2e "divide em partes"; unit `split.test.ts` |
 | RF09 Preservar texto existente; senão, dividir | Feito | Ghostscript pdfwrite preserva texto; sem rasterização; divisão do original quando a compressão não ajuda ou não preserva páginas; aviso quando marcadores/formulários não acompanham as partes |
 | RF10 Resultado por arquivo (antes, depois, partes, situação) | Feito | `JobRow`; progresso por passe (páginas) e do lote (arquivos enfileirados); região de status única para leitores de tela |
-| RF11 ZIP local só com resultados aprovados e nomes únicos | Feito | `download.ts`, `uniqueNames`; ZIP inclui os que já cabiam |
+| RF11 ZIP local só com resultados aprovados e nomes únicos | Feito | `zipPlan.ts`: pasta raiz, numeração na ordem do lote, partes em pasta, pastas por petição, LEIA-ME; unit `zipPlan.test.ts`, e2e |
 | RF12 Cancelamento com liberação de memória | Feito | `cancel()` aborta e encerra os workers (Ghostscript e pdf-lib); watchdog de inatividade; e2e "cancelar interrompe o lote" |
 | RF13 Reprocessar um item | Feito | botão "Tentar de novo" (`retry`) |
 | RF14 Responsivo + aviso de capacidade | Feito | CSS mobile (e2e em 390 px sem rolagem horizontal); `deviceCapacityWarning` (deviceMemory, celular/tablet por UA e toque); contraste revisado no modo escuro |
 | RF15 Regras versionadas validadas no build | Feito | `scripts/validate-rules.mjs` em `npm run build` |
 | RF16 Medição sem dados de documentos | Feito (sem provedor ativo) | `analytics.ts` bloqueia chaves de nome/conteúdo/hash e mantém contagens; eventos: lote, resultado, download (todos os botões), regra (inclusive via ?regra=), erro |
 | §6.1 Páginas públicas (início, diretório, página por regra, guias, metodologia, privacidade, termos, contato) | Feito | `src/pages/**`, 8 guias em `src/content/guias` |
-| §8.2 Nomes `_otimizado` / `_parte_01` | Feito | `naming.ts` |
+| §8.2 Nomes `_otimizado` / `_parte_01` | Feito | `naming.ts` (`_parte_01_de_03`; nomes sem acento/espaço; numeração `NN_` no ZIP) |
 | §8.3 Assinados excluídos por padrão; com senha recusados | Feito | `deriveKind`: senha de abertura recusada; só restrições de edição (abre sem senha) fica fora por padrão e o usuário pode liberar, avisado de que o resultado sai sem as restrições; nunca tentamos senha alguma |
 | §8.4 Prova técnica do motor e licença | Feito | `docs/decisoes-tecnicas.md` |
 | §9.1 Monitor semanal das fontes | Feito | `scripts/check-sources.mjs` (trecho normalizado + hash de vizinhança, paralelo, assinatura) e `rules-monitor.yml` (comita o lock, issue com label, sem repetição, registra quando estabiliza; fechamento é humano) |

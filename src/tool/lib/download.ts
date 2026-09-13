@@ -1,5 +1,6 @@
 import type { OutputFile } from './types'
-import { buildZip } from './zip'
+import { buildZip, buildZipEntries } from './zip'
+import type { ZipEntry } from './zipPlan'
 import { track } from './analytics'
 
 function triggerDownload(blob: Blob, name: string) {
@@ -24,4 +25,11 @@ export function downloadZip(files: OutputFile[], zipName = 'pdfs-preparados.zip'
   const zip = buildZip(files)
   triggerDownload(new Blob([zip as BlobPart], { type: 'application/zip' }), zipName)
   track('download', { tipo, quantidade: files.length })
+}
+
+/** ZIP com estrutura de pastas (pacote completo do lote). */
+export function downloadZipEntries(entries: ZipEntry[], zipName: string, quantidade: number) {
+  const zip = buildZipEntries(entries)
+  triggerDownload(new Blob([zip as BlobPart], { type: 'application/zip' }), zipName)
+  track('download', { tipo: 'zip', quantidade })
 }

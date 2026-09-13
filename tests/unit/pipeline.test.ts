@@ -91,7 +91,7 @@ describe('processPdf', () => {
     const r = await processPdf(new Uint8Array(40 * MB), 'grande.pdf', settings, deps(eng))
     expect(r.status).toBe('done')
     expect(r.outputs.length).toBeGreaterThan(1)
-    expect(r.outputs[0].name).toBe('grande_parte_01.pdf')
+    expect(r.outputs[0].name).toBe('grande_parte_01_de_04.pdf')
     expect(r.outputs[0].kind).toBe('part')
     expect(r.contentUntouched).toBe(false)
     expect(r.warnings.join(' ')).toMatch(/dividido/i)

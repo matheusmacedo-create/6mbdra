@@ -21,7 +21,9 @@ Implementa a V1 descrita em `Especificação do Aplicativo de Preparação de PD
    1 bit ficam em CCITT G4. A saída é verificada (PDF válido, mesmo número de páginas). Se nem o
    nível máximo couber — ou a compressão não ajudar —, o arquivo é dividido por páginas inteiras.
 4. **Baixar** — um a um ou tudo em ZIP (inclui os que já cabiam), com nomes previsíveis:
-   `contrato_otimizado.pdf`, `laudo_parte_01.pdf`.
+   `contrato_otimizado.pdf`, `laudo_parte_01_de_03.pdf`. O ZIP do lote (`zipPlan.ts`) vem com pasta raiz, arquivos
+   numerados na ordem (`01_`, `02_`…), sem acentos, partes em pasta própria, pastas `peticao_NN` quando o sistema
+   limita a soma dos anexos por petição, e `LEIA-ME.txt`.
 
 Detalhes e números da prova técnica: [`docs/decisoes-tecnicas.md`](docs/decisoes-tecnicas.md).
 
