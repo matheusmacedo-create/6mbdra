@@ -1,10 +1,11 @@
 ---
 import Base from '../layouts/Base.astro'
 import App from '../tool/App'
-import { REGRAS, limiteBytes, regrasVigentes } from '../tool/lib/regras'
+import { REGRAS, TRIBUNAIS, limiteBytes, regrasVigentes, tribunaisCobertos } from '../tool/lib/regras'
 import { formatBytes } from '../tool/lib/format'
 import { getCollection } from 'astro:content'
 const limites = regrasVigentes().map(limiteBytes)
+const cobertos = tribunaisCobertos().length
 const limiteMin = limites.length ? Math.min(...limites) : 1_000_000
 const limiteMax = limites.length ? Math.max(...limites) : 50_000_000
 const guias = (await getCollection('guias')).sort((a, b) => a.data.title.localeCompare(b.data.title, 'pt-BR')).slice(0, 4)
@@ -66,7 +67,7 @@ const guias = (await getCollection('guias')).sort((a, b) => a.data.title.localeC
       </details>
       <details>
         <summary>Qual é o limite do meu tribunal?</summary>
-        <p>Varia bastante por tribunal, sistema, instância e tipo de petição: na nossa base há limites de {formatBytes(limiteMin)} a {formatBytes(limiteMax)} por arquivo. Consulte o <a href="/tribunais/">diretório</a> ou a tela de anexar documentos do sistema e, se não achar, informe o limite manualmente.</p>
+        <p>Varia bastante por tribunal, sistema, instância e tipo de petição: na nossa base há limites de {formatBytes(limiteMin)} a {formatBytes(limiteMax)} por arquivo, com regra cadastrada para {cobertos} dos {TRIBUNAIS.length} tribunais do país. Consulte o <a href="/tribunais/">diretório</a> ou a tela de anexar documentos do sistema e, se não achar, informe o limite manualmente.</p>
       </details>
     </section>
 

@@ -5,7 +5,7 @@ Estado em 11/09/2026, após revisão adversarial (corretude, privacidade, regras
 | Requisito | Situação | Onde |
 |---|---|---|
 | RF01 Selecionar vários PDFs no mesmo lote | Feito | `DropZone` (múltiplos, pastas); e2e "processa vários arquivos" |
-| RF02 Escolher tribunal e sistema (limite, fonte, verificação) | Feito | `RuleSelector`, `src/data/regras.json` (34 regras; limites por página/petição, condicionais e PDF/A quando a fonte informa) |
+| RF02 Escolher tribunal e sistema (limite, fonte, verificação) | Feito | `RuleSelector` agrupado por ramo; `src/data/regras.json` (limites por página/petição, condicionais, PDF/A, regras nacionais com `abrange`); `src/data/tribunais.json` com os 92 tribunais e contador de cobertura |
 | RF03 Limite personalizado | Feito | `RuleSelector` (campo MB), `resolveSettings` |
 | RF04 Meta segura (95 %) | Feito | `metaBytes`, `targetForLimit`, `targetFor` (por arquivo, considerando páginas); único percentual no arquivo de regras |
 | RF05 Análise preliminar (assinado, protegido, inválido) antes de alterar | Feito | `analyze.ts` + `pdfCrypt.ts` (distingue senha de abertura de restrições de edição com senha de usuário vazia), `deriveKind`; e2e "PDF assinado", "arquivo corrompido", "PDF só com restrições" |
