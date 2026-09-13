@@ -1,0 +1,549 @@
+[
+  {
+    "sigla": "STF",
+    "nome": "Supremo Tribunal Federal",
+    "ramo": "superior"
+  },
+  {
+    "sigla": "STJ",
+    "nome": "Superior Tribunal de Justiça",
+    "ramo": "superior"
+  },
+  {
+    "sigla": "TST",
+    "nome": "Tribunal Superior do Trabalho",
+    "ramo": "superior"
+  },
+  {
+    "sigla": "TSE",
+    "nome": "Tribunal Superior Eleitoral",
+    "ramo": "superior"
+  },
+  {
+    "sigla": "STM",
+    "nome": "Superior Tribunal Militar",
+    "ramo": "superior"
+  },
+  {
+    "sigla": "TJAC",
+    "nome": "Tribunal de Justiça do Estado do Acre",
+    "ramo": "estadual",
+    "uf": "AC"
+  },
+  {
+    "sigla": "TJAL",
+    "nome": "Tribunal de Justiça do Estado de Alagoas",
+    "ramo": "estadual",
+    "uf": "AL"
+  },
+  {
+    "sigla": "TJAM",
+    "nome": "Tribunal de Justiça do Estado do Amazonas",
+    "ramo": "estadual",
+    "uf": "AM"
+  },
+  {
+    "sigla": "TJAP",
+    "nome": "Tribunal de Justiça do Estado do Amapá",
+    "ramo": "estadual",
+    "uf": "AP"
+  },
+  {
+    "sigla": "TJBA",
+    "nome": "Tribunal de Justiça do Estado da Bahia",
+    "ramo": "estadual",
+    "uf": "BA"
+  },
+  {
+    "sigla": "TJCE",
+    "nome": "Tribunal de Justiça do Estado do Ceará",
+    "ramo": "estadual",
+    "uf": "CE"
+  },
+  {
+    "sigla": "TJDFT",
+    "nome": "Tribunal de Justiça do Distrito Federal e dos Territórios",
+    "ramo": "estadual",
+    "uf": "DF"
+  },
+  {
+    "sigla": "TJES",
+    "nome": "Tribunal de Justiça do Estado do Espírito Santo",
+    "ramo": "estadual",
+    "uf": "ES"
+  },
+  {
+    "sigla": "TJGO",
+    "nome": "Tribunal de Justiça do Estado de Goiás",
+    "ramo": "estadual",
+    "uf": "GO"
+  },
+  {
+    "sigla": "TJMA",
+    "nome": "Tribunal de Justiça do Estado do Maranhão",
+    "ramo": "estadual",
+    "uf": "MA"
+  },
+  {
+    "sigla": "TJMG",
+    "nome": "Tribunal de Justiça do Estado de Minas Gerais",
+    "ramo": "estadual",
+    "uf": "MG"
+  },
+  {
+    "sigla": "TJMS",
+    "nome": "Tribunal de Justiça do Estado de Mato Grosso do Sul",
+    "ramo": "estadual",
+    "uf": "MS"
+  },
+  {
+    "sigla": "TJMT",
+    "nome": "Tribunal de Justiça do Estado de Mato Grosso",
+    "ramo": "estadual",
+    "uf": "MT"
+  },
+  {
+    "sigla": "TJPA",
+    "nome": "Tribunal de Justiça do Estado do Pará",
+    "ramo": "estadual",
+    "uf": "PA"
+  },
+  {
+    "sigla": "TJPB",
+    "nome": "Tribunal de Justiça do Estado da Paraíba",
+    "ramo": "estadual",
+    "uf": "PB"
+  },
+  {
+    "sigla": "TJPE",
+    "nome": "Tribunal de Justiça do Estado de Pernambuco",
+    "ramo": "estadual",
+    "uf": "PE"
+  },
+  {
+    "sigla": "TJPI",
+    "nome": "Tribunal de Justiça do Estado do Piauí",
+    "ramo": "estadual",
+    "uf": "PI"
+  },
+  {
+    "sigla": "TJPR",
+    "nome": "Tribunal de Justiça do Estado do Paraná",
+    "ramo": "estadual",
+    "uf": "PR"
+  },
+  {
+    "sigla": "TJRJ",
+    "nome": "Tribunal de Justiça do Estado do Rio de Janeiro",
+    "ramo": "estadual",
+    "uf": "RJ"
+  },
+  {
+    "sigla": "TJRN",
+    "nome": "Tribunal de Justiça do Estado do Rio Grande do Norte",
+    "ramo": "estadual",
+    "uf": "RN"
+  },
+  {
+    "sigla": "TJRO",
+    "nome": "Tribunal de Justiça do Estado de Rondônia",
+    "ramo": "estadual",
+    "uf": "RO"
+  },
+  {
+    "sigla": "TJRR",
+    "nome": "Tribunal de Justiça do Estado de Roraima",
+    "ramo": "estadual",
+    "uf": "RR"
+  },
+  {
+    "sigla": "TJRS",
+    "nome": "Tribunal de Justiça do Estado do Rio Grande do Sul",
+    "ramo": "estadual",
+    "uf": "RS"
+  },
+  {
+    "sigla": "TJSC",
+    "nome": "Tribunal de Justiça do Estado de Santa Catarina",
+    "ramo": "estadual",
+    "uf": "SC"
+  },
+  {
+    "sigla": "TJSE",
+    "nome": "Tribunal de Justiça do Estado de Sergipe",
+    "ramo": "estadual",
+    "uf": "SE"
+  },
+  {
+    "sigla": "TJSP",
+    "nome": "Tribunal de Justiça do Estado de São Paulo",
+    "ramo": "estadual",
+    "uf": "SP"
+  },
+  {
+    "sigla": "TJTO",
+    "nome": "Tribunal de Justiça do Estado do Tocantins",
+    "ramo": "estadual",
+    "uf": "TO"
+  },
+  {
+    "sigla": "TRF1",
+    "nome": "Tribunal Regional Federal da 1ª Região (AC, AM, AP, BA, DF, GO, MA, MT, PA, PI, RO, RR e TO)",
+    "ramo": "federal",
+    "abrangencia": "AC, AM, AP, BA, DF, GO, MA, MT, PA, PI, RO, RR e TO"
+  },
+  {
+    "sigla": "TRF2",
+    "nome": "Tribunal Regional Federal da 2ª Região (RJ e ES)",
+    "ramo": "federal",
+    "abrangencia": "RJ e ES"
+  },
+  {
+    "sigla": "TRF3",
+    "nome": "Tribunal Regional Federal da 3ª Região (SP e MS)",
+    "ramo": "federal",
+    "abrangencia": "SP e MS"
+  },
+  {
+    "sigla": "TRF4",
+    "nome": "Tribunal Regional Federal da 4ª Região (RS, SC e PR)",
+    "ramo": "federal",
+    "abrangencia": "RS, SC e PR"
+  },
+  {
+    "sigla": "TRF5",
+    "nome": "Tribunal Regional Federal da 5ª Região (PE, CE, AL, SE, RN e PB)",
+    "ramo": "federal",
+    "abrangencia": "PE, CE, AL, SE, RN e PB"
+  },
+  {
+    "sigla": "TRF6",
+    "nome": "Tribunal Regional Federal da 6ª Região (MG)",
+    "ramo": "federal",
+    "abrangencia": "MG"
+  },
+  {
+    "sigla": "TRT1",
+    "nome": "Tribunal Regional do Trabalho da 1ª Região (RJ)",
+    "ramo": "trabalho",
+    "abrangencia": "RJ"
+  },
+  {
+    "sigla": "TRT2",
+    "nome": "Tribunal Regional do Trabalho da 2ª Região (SP (Grande São Paulo e Baixada Santista))",
+    "ramo": "trabalho",
+    "abrangencia": "SP (Grande São Paulo e Baixada Santista)"
+  },
+  {
+    "sigla": "TRT3",
+    "nome": "Tribunal Regional do Trabalho da 3ª Região (MG)",
+    "ramo": "trabalho",
+    "abrangencia": "MG"
+  },
+  {
+    "sigla": "TRT4",
+    "nome": "Tribunal Regional do Trabalho da 4ª Região (RS)",
+    "ramo": "trabalho",
+    "abrangencia": "RS"
+  },
+  {
+    "sigla": "TRT5",
+    "nome": "Tribunal Regional do Trabalho da 5ª Região (BA)",
+    "ramo": "trabalho",
+    "abrangencia": "BA"
+  },
+  {
+    "sigla": "TRT6",
+    "nome": "Tribunal Regional do Trabalho da 6ª Região (PE)",
+    "ramo": "trabalho",
+    "abrangencia": "PE"
+  },
+  {
+    "sigla": "TRT7",
+    "nome": "Tribunal Regional do Trabalho da 7ª Região (CE)",
+    "ramo": "trabalho",
+    "abrangencia": "CE"
+  },
+  {
+    "sigla": "TRT8",
+    "nome": "Tribunal Regional do Trabalho da 8ª Região (PA e AP)",
+    "ramo": "trabalho",
+    "abrangencia": "PA e AP"
+  },
+  {
+    "sigla": "TRT9",
+    "nome": "Tribunal Regional do Trabalho da 9ª Região (PR)",
+    "ramo": "trabalho",
+    "abrangencia": "PR"
+  },
+  {
+    "sigla": "TRT10",
+    "nome": "Tribunal Regional do Trabalho da 10ª Região (DF e TO)",
+    "ramo": "trabalho",
+    "abrangencia": "DF e TO"
+  },
+  {
+    "sigla": "TRT11",
+    "nome": "Tribunal Regional do Trabalho da 11ª Região (AM e RR)",
+    "ramo": "trabalho",
+    "abrangencia": "AM e RR"
+  },
+  {
+    "sigla": "TRT12",
+    "nome": "Tribunal Regional do Trabalho da 12ª Região (SC)",
+    "ramo": "trabalho",
+    "abrangencia": "SC"
+  },
+  {
+    "sigla": "TRT13",
+    "nome": "Tribunal Regional do Trabalho da 13ª Região (PB)",
+    "ramo": "trabalho",
+    "abrangencia": "PB"
+  },
+  {
+    "sigla": "TRT14",
+    "nome": "Tribunal Regional do Trabalho da 14ª Região (RO e AC)",
+    "ramo": "trabalho",
+    "abrangencia": "RO e AC"
+  },
+  {
+    "sigla": "TRT15",
+    "nome": "Tribunal Regional do Trabalho da 15ª Região (SP (Campinas e interior))",
+    "ramo": "trabalho",
+    "abrangencia": "SP (Campinas e interior)"
+  },
+  {
+    "sigla": "TRT16",
+    "nome": "Tribunal Regional do Trabalho da 16ª Região (MA)",
+    "ramo": "trabalho",
+    "abrangencia": "MA"
+  },
+  {
+    "sigla": "TRT17",
+    "nome": "Tribunal Regional do Trabalho da 17ª Região (ES)",
+    "ramo": "trabalho",
+    "abrangencia": "ES"
+  },
+  {
+    "sigla": "TRT18",
+    "nome": "Tribunal Regional do Trabalho da 18ª Região (GO)",
+    "ramo": "trabalho",
+    "abrangencia": "GO"
+  },
+  {
+    "sigla": "TRT19",
+    "nome": "Tribunal Regional do Trabalho da 19ª Região (AL)",
+    "ramo": "trabalho",
+    "abrangencia": "AL"
+  },
+  {
+    "sigla": "TRT20",
+    "nome": "Tribunal Regional do Trabalho da 20ª Região (SE)",
+    "ramo": "trabalho",
+    "abrangencia": "SE"
+  },
+  {
+    "sigla": "TRT21",
+    "nome": "Tribunal Regional do Trabalho da 21ª Região (RN)",
+    "ramo": "trabalho",
+    "abrangencia": "RN"
+  },
+  {
+    "sigla": "TRT22",
+    "nome": "Tribunal Regional do Trabalho da 22ª Região (PI)",
+    "ramo": "trabalho",
+    "abrangencia": "PI"
+  },
+  {
+    "sigla": "TRT23",
+    "nome": "Tribunal Regional do Trabalho da 23ª Região (MT)",
+    "ramo": "trabalho",
+    "abrangencia": "MT"
+  },
+  {
+    "sigla": "TRT24",
+    "nome": "Tribunal Regional do Trabalho da 24ª Região (MS)",
+    "ramo": "trabalho",
+    "abrangencia": "MS"
+  },
+  {
+    "sigla": "TRE-AC",
+    "nome": "Tribunal Regional Eleitoral do Acre",
+    "ramo": "eleitoral",
+    "uf": "AC"
+  },
+  {
+    "sigla": "TRE-AL",
+    "nome": "Tribunal Regional Eleitoral de Alagoas",
+    "ramo": "eleitoral",
+    "uf": "AL"
+  },
+  {
+    "sigla": "TRE-AM",
+    "nome": "Tribunal Regional Eleitoral do Amazonas",
+    "ramo": "eleitoral",
+    "uf": "AM"
+  },
+  {
+    "sigla": "TRE-AP",
+    "nome": "Tribunal Regional Eleitoral do Amapá",
+    "ramo": "eleitoral",
+    "uf": "AP"
+  },
+  {
+    "sigla": "TRE-BA",
+    "nome": "Tribunal Regional Eleitoral da Bahia",
+    "ramo": "eleitoral",
+    "uf": "BA"
+  },
+  {
+    "sigla": "TRE-CE",
+    "nome": "Tribunal Regional Eleitoral do Ceará",
+    "ramo": "eleitoral",
+    "uf": "CE"
+  },
+  {
+    "sigla": "TRE-DF",
+    "nome": "Tribunal Regional Eleitoral do Distrito Federal",
+    "ramo": "eleitoral",
+    "uf": "DF"
+  },
+  {
+    "sigla": "TRE-ES",
+    "nome": "Tribunal Regional Eleitoral do Espírito Santo",
+    "ramo": "eleitoral",
+    "uf": "ES"
+  },
+  {
+    "sigla": "TRE-GO",
+    "nome": "Tribunal Regional Eleitoral de Goiás",
+    "ramo": "eleitoral",
+    "uf": "GO"
+  },
+  {
+    "sigla": "TRE-MA",
+    "nome": "Tribunal Regional Eleitoral do Maranhão",
+    "ramo": "eleitoral",
+    "uf": "MA"
+  },
+  {
+    "sigla": "TRE-MG",
+    "nome": "Tribunal Regional Eleitoral de Minas Gerais",
+    "ramo": "eleitoral",
+    "uf": "MG"
+  },
+  {
+    "sigla": "TRE-MS",
+    "nome": "Tribunal Regional Eleitoral de Mato Grosso do Sul",
+    "ramo": "eleitoral",
+    "uf": "MS"
+  },
+  {
+    "sigla": "TRE-MT",
+    "nome": "Tribunal Regional Eleitoral de Mato Grosso",
+    "ramo": "eleitoral",
+    "uf": "MT"
+  },
+  {
+    "sigla": "TRE-PA",
+    "nome": "Tribunal Regional Eleitoral do Pará",
+    "ramo": "eleitoral",
+    "uf": "PA"
+  },
+  {
+    "sigla": "TRE-PB",
+    "nome": "Tribunal Regional Eleitoral da Paraíba",
+    "ramo": "eleitoral",
+    "uf": "PB"
+  },
+  {
+    "sigla": "TRE-PE",
+    "nome": "Tribunal Regional Eleitoral de Pernambuco",
+    "ramo": "eleitoral",
+    "uf": "PE"
+  },
+  {
+    "sigla": "TRE-PI",
+    "nome": "Tribunal Regional Eleitoral do Piauí",
+    "ramo": "eleitoral",
+    "uf": "PI"
+  },
+  {
+    "sigla": "TRE-PR",
+    "nome": "Tribunal Regional Eleitoral do Paraná",
+    "ramo": "eleitoral",
+    "uf": "PR"
+  },
+  {
+    "sigla": "TRE-RJ",
+    "nome": "Tribunal Regional Eleitoral do Rio de Janeiro",
+    "ramo": "eleitoral",
+    "uf": "RJ"
+  },
+  {
+    "sigla": "TRE-RN",
+    "nome": "Tribunal Regional Eleitoral do Rio Grande do Norte",
+    "ramo": "eleitoral",
+    "uf": "RN"
+  },
+  {
+    "sigla": "TRE-RO",
+    "nome": "Tribunal Regional Eleitoral de Rondônia",
+    "ramo": "eleitoral",
+    "uf": "RO"
+  },
+  {
+    "sigla": "TRE-RR",
+    "nome": "Tribunal Regional Eleitoral de Roraima",
+    "ramo": "eleitoral",
+    "uf": "RR"
+  },
+  {
+    "sigla": "TRE-RS",
+    "nome": "Tribunal Regional Eleitoral do Rio Grande do Sul",
+    "ramo": "eleitoral",
+    "uf": "RS"
+  },
+  {
+    "sigla": "TRE-SC",
+    "nome": "Tribunal Regional Eleitoral de Santa Catarina",
+    "ramo": "eleitoral",
+    "uf": "SC"
+  },
+  {
+    "sigla": "TRE-SE",
+    "nome": "Tribunal Regional Eleitoral de Sergipe",
+    "ramo": "eleitoral",
+    "uf": "SE"
+  },
+  {
+    "sigla": "TRE-SP",
+    "nome": "Tribunal Regional Eleitoral de São Paulo",
+    "ramo": "eleitoral",
+    "uf": "SP"
+  },
+  {
+    "sigla": "TRE-TO",
+    "nome": "Tribunal Regional Eleitoral do Tocantins",
+    "ramo": "eleitoral",
+    "uf": "TO"
+  },
+  {
+    "sigla": "TJMSP",
+    "nome": "Tribunal de Justiça Militar do Estado de São Paulo",
+    "ramo": "militar",
+    "uf": "SP"
+  },
+  {
+    "sigla": "TJMMG",
+    "nome": "Tribunal de Justiça Militar do Estado de Minas Gerais",
+    "ramo": "militar",
+    "uf": "MG"
+  },
+  {
+    "sigla": "TJMRS",
+    "nome": "Tribunal de Justiça Militar do Estado do Rio Grande do Sul",
+    "ramo": "militar",
+    "uf": "RS"
+  }
+]

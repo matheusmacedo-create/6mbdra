@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { execFileSync } from 'node:child_process'
-import { REGRAS, limiteBytes, metaBytes, regrasVigentes, rotuloRegra, rotuloContexto, tituloRegra, type Regra } from '../../src/tool/lib/regras'
+import { REGRAS, TRIBUNAIS, idPagina, limiteBytes, metaBytes, opcoesPorRamo, paginasDeRegras, regrasDoTribunal, regrasVigentes, rotuloRegra, rotuloContexto, tituloRegra, tribunaisCobertos, type Regra } from '../../src/tool/lib/regras'
 import { resolveSettings, targetForLimit } from '../../src/tool/lib/limits'
 import { DEFAULT_SETTINGS, deriveKind, targetFor, isStale, type Job, type ProcessSettings } from '../../src/tool/lib/types'
 import { track } from '../../src/tool/lib/analytics'
@@ -75,5 +75,26 @@ describe('regras', () => {
     expect(s.targetBytes).toBe(5_700_000)
     const unknown = resolveSettings({ ...DEFAULT_SETTINGS, ruleId: 'nao-existe', customMb: 10 })
     expect(unknown.limitBytes).toBe(10_000_000)
+  })
+})
+
+describe('cobertura por tribunal (regras nacionais herdadas)', () => {
+  it('lista os 92 tribunais e aplica a regra nacional do PJe-JT a cada TRT', () => {
+    expect(TRIBUNAIS).toHaveLength(92)
+    const trt2 = regrasDoTribunal('TRT2')
+    expect(trt2.length).toBeGreaterThan(0)
+    expect(trt2[0].herdada).toBe(true)
+    expect(trt2[0].regra.id).toBe('csjt-pje-jt')
+    expect(idPagina(trt2[0])).toBe('trt2-pje-jt')
+    // TRT4 tem regra própria do mesmo sistema: a nacional não é repetida
+    const trt4 = regrasDoTribunal('TRT4')
+    expect(trt4.map((x) => x.regra.id)).toEqual(['trt4-pje-jt'])
+    expect(tribunaisCobertos().length).toBeGreaterThanOrEqual(50)
+  })
+  it('agrupa as opções por ramo e gera páginas sem ids repetidos', () => {
+    const grupos = opcoesPorRamo()
+    expect(grupos.get('trabalho')!.filter((o) => o.tribunal.sigla.startsWith('TRT')).length).toBe(24)
+    const ids = paginasDeRegras().map(idPagina)
+    expect(new Set(ids).size).toBe(ids.length)
   })
 })

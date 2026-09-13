@@ -4,8 +4,8 @@
   "regras": [
     {
       "id": "csjt-pje-jt",
-      "tribunal_sigla": "TRTs/TST",
-      "tribunal_nome": "Justiça do Trabalho — PJe-JT em todos os TRTs (1ª a 24ª Região) e no TST",
+      "tribunal_sigla": "TST",
+      "tribunal_nome": "Tribunal Superior do Trabalho / CSJT — regra nacional do PJe-JT, válida em todos os TRTs",
       "sistema": "PJe-JT",
       "instancia": "ambos",
       "tipo_peticionamento": "geral",
@@ -19,7 +19,33 @@
       "situacao": "vigente",
       "observacoes": "Regra nacional (Ato Conjunto TST.CSJT.GP.SG.SETIC nº 48/2021, DEJT 09/12/2021), válida no PJe de qualquer TRT e do TST: PDF até 10 MB por arquivo; áudio e vídeo (MP3/MP4) até 200 MB. O ato admite dividir PDFs em partes desde que cada uma respeite o limite. Em petições iniciais o PDF deve estar no padrão PDF/A (Res. CSJT 185/2017); digitalizações com no máximo 300 dpi, A4 retrato (Res. CSJT 94/2012). Revogou o Ato 89/2017 (3 MB). Use esta regra para TRT1, TRT3, TRT5 e demais regiões sem entrada própria.",
       "data_fonte": "2021-12-09",
-      "exige_pdfa": true
+      "exige_pdfa": true,
+      "abrange": [
+        "TRT1",
+        "TRT2",
+        "TRT3",
+        "TRT4",
+        "TRT5",
+        "TRT6",
+        "TRT7",
+        "TRT8",
+        "TRT9",
+        "TRT10",
+        "TRT11",
+        "TRT12",
+        "TRT13",
+        "TRT14",
+        "TRT15",
+        "TRT16",
+        "TRT17",
+        "TRT18",
+        "TRT19",
+        "TRT20",
+        "TRT21",
+        "TRT22",
+        "TRT23",
+        "TRT24"
+      ]
     },
     {
       "id": "tjsp-eproc",

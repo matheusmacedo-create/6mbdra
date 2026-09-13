@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Settings } from '../lib/types'
-import { agruparPorTribunal, regrasVigentes, regraPorId, formatLimite, limiteBytes, metaBytes, mostrarBytesDoLimite, percentualMeta, rotuloContexto, rotuloSistema, META_PERCENTUAL_PADRAO } from '../lib/regras'
+import { opcoesPorRamo, regrasVigentes, regraPorId, formatLimite, limiteBytes, metaBytes, mostrarBytesDoLimite, percentualMeta, rotuloContexto, rotuloSistema, tribunalPorSigla, RAMO_ROTULO, TRIBUNAIS, META_PERCENTUAL_PADRAO } from '../lib/regras'
 import { formatBytes, formatDate } from '../lib/format'
 import { CUSTOM_MB_MAX, CUSTOM_MB_MIN, resolveSettings } from '../lib/limits'
 import { track } from '../lib/analytics'
@@ -24,8 +24,14 @@ const fmtMb = (n: number) => n.toLocaleString('pt-BR')
 
 export function RuleSelector({ settings, onChange, onValidity }: Props) {
   const regras = regrasVigentes()
-  const grupos = agruparPorTribunal(regras)
+  const grupos = opcoesPorRamo(regras)
   const regra = settings.ruleId ? regraPorId(settings.ruleId) : undefined
+  // Tribunal exibido: o escolhido (regra nacional herdada) ou o da própria regra.
+  const siglaEscolhida = regra ? (settings.tribunal && regra.abrange?.includes(settings.tribunal) ? settings.tribunal : regra.tribunal_sigla) : undefined
+  const tribunalEscolhido = siglaEscolhida ? tribunalPorSigla(siglaEscolhida) : undefined
+  const herdada = regra !== undefined && siglaEscolhida !== regra.tribunal_sigla
+  const valorSelect = regra ? (herdada ? `${regra.id}@${siglaEscolhida}` : regra.id) : 'custom'
+  const cobertos = new Set([...grupos.values()].flat().map((o) => o.tribunal.sigla)).size
   const [customText, setCustomText] = useState(String(settings.customMb).replace('.', ','))
   const resolved = resolveSettings(settings)
   const customValid = regra !== undefined || isValidMb(parseMb(customText))
@@ -46,31 +52,40 @@ export function RuleSelector({ settings, onChange, onValidity }: Props) {
         <label htmlFor="regra">Tribunal e sistema</label>
         <select
           id="regra"
-          value={regra ? regra.id : 'custom'}
+          value={valorSelect}
           onChange={(e) => {
             const v = e.target.value
-            if (v === 'custom') onChange({ ...settings, ruleId: null })
+            if (v === 'custom') onChange({ ...settings, ruleId: null, tribunal: null })
             else {
-              onChange({ ...settings, ruleId: v })
-              const r = regraPorId(v)
-              if (r) track('regra_selecionada', { tribunal: r.tribunal_sigla, sistema: r.sistema })
+              const [id, sigla] = v.split('@')
+              const r = regraPorId(id)
+              onChange({ ...settings, ruleId: id, tribunal: sigla ?? null })
+              if (r) track('regra_selecionada', { tribunal: sigla ?? r.tribunal_sigla, sistema: r.sistema })
             }
           }}
         >
           <option value="custom">Outro limite (informar em MB)</option>
-          {[...grupos.entries()].map(([grupo, lista]) => (
-            <optgroup key={grupo} label={grupo}>
-              {lista.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {rotuloSistema(r)} · {formatLimite(r)}
-                  {rotuloContexto(r, { omitirAmbos: true }) ? ` · ${rotuloContexto(r, { omitirAmbos: true })}` : ''}
-                  {r.situacao === 'em_revisao' ? ' · em revisão' : ''}
-                </option>
-              ))}
+          {[...grupos.entries()].map(([ramo, lista]) => (
+            <optgroup key={ramo} label={RAMO_ROTULO[ramo]}>
+              {lista.map((o) => {
+                const r = o.regra
+                const ctx = rotuloContexto(r, { omitirAmbos: true })
+                return (
+                  <option key={`${r.id}@${o.tribunal.sigla}`} value={o.herdada ? `${r.id}@${o.tribunal.sigla}` : r.id}>
+                    {o.tribunal.sigla} · {rotuloSistema(r)} · {formatLimite(r)}
+                    {ctx ? ` · ${ctx}` : ''}
+                    {o.herdada ? ' · regra nacional' : ''}
+                    {r.situacao === 'em_revisao' ? ' · em revisão' : ''}
+                  </option>
+                )
+              })}
             </optgroup>
           ))}
         </select>
-        {regras.length === 0 && <div className="hint">Ainda não há regras de tribunal cadastradas. Informe o limite manualmente.</div>}
+        <div className="hint">
+          {cobertos} dos {TRIBUNAIS.length} tribunais com regra cadastrada. Não achou o seu? Escolha "Outro limite" e confira o valor na tela de anexar do
+          sistema (<a href="/tribunais/">diretório completo</a>).
+        </div>
       </div>
 
       {!regra && (
@@ -105,8 +120,9 @@ export function RuleSelector({ settings, onChange, onValidity }: Props) {
         {regra ? (
           <>
             <div>
-              <strong>{regra.tribunal_sigla} · {rotuloSistema(regra)}</strong> — {regra.tribunal_nome}
+              <strong>{siglaEscolhida} · {rotuloSistema(regra)}</strong> — {tribunalEscolhido?.nome ?? regra.tribunal_nome}
               {rotuloContexto(regra) ? ` · ${rotuloContexto(regra)}` : ''}
+              {herdada ? ` · regra nacional (${regra.tribunal_sigla})` : ''}
             </div>
             <dl>
               <div>

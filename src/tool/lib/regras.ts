@@ -1,4 +1,6 @@
 import data from '../../data/regras.json'
+import tribunaisData from '../../data/tribunais.json'
+import { slug } from './naming'
 
 export type Unidade = 'MB' | 'MiB' | 'KB'
 export type Situacao = 'vigente' | 'em_revisao' | 'substituida'
@@ -49,6 +51,32 @@ export interface Regra {
   /** Por que está "em revisão" (fontes divergentes, fonte antiga…) */
   motivo_revisao?: string
   observacoes?: string
+  /** Siglas de outros tribunais aos quais esta mesma regra/fonte se aplica (regra nacional) */
+  abrange?: string[]
+}
+
+export type Ramo = 'superior' | 'estadual' | 'federal' | 'trabalho' | 'eleitoral' | 'militar'
+
+export interface Tribunal {
+  sigla: string
+  nome: string
+  ramo: Ramo
+  uf?: string
+  abrangencia?: string
+}
+
+/** Os 92 tribunais brasileiros com função de julgamento (STF, 4 superiores, 27 TJs, 6 TRFs, 24 TRTs, 27 TREs, 3 TJMs). */
+export const TRIBUNAIS: Tribunal[] = tribunaisData as Tribunal[]
+
+export const RAMOS: Ramo[] = ['estadual', 'federal', 'trabalho', 'superior', 'eleitoral', 'militar']
+
+export const RAMO_ROTULO: Record<Ramo, string> = {
+  superior: 'Tribunais Superiores',
+  estadual: 'Justiça Estadual',
+  federal: 'Justiça Federal',
+  trabalho: 'Justiça do Trabalho',
+  eleitoral: 'Justiça Eleitoral',
+  militar: 'Justiça Militar Estadual',
 }
 
 export interface BaseDeRegras {
@@ -181,4 +209,78 @@ export function agruparPorTribunal(regras: Regra[]): Map<string, Regra[]> {
     m.get(k)!.push(r)
   }
   return m
+}
+
+export function tribunalPorSigla(sigla: string): Tribunal | undefined {
+  return TRIBUNAIS.find((t) => t.sigla === sigla)
+}
+
+/** Uma regra vista a partir de um tribunal: própria dele ou herdada de uma regra nacional que o abrange. */
+export interface RegraDoTribunal {
+  regra: Regra
+  tribunal: Tribunal
+  herdada: boolean
+}
+
+/** Regras que valem para o tribunal: as próprias primeiro; depois as nacionais que o abrangem (sem repetir o sistema). */
+export function regrasDoTribunal(sigla: string, regras: Regra[] = regrasVigentes()): RegraDoTribunal[] {
+  const tribunal = tribunalPorSigla(sigla)
+  if (!tribunal) return []
+  const proprias = regras.filter((r) => r.tribunal_sigla === sigla)
+  const sistemasProprios = new Set(proprias.map((r) => r.sistema))
+  const herdadas = regras.filter((r) => r.tribunal_sigla !== sigla && r.abrange?.includes(sigla) && !sistemasProprios.has(r.sistema))
+  return [...proprias.map((regra) => ({ regra, tribunal, herdada: false })), ...herdadas.map((regra) => ({ regra, tribunal, herdada: true }))]
+}
+
+/** Tribunais com pelo menos uma regra (própria ou herdada), na ordem da lista oficial. */
+export function tribunaisCobertos(regras: Regra[] = regrasVigentes()): Tribunal[] {
+  return TRIBUNAIS.filter((t) => regrasDoTribunal(t.sigla, regras).length > 0)
+}
+
+/** Opções do seletor e do diretório, agrupadas por ramo, na ordem da lista de tribunais. */
+export function opcoesPorRamo(regras: Regra[] = regrasVigentes()): Map<Ramo, RegraDoTribunal[]> {
+  const m = new Map<Ramo, RegraDoTribunal[]>()
+  for (const ramo of RAMOS) m.set(ramo, [])
+  for (const t of TRIBUNAIS) m.get(t.ramo)!.push(...regrasDoTribunal(t.sigla, regras))
+  for (const ramo of RAMOS) if (m.get(ramo)!.length === 0) m.delete(ramo)
+  return m
+}
+
+export function slugTribunal(sigla: string): string {
+  return slug(sigla).toLowerCase()
+}
+
+export function slugSistema(r: Regra): string {
+  return slug(rotuloSistema(r)).toLowerCase().replace(/_/g, '-')
+}
+
+/** Id da página pública: o id da regra quando é própria; "<tribunal>-<sistema>" quando é herdada. */
+export function idPagina(x: RegraDoTribunal): string {
+  return x.herdada ? `${slugTribunal(x.tribunal.sigla)}-${slugSistema(x.regra)}` : x.regra.id
+}
+
+/** Todas as páginas públicas de regra: as próprias (inclusive em revisão) e as herdadas das regras nacionais. */
+export function paginasDeRegras(): RegraDoTribunal[] {
+  const out: RegraDoTribunal[] = []
+  const ids = new Set<string>()
+  for (const r of REGRAS.regras) {
+    const tribunal = tribunalPorSigla(r.tribunal_sigla) ?? { sigla: r.tribunal_sigla, nome: r.tribunal_nome, ramo: 'estadual' as Ramo }
+    out.push({ regra: r, tribunal, herdada: false })
+    ids.add(r.id)
+  }
+  for (const t of TRIBUNAIS) {
+    for (const x of regrasDoTribunal(t.sigla)) {
+      if (!x.herdada) continue
+      const id = idPagina(x)
+      if (ids.has(id)) continue
+      ids.add(id)
+      out.push(x)
+    }
+  }
+  return out
+}
+
+/** Título de uma regra vista de um tribunal (herdada ou não). */
+export function tituloRegraDoTribunal(x: RegraDoTribunal): string {
+  return tituloRegra({ ...x.regra, tribunal_sigla: x.tribunal.sigla })
 }

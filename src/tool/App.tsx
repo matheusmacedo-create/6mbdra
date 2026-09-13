@@ -7,7 +7,7 @@ import { BatchList } from './components/BatchList'
 import { Stepper, type Phase } from './components/Stepper'
 import { formatBytes } from './lib/format'
 import { deviceCapacityWarning, resolveSettings } from './lib/limits'
-import { formatLimite, regraPorId, rotuloSistema } from './lib/regras'
+import { formatLimite, regraPorId, rotuloSistema, tribunalPorSigla } from './lib/regras'
 import { downloadZipEntries } from './lib/download'
 import { safeFileName } from './lib/naming'
 import { planZip, type ZipDoc, type ZipExcluded } from './lib/zipPlan'
@@ -26,18 +26,22 @@ function loadSettings(): Settings {
   } catch {
     // armazenamento indisponível: usa o padrão
   }
-  // ?regra=<id> vindo das páginas de tribunal
+  // ?regra=<id>[&tribunal=<sigla>] vindo das páginas de tribunal (tribunal: quando a regra é nacional)
   try {
-    const q = new URLSearchParams(window.location.search).get('regra')
+    const params = new URLSearchParams(window.location.search)
+    const q = params.get('regra')
     const r = q ? regraPorId(q) : undefined
     if (r) {
-      s = { ...s, ruleId: r.id }
-      track('regra_selecionada', { tribunal: r.tribunal_sigla, sistema: r.sistema, origem: 'pagina' })
+      const t = params.get('tribunal')
+      const tribunal = t && t !== r.tribunal_sigla && r.abrange?.includes(t) && tribunalPorSigla(t) ? t : null
+      s = { ...s, ruleId: r.id, tribunal }
+      track('regra_selecionada', { tribunal: tribunal ?? r.tribunal_sigla, sistema: r.sistema, origem: 'pagina' })
     }
   } catch {
     // sem window (SSR) ou URL inválida
   }
-  if (s.ruleId && !regraPorId(s.ruleId)) s = { ...s, ruleId: null }
+  if (s.ruleId && !regraPorId(s.ruleId)) s = { ...s, ruleId: null, tribunal: null }
+  if (s.tribunal && !(s.ruleId && regraPorId(s.ruleId)?.abrange?.includes(s.tribunal))) s = { ...s, tribunal: null }
   return s
 }
 
@@ -180,7 +184,7 @@ export default function App() {
         docs,
         excluded,
         when: new Date(),
-        tribunal: regra ? { sigla: regra.tribunal_sigla, sistema: rotuloSistema(regra), limite: formatLimite(regra) } : undefined,
+        tribunal: regra ? { sigla: settings.tribunal ?? regra.tribunal_sigla, sistema: rotuloSistema(regra), limite: formatLimite(regra) } : undefined,
         limitBytes: process.limitBytes,
         targetBytes: process.targetBytes,
         petitionBytes: process.totalPetitionBytes,

@@ -1,8 +1,9 @@
 ---
 import Base from '../../layouts/Base.astro'
-import { REGRAS, agruparPorTribunal, formatLimite, limiteBytes, metaBytes, mostrarBytesDoLimite, regrasVigentes, rotuloContexto, rotuloSistema } from '../../tool/lib/regras'
+import { REGRAS, RAMOS, RAMO_ROTULO, TRIBUNAIS, formatLimite, idPagina, limiteBytes, metaBytes, mostrarBytesDoLimite, regrasDoTribunal, regrasVigentes, rotuloContexto, rotuloSistema, tribunaisCobertos } from '../../tool/lib/regras'
 import { formatBytes, formatDate } from '../../tool/lib/format'
-const grupos = agruparPorTribunal(regrasVigentes())
+const vigentes = regrasVigentes()
+const cobertos = tribunaisCobertos(vigentes)
 const contexto = (r: Parameters<typeof rotuloContexto>[0]) => rotuloContexto(r, { omitirAmbos: true }) || 'geral'
 ---
 <Base
@@ -13,42 +14,57 @@ const contexto = (r: Parameters<typeof rotuloContexto>[0]) => rotuloContexto(r, 
   <main class="page prose">
     <h1>Limites de PDF por tribunal e sistema</h1>
     <p class="lead">
-      Cada regra abaixo vem de uma fonte oficial (página, manual ou ato do próprio tribunal), com a data em que conferimos. A meta segura é
-      {REGRAS.meta_segura_percentual_padrao}% do limite declarado, para o portal não recusar o arquivo por diferença de contagem (MB vs. MiB).
+      {cobertos.length} dos {TRIBUNAIS.length} tribunais brasileiros já têm regra cadastrada. Cada regra vem de uma fonte oficial (página, manual ou ato
+      do próprio tribunal), com a data em que conferimos. A meta segura é {REGRAS.meta_segura_percentual_padrao}% do limite declarado, para o portal
+      não recusar o arquivo por diferença de contagem (MB vs. MiB).
     </p>
     <div class="callout warn">
-      Regras mudam sem aviso. Antes de protocolar, confira o limite na tela de anexar documentos do sistema. Não achou seu tribunal? Use o
-      limite manual na <a href="/">ferramenta</a> e <a href="/contato/">nos avise</a>.
+      Regras mudam sem aviso. Antes de protocolar, confira o limite na tela de anexar documentos do sistema. Tribunal sem regra aqui? Use o limite
+      manual na <a href="/">ferramenta</a> e <a href="/contato/">nos avise</a> qual é o valor e onde ele está publicado.
     </div>
-    {REGRAS.regras.length === 0 && <p>A base de regras ainda está sendo montada. Enquanto isso, informe o limite manualmente na ferramenta.</p>}
-    <p>
-      <strong>Justiça do Trabalho:</strong> a regra nacional do PJe-JT (primeiro grupo abaixo) vale para todos os TRTs e para o TST; TRT4 e TRT15 aparecem
-      também com suas páginas próprias.
-    </p>
-    {[...grupos.entries()].map(([grupo, lista]) => (
-      <section>
-        <h2>{grupo}</h2>
-        <div class="rules-table">
-          <table>
-            <thead>
-              <tr><th>Sistema</th><th>Contexto</th><th>Limite declarado</th><th>Meta segura</th><th>Verificado em</th><th></th></tr>
-            </thead>
-            <tbody>
-              {lista.map((r) => (
-                <tr>
-                  <td>{rotuloSistema(r)}</td>
-                  <td>{contexto(r)}{r.limite_por_pagina_kb ? ` · ${r.limite_por_pagina_kb} KB/página` : ''}{r.limite_condicional ? ` · ${r.limite_condicional.limite_valor} ${r.limite_condicional.limite_unidade} com ${r.limite_condicional.min_paginas}+ páginas` : ''}{r.exige_pdfa ? ' · PDF/A' : ''}</td>
-                  <td>{formatLimite(r)}{mostrarBytesDoLimite(r) ? <span class="tag">{formatBytes(limiteBytes(r))}</span> : ''}</td>
-                  <td>{formatBytes(metaBytes(r))}</td>
-                  <td>{formatDate(r.verificado_em)}{r.situacao === 'em_revisao' ? <><span class="tag">em revisão</span><span class="revisao">{r.motivo_revisao}</span></> : ''}</td>
-                  <td><a href={`/tribunais/${r.id}/`}>detalhes</a></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    ))}
+    {RAMOS.map((ramo) => {
+      const tribunais = TRIBUNAIS.filter((t) => t.ramo === ramo)
+      const comRegra = tribunais.filter((t) => regrasDoTribunal(t.sigla, vigentes).length > 0).length
+      return (
+        <section>
+          <h2>{RAMO_ROTULO[ramo]} <small class="muted">({comRegra} de {tribunais.length} com regra)</small></h2>
+          <div class="rules-table">
+            <table>
+              <thead>
+                <tr><th>Tribunal</th><th>Sistema</th><th>Contexto</th><th>Limite declarado</th><th>Meta segura</th><th>Verificado em</th><th></th></tr>
+              </thead>
+              <tbody>
+                {tribunais.map((t) => {
+                  const regras = regrasDoTribunal(t.sigla, vigentes)
+                  if (regras.length === 0) {
+                    return (
+                      <tr class="sem-regra">
+                        <td><strong>{t.sigla}</strong><br /><small>{t.nome}</small></td>
+                        <td colspan="6"><span class="muted">sem regra cadastrada — informe o limite manualmente na ferramenta</span></td>
+                      </tr>
+                    )
+                  }
+                  return regras.map((x, i) => {
+                    const r = x.regra
+                    return (
+                      <tr>
+                        <td>{i === 0 ? <><strong>{t.sigla}</strong><br /><small>{t.nome}</small></> : ''}</td>
+                        <td>{rotuloSistema(r)}{x.herdada ? <><br /><small>regra nacional ({r.tribunal_sigla})</small></> : ''}</td>
+                        <td>{contexto(r)}{r.limite_por_pagina_kb ? ` · ${r.limite_por_pagina_kb} KB/página` : ''}{r.limite_condicional ? ` · ${r.limite_condicional.limite_valor} ${r.limite_condicional.limite_unidade} com ${r.limite_condicional.min_paginas}+ páginas` : ''}{r.exige_pdfa ? ' · PDF/A' : ''}</td>
+                        <td>{formatLimite(r)}{mostrarBytesDoLimite(r) ? <span class="tag">{formatBytes(limiteBytes(r))}</span> : ''}</td>
+                        <td>{formatBytes(metaBytes(r))}</td>
+                        <td>{formatDate(r.verificado_em)}{r.situacao === 'em_revisao' ? <><span class="tag">em revisão</span><span class="revisao">{r.motivo_revisao}</span></> : ''}</td>
+                        <td><a href={`/tribunais/${idPagina(x)}/`}>detalhes</a></td>
+                      </tr>
+                    )
+                  })
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )
+    })}
     <p>Base de regras versão {REGRAS.versao}. Veja a <a href="/metodologia/">metodologia de atualização</a>.</p>
   </main>
 </Base>

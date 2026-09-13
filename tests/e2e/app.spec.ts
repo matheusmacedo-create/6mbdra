@@ -168,7 +168,7 @@ test('nenhuma requisição de rede transporta os documentos (RF06)', async ({ pa
 })
 
 test('páginas públicas respondem e apontam para a ferramenta', async ({ page }) => {
-  for (const path of ['/tribunais/', '/guias/', '/metodologia/', '/privacidade/', '/termos/', '/contato/']) {
+  for (const path of ['/tribunais/', '/tribunais/trt2-pje-jt/', '/tribunais/tjsp-esaj/', '/guias/', '/metodologia/', '/privacidade/', '/termos/', '/contato/']) {
     const res = await page.goto(path)
     expect(res?.status(), path).toBe(200)
     await expect(page.locator('main h1')).toBeVisible()

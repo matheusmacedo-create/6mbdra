@@ -95,6 +95,8 @@ img { max-width: 100%; }
 .rules-table { overflow-x: auto; }
 .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); font-size: 13px; margin-right: 4px; }
 .revisao { display: block; color: var(--muted); font-size: 13px; margin-top: 4px; }
+.muted { color: var(--muted); font-weight: 400; }
+tr.sem-regra td { color: var(--muted); }
 .grid-cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); padding: 0; list-style: none; }
 .grid-cards li { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
 .grid-cards a { font-weight: 700; text-decoration: none; }

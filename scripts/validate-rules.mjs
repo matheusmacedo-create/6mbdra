@@ -9,6 +9,9 @@ const path = join(root, 'src', 'data', 'regras.json')
 const data = JSON.parse(readFileSync(path, 'utf8'))
 
 const errors = []
+const TRIBUNAIS = JSON.parse(readFileSync(new URL('../src/data/tribunais.json', import.meta.url), 'utf8'))
+const SIGLAS = new Set(TRIBUNAIS.map((t) => t.sigla))
+if (TRIBUNAIS.length !== 92) errors.push(`tribunais.json deve listar 92 tribunais (tem ${TRIBUNAIS.length})`)
 const isIsoDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s))
 const OFFICIAL = /^https:\/\/([a-z0-9-]+\.)*(jus\.br|gov\.br)(\/|$)/i
 const UNIDADES = new Set(['MB', 'MiB', 'KB'])
@@ -40,6 +43,15 @@ for (const [i, r] of (data.regras ?? []).entries()) {
   if (!SITUACOES.has(r.situacao)) errors.push(`${where}: situacao inválida`)
   if (r.situacao === 'em_revisao' && !r.motivo_revisao) errors.push(`${where}: regra em revisão precisa de motivo_revisao`)
   if (!SISTEMAS.has(r.sistema)) errors.push(`${where}: sistema deve ser um de ${[...SISTEMAS].join(', ')}`)
+  if (!SIGLAS.has(r.tribunal_sigla)) errors.push(`${where}: tribunal_sigla "${r.tribunal_sigla}" não está em tribunais.json`)
+  if (r.abrange !== undefined) {
+    if (!Array.isArray(r.abrange) || r.abrange.length === 0) errors.push(`${where}: abrange deve ser uma lista de siglas`)
+    else {
+      for (const s of r.abrange) if (!SIGLAS.has(s)) errors.push(`${where}: abrange contém sigla desconhecida "${s}"`)
+      if (r.abrange.includes(r.tribunal_sigla)) errors.push(`${where}: abrange não deve repetir o próprio tribunal`)
+      if (new Set(r.abrange).size !== r.abrange.length) errors.push(`${where}: abrange tem siglas repetidas`)
+    }
+  }
   if (r.sistema === 'Portal próprio' && !r.sistema_rotulo) errors.push(`${where}: "Portal próprio" precisa de sistema_rotulo (nome do sistema)`)
   if (!INSTANCIAS.has(r.instancia)) errors.push(`${where}: instancia deve ser um de ${[...INSTANCIAS].join(', ')}`)
   if (!TIPOS.has(r.tipo_peticionamento)) errors.push(`${where}: tipo_peticionamento deve ser um de ${[...TIPOS].join(', ')}`)

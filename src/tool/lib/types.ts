@@ -67,6 +67,8 @@ export interface Job {
 export interface Settings {
   /** id da regra de tribunal escolhida, ou null para limite manual */
   ruleId: string | null
+  /** Sigla do tribunal escolhido quando a regra é nacional (herdada); null = o tribunal da própria regra */
+  tribunal?: string | null
   /** Limite manual em MB (decimal) */
   customMb: number
   /** Dividir em partes quando nem a compressão máxima couber */
@@ -115,6 +117,7 @@ export function splitBudget(p: ProcessSettings): SplitBudget {
 
 export const DEFAULT_SETTINGS: Settings = {
   ruleId: null,
+  tribunal: null,
   customMb: 6,
   autoSplit: true,
   grayscale: false,
