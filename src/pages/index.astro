@@ -9,42 +9,87 @@ const cobertos = tribunaisCobertos().length
 const limiteMin = limites.length ? Math.min(...limites) : 1_000_000
 const limiteMax = limites.length ? Math.max(...limites) : 50_000_000
 const guias = (await getCollection('guias')).sort((a, b) => a.data.title.localeCompare(b.data.title, 'pt-BR')).slice(0, 4)
+const ferramentas = [
+  { mark: '↓', cls: 'info', title: 'Compactar para o tribunal', desc: 'Reduz cada PDF até a meta do sistema escolhido, preservando texto e OCR.', href: '/?view=tool' },
+  { mark: '÷', cls: 'ok', title: 'Dividir em partes', desc: 'Quando nem a compressão máxima resolve, corta por páginas inteiras.', href: '/?view=tool' },
+  { mark: '+', cls: 'warn', title: 'Juntar PDFs', desc: 'Une anexos na ordem certa antes de protocolar.', soon: true },
+  { mark: '↻', cls: 'neutral', title: 'Girar páginas', desc: 'Endireita digitalizações de cabeça para baixo.', soon: true },
+  { mark: '✎', cls: 'info', title: 'Reordenar e remover', desc: 'Reorganiza ou descarta páginas de um lote digitalizado.', soon: true },
+  { mark: '≡', cls: 'ok', title: 'Pacote em ZIP', desc: 'Arquivos numerados na ordem, sem acentos, com LEIA-ME do lote.', href: '/?view=tool' },
+]
+const confianca = [
+  { title: 'Nada sai do seu computador', desc: 'A compressão roda no navegador. Depois de carregar a página você pode até desligar a internet.' },
+  { title: 'Texto continua pesquisável', desc: 'Reduzimos só as imagens: texto, fontes, marcadores e a camada de OCR ficam intactos.' },
+  { title: 'Limites com fonte e data', desc: 'Cada regra tem trecho literal, link oficial e a data em que foi conferida.' },
+]
 ---
 <Base
   title="Compacte e divida PDFs para o peticionamento eletrônico"
   description="Prepare vários PDFs de uma vez para caberem no limite do tribunal (PJe, eproc, e-SAJ, Projudi). Grátis, sem cadastro e sem enviar arquivos: tudo roda no seu navegador."
   path="/"
 >
-  <main class="page">
-    <section class="hero">
-      <h1>Deixe cada PDF dentro do limite do tribunal, sem enviar nada para a internet</h1>
-      <p class="lead">
-        Escolha o tribunal, arraste os PDFs e baixe os arquivos prontos para protocolar. Os documentos são comprimidos — ou divididos em partes — no seu
-        próprio computador. Grátis e sem cadastro.
-      </p>
-      <p class="privacy-pill"><span aria-hidden="true">🔒</span> Seus arquivos não saem do seu computador</p>
+  <main>
+    <section class="hero home-only">
+      <p class="eyebrow">Grátis · sem cadastro · nada sai do seu computador</p>
+      <h1>Seus PDFs dentro do limite do tribunal em um minuto</h1>
+      <p class="lead">Escolha o tribunal, arraste os arquivos e baixe tudo pronto para protocolar. Compressão e divisão em partes rodam no seu navegador.</p>
     </section>
 
     <App client:only="react" />
 
-    <section class="prose" id="como-funciona">
-      <h2>Como funciona</h2>
-      <ol>
-        <li><strong>Configurar:</strong> escolha o tribunal e o sistema (ou informe o limite em MB). Mostramos o limite declarado, a meta segura, a fonte oficial e a data em que conferimos.</li>
-        <li><strong>Revisar o lote:</strong> cada PDF é analisado antes de qualquer alteração: tamanho, páginas, senha, assinatura digital e integridade. Arquivos que já cabem ficam intactos.</li>
-        <li><strong>Preparar:</strong> o motor primeiro remove redundâncias; só se precisar reduz a resolução das imagens, aos poucos, até caber. Ao comprimir, texto, fontes, marcadores e a camada de OCR são preservados. Se nem a compressão máxima resolver, o arquivo é dividido em partes por páginas inteiras — nesse caso marcadores, links internos e campos de formulário não acompanham as partes, e a ferramenta avisa.</li>
-        <li><strong>Baixar:</strong> cada arquivo é medido de novo antes de aparecer como pronto. Baixe um a um (<code>contrato_otimizado.pdf</code>, <code>laudo_parte_01_de_03.pdf</code>) ou tudo em um único ZIP, já organizado: arquivos numerados na ordem do lote, sem acentos nem espaços, partes em pasta própria, pastas por petição quando o sistema limita a soma dos anexos, e um LEIA-ME com o resumo.</li>
-      </ol>
-      <p>
-        Regras cadastradas: {REGRAS.regras.length} (base versão {REGRAS.versao}). Veja o <a href="/tribunais/">diretório de limites por tribunal</a> e a{' '}
-        <a href="/metodologia/">metodologia de atualização</a>.
-      </p>
+    <section class="wrap home-section home-only" id="ferramentas">
+      <h2>Ferramentas</h2>
+      <p class="sub">Tudo o que o protocolo exige, sem instalar nada.</p>
+      <ul class="tools-grid">
+        {ferramentas.map((t) =>
+          t.soon ? (
+            <li>
+              <div class="tool-card soon" aria-label={`${t.title} (em breve)`}>
+                <span class="soon-tag">Em breve</span>
+                <span class={`mark ${t.cls}`} aria-hidden="true">{t.mark}</span>
+                <span class="title">{t.title}</span>
+                <span class="desc">{t.desc}</span>
+              </div>
+            </li>
+          ) : (
+            <li>
+              <a class="tool-card" href={t.href} data-open-tool>
+                <span class={`mark ${t.cls}`} aria-hidden="true">{t.mark}</span>
+                <span class="title">{t.title}</span>
+                <span class="desc">{t.desc}</span>
+              </a>
+            </li>
+          ),
+        )}
+      </ul>
     </section>
 
-    <div class="ad-slot" data-enabled="false" aria-hidden="true"></div>
+    <section class="wrap home-section home-only" aria-label="Garantias">
+      <ul class="trust-grid">
+        {confianca.map((c) => (
+          <li class="trust-card">
+            <div class="title">{c.title}</div>
+            <div class="desc">{c.desc}</div>
+          </li>
+        ))}
+      </ul>
+    </section>
 
-    <section class="prose faq" id="perguntas">
+    <section class="wrap home-section home-only">
+      <div class="band">
+        <div>
+          <h2>Limites de {cobertos} tribunais, com fonte oficial e data</h2>
+          <p>PJe, eproc, e-SAJ e Projudi. Conferimos as fontes toda semana e aplicamos {REGRAS.meta_segura_percentual_padrao}% do limite como meta segura, para o portal não recusar por diferença de contagem.</p>
+        </div>
+        <a class="btn light" href="/tribunais/">Ver limites por tribunal</a>
+      </div>
+    </section>
+
+    <div class="wrap home-only"><div class="ad-slot" data-enabled="false" aria-hidden="true"></div></div>
+
+    <section class="wrap home-section home-only faq" id="perguntas">
       <h2>Perguntas frequentes</h2>
+      <div class="faq-list">
       <details>
         <summary>Meus documentos são enviados para algum servidor?</summary>
         <p>Não. A compressão roda dentro do seu navegador, com o processador do seu computador. Nenhum arquivo, nome de arquivo ou número de processo é transmitido. Você pode até desligar a internet depois que a página carregar.</p>
@@ -62,18 +107,24 @@ const guias = (await getCollection('guias')).sort((a, b) => a.data.title.localeC
         <p>O arquivo é dividido em partes numeradas (parte_01_de_03, parte_02_de_03…), cada uma dentro da meta, sem cortar páginas. Você protocola cada parte como um documento.</p>
       </details>
       <details>
+        <summary>Como fica o download?</summary>
+        <p>Baixe um a um (<code>contrato_otimizado.pdf</code>, <code>laudo_parte_01_de_03.pdf</code>) ou tudo em um único ZIP, já organizado: arquivos numerados na ordem do lote, sem acentos nem espaços, partes em pasta própria, pastas por petição quando o sistema limita a soma dos anexos, e um LEIA-ME com o resumo.</p>
+      </details>
+      <details>
         <summary>Por que a ferramenta recusa PDFs com senha e avisa sobre assinados?</summary>
         <p>Não removemos proteções: destrave o PDF no programa de origem antes. Um PDF assinado digitalmente perde a assinatura se for alterado, então ele fica de fora por padrão — o certo é preparar o arquivo antes de assinar.</p>
       </details>
       <details>
         <summary>Qual é o limite do meu tribunal?</summary>
-        <p>Varia bastante por tribunal, sistema, instância e tipo de petição: na nossa base há limites de {formatBytes(limiteMin)} a {formatBytes(limiteMax)} por arquivo, com regra cadastrada para {cobertos} dos {TRIBUNAIS.length} tribunais do país. Consulte o <a href="/tribunais/">diretório</a> ou a tela de anexar documentos do sistema e, se não achar, informe o limite manualmente.</p>
+        <p>Varia bastante por tribunal, sistema, instância e tipo de petição: na nossa base há limites de {formatBytes(limiteMin)} a {formatBytes(limiteMax)} por arquivo, com regra cadastrada para {cobertos} dos {TRIBUNAIS.length} tribunais do país (base versão {REGRAS.versao}). Consulte o <a href="/tribunais/">diretório</a> ou a tela de anexar documentos do sistema e, se não achar, informe o limite manualmente.</p>
       </details>
+      </div>
     </section>
 
     {guias.length > 0 && (
-      <section class="prose">
+      <section class="wrap home-section home-only guias">
         <h2>Guias</h2>
+        <p class="sub">Como digitalizar, dividir, nomear e conferir antes de protocolar.</p>
         <ul class="grid-cards">
           {guias.map((g) => (
             <li>
@@ -82,16 +133,21 @@ const guias = (await getCollection('guias')).sort((a, b) => a.data.title.localeC
             </li>
           ))}
         </ul>
-        <p><a href="/guias/">Ver todos os guias</a></p>
+        <p class="more"><a href="/guias/">Ver todos os guias →</a></p>
       </section>
     )}
   </main>
 </Base>
 
+<script>
+  // Evita o "piscar" das seções da página inicial quando a URL já pede a ferramenta.
+  if (/[?&](view=tool|regra=)/.test(location.search)) document.documentElement.dataset.view = 'tool'
+</script>
+
 <style>
-  .hero h1 { font-family: var(--serif); font-size: 30px; line-height: 1.2; margin: 8px 0 10px; max-width: 760px; }
-  .hero .lead { max-width: 720px; margin: 0 0 10px; }
-  .privacy-pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: var(--ok-bg); color: var(--ok); font-weight: 600; font-size: 14px; margin: 0 0 18px; }
-  .prose { margin-top: 28px; }
-  code { background: var(--surface-2); padding: 1px 6px; border-radius: 6px; font-size: 0.92em; }
+  .faq-list { max-width: 760px; }
+  .faq h2 { margin-bottom: 8px; }
+  .faq-list p { font-size: 15.5px; }
+  .guias { padding-bottom: 48px; }
+  .more { margin-top: 14px; }
 </style>

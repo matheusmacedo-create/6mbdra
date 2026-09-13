@@ -1,5 +1,15 @@
 ---
 import { SITE } from '../config/site'
+import '@fontsource/inter/latin-400.css'
+import '@fontsource/inter/latin-500.css'
+import '@fontsource/inter/latin-600.css'
+import '@fontsource/inter/latin-700.css'
+import '@fontsource/inter/latin-800.css'
+import '@fontsource/inter/latin-ext-400.css'
+import '@fontsource/inter/latin-ext-500.css'
+import '@fontsource/inter/latin-ext-600.css'
+import '@fontsource/inter/latin-ext-700.css'
+import '@fontsource/inter/latin-ext-800.css'
 import '../styles/global.css'
 
 interface Props {
@@ -38,14 +48,15 @@ const current = (p: string) => (path === p || (p !== '/' && path.startsWith(p)) 
       <div class="inner">
         <a class="brand" href="/" aria-label={`${SITE.name} — página inicial`}>
           <span class="logo" aria-hidden="true">{SITE.name}</span>
-          <span>Preparador de PDFs</span>
+          <span class="brand-name">Preparador de PDFs</span>
         </a>
         <nav class="site-nav" aria-label="Principal">
-          <a href="/" aria-current={current('/')}>Ferramenta</a>
+          <a href="/#ferramentas" aria-current={current('/')} data-go-home>Ferramentas</a>
           <a href="/tribunais/" aria-current={current('/tribunais/')}>Limites por tribunal</a>
           <a href="/guias/" aria-current={current('/guias/')}>Guias</a>
           <a href="/metodologia/" aria-current={current('/metodologia/')}>Metodologia</a>
         </nav>
+        <a class="btn header-cta" href="/?view=tool" data-open-tool>Preparar PDFs</a>
       </div>
     </header>
     <slot />

@@ -44,6 +44,7 @@ export function JobRow({ job, process, onRemove, onRetry, onAllow }: Props) {
   return (
     <div className="job" data-testid="job" data-kind={kind}>
       <div className="job-top">
+        <span className="pdf-icon" aria-hidden="true">PDF</span>
         <div className="job-title">
           <div className="job-name">{job.name}</div>
           <div className="job-meta">
@@ -98,7 +99,7 @@ export function JobRow({ job, process, onRemove, onRetry, onAllow }: Props) {
       </div>
 
       {kind === 'processing' && (
-        <>
+        <div className="indent">
           <div
             className={`progress${job.progress <= 0 ? ' indeterminate' : ''}`}
             role="progressbar"
@@ -111,13 +112,13 @@ export function JobRow({ job, process, onRemove, onRetry, onAllow }: Props) {
             <div style={{ width: `${Math.max(2, job.progress * 100)}%` }} />
           </div>
           <div className="stage">{job.stage}</div>
-        </>
+        </div>
       )}
 
       {kind === 'done' && job.outputs.length > 0 && (
-        <div className="sizes">
+        <div className="sizes indent">
           <span className="from">{formatBytes(job.originalSize)}</span>
-          <span aria-hidden="true">→</span>
+          <span aria-hidden="true" className="arrow">→</span>
           <span className="to">{job.outputs.length > 1 ? `${job.outputs.length} partes, ${formatBytes(totalOut)} no total` : formatBytes(totalOut)}</span>
           {!job.contentUntouched && <span className="pct">−{formatReduction(job.originalSize, totalOut)}</span>}
           {!stale && job.outputs.every((o) => o.size <= targetBytes) && <span className="badge ok">dentro da meta</span>}
@@ -125,7 +126,7 @@ export function JobRow({ job, process, onRemove, onRetry, onAllow }: Props) {
       )}
 
       {kind === 'done' && job.outputs.length > 1 && (
-        <div className="parts">
+        <div className="parts indent">
           {job.outputs.map((o) => (
             <div className="part" key={o.name}>
               <span className="part-name">
@@ -142,43 +143,43 @@ export function JobRow({ job, process, onRemove, onRetry, onAllow }: Props) {
       )}
 
       {kind === 'done' && job.outputs.length === 0 && (
-        <div className="note info">Já estava dentro da meta: mantido sem alteração.</div>
+        <div className="note info indent">Já estava dentro da meta: mantido sem alteração.</div>
       )}
       {kind === 'signed' && (
-        <div className="note warn">
+        <div className="note warn indent">
           Detectamos uma assinatura digital. Qualquer alteração invalida a assinatura, por isso este arquivo não será processado. O ideal é
           preparar o PDF <em>antes</em> de assinar. Se a assinatura não for necessária, você pode processar mesmo assim.
         </div>
       )}
       {kind === 'restricted' && (
-        <div className="note warn">
+        <div className="note warn indent">
           Este PDF abre sem senha, mas tem restrições de edição ou impressão (senha de permissões). Não removemos proteções por padrão: se
           processado, o arquivo preparado sai sem essas restrições. Se isso não for um problema, você pode processar mesmo assim.
         </div>
       )}
       {kind === 'protected' && (
-        <div className="note err">
+        <div className="note err indent">
           Este PDF exige senha para ser aberto. Não removemos proteções: abra-o no programa de origem com a senha, salve uma cópia sem senha e adicione de novo.
         </div>
       )}
       {kind === 'invalid' && (
-        <div className="note err">Não foi possível ler este arquivo como PDF. {job.analysis?.reason ? `(${job.analysis.reason})` : ''}</div>
+        <div className="note err indent">Não foi possível ler este arquivo como PDF. {job.analysis?.reason ? `(${job.analysis.reason})` : ''}</div>
       )}
       {stale && (
-        <div className="note warn">
+        <div className="note warn indent">
           Este arquivo foi preparado para a meta de {formatBytes(job.targetBytes!)}; a meta atual é {formatBytes(targetBytes)} e o resultado não cabe nela. Reprocesse antes de protocolar.
         </div>
       )}
       {kind === 'unchanged' && job.analysis?.signed && (
-        <div className="note info">Assinado digitalmente e já dentro da meta: mantido exatamente como está.</div>
+        <div className="note info indent">Assinado digitalmente e já dentro da meta: mantido exatamente como está.</div>
       )}
       {process.perPageBytes && (kind === 'ready' || kind === 'unchanged') && job.analysis?.pages ? (
-        <div className="job-meta">
+        <div className="job-meta indent">
           Meta para este arquivo: {formatBytes(targetBytes)} (este sistema também limita cada página a {formatBytes(process.perPageBytes)}).
         </div>
       ) : null}
-      {kind === 'done' && job.warnings.map((w) => <div className="note warn" key={w}>{w}</div>)}
-      {kind === 'error' && <div className="note err">{job.error}</div>}
+      {kind === 'done' && job.warnings.map((w) => <div className="note warn indent" key={w}>{w}</div>)}
+      {kind === 'error' && <div className="note err indent">{job.error}</div>}
     </div>
   )
 }

@@ -12,7 +12,7 @@ test.beforeAll(async () => {
 })
 
 async function openApp(page: Page, limitMb?: number) {
-  await page.goto('/')
+  await page.goto('/?view=tool')
   await expect(page.getByTestId('engine-status')).toHaveAttribute('data-state', 'ready', { timeout: 120_000 })
   if (limitMb !== undefined) {
     await page.locator('#regra').selectOption('custom')
@@ -152,7 +152,7 @@ test('nenhuma requisição de rede transporta os documentos (RF06)', async ({ pa
   const fileBytes = readFileSync(fx.scanBig)
   const size = String(fileBytes.length)
   const sha = createHash('sha256').update(fileBytes).digest('hex')
-  const allowed = /^\/(\?regra=[a-z0-9-]+)?$|^\/_astro\/[\w.-]+\.(js|css|wasm)$|^\/favicon\.svg$/
+  const allowed = /^\/(\?[a-z0-9=&%_-]*)?$|^\/_astro\/[\w.-]+\.(js|css|wasm|woff2)$|^\/favicon\.svg$/
   expect(sockets, 'nenhum WebSocket').toHaveLength(0)
   for (const r of requests) {
     expect(r.method, `método em ${r.url}`).toBe('GET')
@@ -180,7 +180,7 @@ test('páginas públicas respondem e apontam para a ferramenta', async ({ page }
 
 test('no celular a ferramenta não rola na horizontal e o seletor cabe na tela', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('/')
+  await page.goto('/?view=tool')
   await expect(page.getByTestId('engine-status')).toHaveAttribute('data-state', 'ready', { timeout: 120_000 })
   await page.locator('#regra').selectOption({ index: 1 })
   await page.getByTestId('file-input').setInputFiles([fx.text])
@@ -236,4 +236,22 @@ test('PDF que exige senha de abertura é recusado na análise, sem pedir senha',
   await waitFinished(page, 2)
   await expect(page.locator('[data-testid="job"][data-kind="done"]')).toHaveCount(1)
   await expect(locked).toHaveCount(1)
+})
+
+test('a página inicial abre a ferramenta ao receber arquivos e volta com "Ferramentas"', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.locator('#regra')).toHaveCount(0)
+  await expect(page.locator('#ferramentas')).toBeVisible()
+  await expect(page.getByTestId('engine-status')).toHaveAttribute('data-state', 'ready', { timeout: 120_000 })
+  await page.getByTestId('file-input').setInputFiles([fx.text])
+  await expect(page.locator('#regra')).toBeVisible()
+  await expect(page.locator('#ferramentas')).toBeHidden()
+  await expect(page).toHaveURL(/view=tool/)
+  await expect.poll(async () => page.locator('[data-testid="job"][data-kind="analyzing"]').count(), { timeout: 60_000 }).toBe(0)
+  await page.getByRole('link', { name: '← Ferramentas' }).click()
+  await expect(page.locator('#ferramentas')).toBeVisible()
+  await expect(page.getByText(/no lote/)).toBeVisible()
+  await page.getByRole('link', { name: 'Preparar PDFs' }).click()
+  await expect(page.locator('#regra')).toBeVisible()
+  await expect(page.getByTestId('job')).toHaveCount(1)
 })

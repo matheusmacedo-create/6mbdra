@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DEFAULT_SETTINGS, deriveKind, isBusy, isStale as isStaleJob, type Settings, type OutputFile, type Job } from './lib/types'
 import { useJobQueue, type EngineStatus } from './hooks/useJobQueue'
 import { DropZone } from './components/DropZone'
+import { Options } from './components/Options'
 import { RuleSelector } from './components/RuleSelector'
 import { BatchList } from './components/BatchList'
 import { Stepper, type Phase } from './components/Stepper'
@@ -17,6 +18,17 @@ import { track } from './lib/analytics'
 import './tool.css'
 
 const STORAGE_KEY = '6mb:settings:v2'
+
+type View = 'home' | 'tool'
+
+/** A URL pede a ferramenta? (?view=tool, ou link de página de tribunal com ?regra=) */
+function initialView(): View {
+  try {
+    return /[?&](view=tool|regra=)/.test(window.location.search) ? 'tool' : 'home'
+  } catch {
+    return 'home'
+  }
+}
 
 function loadSettings(): Settings {
   let s = DEFAULT_SETTINGS
@@ -68,6 +80,53 @@ export default function App() {
   const [limitValid, setLimitValid] = useState(true)
   /** Única região aria-live da ferramenta: só marcos (análise concluída, lote concluído…). */
   const [announce, setAnnounce] = useState('')
+  const [view, setView] = useState<View>(initialView)
+  useEffect(() => {
+    document.documentElement.dataset.view = view
+    return () => {
+      delete document.documentElement.dataset.view
+    }
+  }, [view])
+  const openTool = useCallback(() => {
+    setView('tool')
+    try {
+      const url = new URL(window.location.href)
+      url.searchParams.set('view', 'tool')
+      history.replaceState(null, '', url)
+    } catch {
+      // sem history
+    }
+    window.scrollTo({ top: 0 })
+  }, [])
+  const goHome = useCallback(() => {
+    setView('home')
+    try {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('view')
+      history.replaceState(null, '', url)
+    } catch {
+      // sem history
+    }
+    window.scrollTo({ top: 0 })
+  }, [])
+  // Links "Preparar PDFs" do cabeçalho e dos cards da página inicial abrem a ferramenta sem recarregar.
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) return
+      const target = e.target as Element | null
+      if (target?.closest?.('a[data-open-tool]')) {
+        e.preventDefault()
+        openTool()
+      } else if (target?.closest?.('a[data-go-home]')) {
+        // Link "Ferramentas" do cabeçalho: volta à página inicial sem recarregar (o lote continua na memória).
+        e.preventDefault()
+        goHome()
+        requestAnimationFrame(() => document.getElementById('ferramentas')?.scrollIntoView({ block: 'start' }))
+      }
+    }
+    document.addEventListener('click', handler)
+    return () => document.removeEventListener('click', handler)
+  }, [openTool, goHome])
   const { jobs, batchCount, addFiles, remove, clear, start, cancel, retry, allow } = useJobQueue(process, setEngine)
 
   useEffect(() => {
@@ -98,11 +157,12 @@ export default function App() {
       const pdfs = files.filter((f) => /\.pdf$/i.test(f.name) || f.type === 'application/pdf')
       const ignored = files.length - pdfs.length
       addFiles(pdfs)
+      if (pdfs.length > 0) openTool()
       const msg = ignored > 0 ? `${ignored} arquivo${ignored === 1 ? ' foi ignorado porque não é' : 's foram ignorados porque não são'} PDF.` : null
       setNotice(msg)
       if (msg) setAnnounce(msg)
     },
-    [addFiles],
+    [addFiles, openTool],
   )
 
   // Marcos anunciados a leitores de tela (uma região só; a lista em si não é aria-live).
@@ -216,128 +276,183 @@ export default function App() {
   const toPrepare = counts.ready + counts.stale
   const batchDone = Math.max(0, Math.min(batchCount, batchCount - counts.busy))
 
-  return (
-    <div className="tool" data-phase={phase}>
-      <Stepper phase={phase} />
-      <div className="sr-only" role="status" aria-live="polite" data-testid="announce">
-        {announce}
-      </div>
+  const engineStatus = (
+    <div className="engine-status" data-testid="engine-status" data-state={engine.state}>
+      <span className={`dot${engine.state === 'ready' ? ' ready' : engine.state === 'error' ? ' err' : ''}`} aria-hidden="true" />
+      {engine.state === 'loading' && 'Preparando o motor de compressão (só na primeira vez, cerca de 11 MB)…'}
+      {engine.state === 'ready' && `Motor pronto · meta de ${formatBytes(process.targetBytes)} por arquivo`}
+      {engine.state === 'error' && `${engine.message ?? 'O motor de compressão não carregou.'} Ainda é possível dividir arquivos em partes.`}
+      {engine.state === 'idle' && 'Iniciando…'}
+    </div>
+  )
+  const liveRegion = (
+    <div className="sr-only" role="status" aria-live="polite" data-testid="announce">
+      {announce}
+    </div>
+  )
 
-      <section className="card" aria-labelledby="h-config">
-        <h2 id="h-config">Escolha o tribunal ou o limite</h2>
-        <RuleSelector settings={settings} onChange={setSettings} onValidity={setLimitValid} />
-      </section>
-
-      <section className="card" aria-labelledby="h-files">
-        <h2 id="h-files">Adicione os PDFs</h2>
-        <DropZone onFiles={onFiles} compact={jobs.length > 0} />
+  if (view === 'home') {
+    return (
+      <div className="tool landing" data-phase={phase}>
+        {liveRegion}
+        <DropZone onFiles={onFiles} variant="hero" />
         {notice && (
           <div className="note warn" style={{ marginTop: 12 }}>
             {notice}
           </div>
         )}
-        <div className="engine-status" data-testid="engine-status" data-state={engine.state}>
-          <span className={`dot${engine.state === 'ready' ? ' ready' : engine.state === 'error' ? ' err' : ''}`} aria-hidden="true" />
-          {engine.state === 'loading' && 'Preparando o motor de compressão (só na primeira vez, cerca de 11 MB)…'}
-          {engine.state === 'ready' && `Motor pronto. Meta: até ${formatBytes(process.targetBytes)} por arquivo (limite de ${formatBytes(process.limitBytes)}).`}
-          {engine.state === 'error' && `${engine.message ?? 'O motor de compressão não carregou.'} Ainda é possível dividir arquivos em partes.`}
-          {engine.state === 'idle' && 'Iniciando…'}
-        </div>
-      </section>
+        {engineStatus}
+        {jobs.length > 0 && (
+          <p className="hint resume">
+            Você tem {jobs.length} arquivo{jobs.length === 1 ? '' : 's'} no lote.{' '}
+            <a href="/?view=tool" data-open-tool>
+              Voltar ao lote
+            </a>
+          </p>
+        )}
+      </div>
+    )
+  }
 
-      {jobs.length > 0 && (
-        <section className="card" aria-labelledby="h-batch">
-          <div className="jobs-header">
-            <h2 id="h-batch" style={{ margin: 0 }}>
-              {phase === 'result' ? 'Resultado' : phase === 'processing' ? 'Preparando…' : 'Revise o lote'}
-            </h2>
-            <span className="jobs-summary" data-testid="summary">
-              {jobs.length} arquivo{jobs.length === 1 ? '' : 's'}
-              {counts.ready > 0 ? ` · ${counts.ready} para otimizar` : ''}
-              {counts.stale > 0 ? ` · ${counts.stale} fora da meta atual` : ''}
-              {counts.unchanged > 0 ? ` · ${counts.unchanged} já ${plural(counts.unchanged, 'cabe', 'cabem')}` : ''}
-              {counts.blocked > 0 ? ` · ${counts.blocked} com aviso` : ''}
-              {counts.done - counts.stale > 0 ? ` · ${counts.done - counts.stale} ${plural(counts.done - counts.stale, 'pronto', 'prontos')}` : ''}
-              {counts.error > 0 ? ` · ${counts.error} com erro` : ''}
-              {processedDone.length > 0 && totalIn > 0 ? ` (${formatBytes(totalIn)} → ${formatBytes(totalOut)})` : ''}
-            </span>
-            <span className="spacer" />
-            {phase === 'review' && counts.analyzing > 0 && (
-              <button className="btn" disabled data-testid="start">
-                Analisando…
-              </button>
-            )}
-            {phase === 'review' && counts.analyzing === 0 && toPrepare > 0 && (
-              <button className="btn" onClick={() => start()} disabled={!limitValid} title={limitValid ? undefined : 'Corrija o limite informado'} data-testid="start">
-                {counts.ready > 0 ? `Preparar ${toPrepare} arquivo${toPrepare === 1 ? '' : 's'}` : `Reprocessar ${toPrepare} arquivo${toPrepare === 1 ? '' : 's'}`}
-              </button>
-            )}
-            {phase === 'review' && counts.analyzing === 0 && toPrepare === 0 && (
-              <span className="hint" data-testid="nothing-to-prepare">
-                {counts.blocked > 0 ? 'Nada a preparar: veja os avisos abaixo.' : 'Todos os arquivos já cabem na meta. Nada a preparar.'}
-              </span>
-            )}
-            {phase === 'processing' && counts.busy > 0 && (
-              <button className="btn danger" onClick={cancel} data-testid="cancel">
-                Cancelar processamento
-              </button>
-            )}
-            {phase === 'result' && counts.stale > 0 && (
-              <button className="btn" onClick={() => start()} disabled={!limitValid} data-testid="start">
-                Reprocessar {counts.stale} arquivo{counts.stale === 1 ? '' : 's'}
-              </button>
-            )}
-            {phase === 'result' && zipCount > 0 && (
-              <button className={`btn${counts.stale > 0 ? ' secondary' : ''}`} onClick={collectZip} disabled={zipping} data-testid="download-all">
-                {zipping ? 'Montando o pacote…' : `Baixar tudo em um ZIP (${zipCount} arquivo${zipCount === 1 ? '' : 's'})`}
-              </button>
-            )}
-            {counts.busy === 0 && (
-              <button className="btn secondary" onClick={clear} data-testid="clear">
-                {phase === 'result' ? 'Novo lote' : 'Limpar lista'}
-              </button>
-            )}
-          </div>
+  return (
+    <div className="tool tool-page" data-phase={phase}>
+      {liveRegion}
+      <div className="tool-head">
+        <a
+          className="btn small secondary"
+          href="/"
+          onClick={(e) => {
+            e.preventDefault()
+            goHome()
+          }}
+        >
+          ← Ferramentas
+        </a>
+        <h1>Compactar para o tribunal</h1>
+      </div>
+      <Stepper phase={phase} />
 
-          {phase === 'processing' && batchCount > 0 && (
-            <div className="overall">
-              <div className="progress" role="progressbar" aria-label="Progresso do lote" aria-valuemin={0} aria-valuemax={batchCount} aria-valuenow={batchDone}>
-                <div style={{ width: `${Math.max(2, (batchDone / batchCount) * 100)}%` }} />
+      <div className="tool-grid">
+        <aside className="aside">
+          <section className="card" aria-labelledby="h-config">
+            <h2 id="h-config">Tribunal e sistema</h2>
+            <RuleSelector settings={settings} onChange={setSettings} onValidity={setLimitValid} />
+          </section>
+          <section className="card" aria-labelledby="h-opts">
+            <h2 id="h-opts">Opções</h2>
+            <Options settings={settings} onChange={setSettings} />
+            {engineStatus}
+          </section>
+        </aside>
+
+        <section className="card main" aria-labelledby="h-batch">
+          {jobs.length === 0 ? (
+            <>
+              <h2 id="h-batch">Adicione os PDFs</h2>
+              <DropZone onFiles={onFiles} variant="hero" />
+              {notice && (
+                <div className="note warn" style={{ marginTop: 12 }}>
+                  {notice}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="jobs-header">
+                <h2 id="h-batch">{phase === 'result' ? 'Resultado' : phase === 'processing' ? 'Preparando…' : 'Revise o lote'}</h2>
+                <span className="jobs-summary" data-testid="summary">
+                  {jobs.length} arquivo{jobs.length === 1 ? '' : 's'}
+                  {counts.ready > 0 ? ` · ${counts.ready} para otimizar` : ''}
+                  {counts.stale > 0 ? ` · ${counts.stale} fora da meta atual` : ''}
+                  {counts.unchanged > 0 ? ` · ${counts.unchanged} já ${plural(counts.unchanged, 'cabe', 'cabem')}` : ''}
+                  {counts.blocked > 0 ? ` · ${counts.blocked} com aviso` : ''}
+                  {counts.done - counts.stale > 0 ? ` · ${counts.done - counts.stale} ${plural(counts.done - counts.stale, 'pronto', 'prontos')}` : ''}
+                  {counts.error > 0 ? ` · ${counts.error} com erro` : ''}
+                  {processedDone.length > 0 && totalIn > 0 ? ` (${formatBytes(totalIn)} → ${formatBytes(totalOut)})` : ''}
+                </span>
+                <span className="spacer" />
+                <div className="jobs-actions">
+                {phase === 'review' && counts.analyzing > 0 && (
+                  <button className="btn" disabled data-testid="start">
+                    Analisando…
+                  </button>
+                )}
+                {phase === 'review' && counts.analyzing === 0 && toPrepare > 0 && (
+                  <button className="btn" onClick={() => start()} disabled={!limitValid} title={limitValid ? undefined : 'Corrija o limite informado'} data-testid="start">
+                    {counts.ready > 0 ? `Preparar ${toPrepare} arquivo${toPrepare === 1 ? '' : 's'}` : `Reprocessar ${toPrepare} arquivo${toPrepare === 1 ? '' : 's'}`}
+                  </button>
+                )}
+                {phase === 'review' && counts.analyzing === 0 && toPrepare === 0 && (
+                  <span className="hint" data-testid="nothing-to-prepare">
+                    {counts.blocked > 0 ? 'Nada a preparar: veja os avisos abaixo.' : 'Todos os arquivos já cabem na meta. Nada a preparar.'}
+                  </span>
+                )}
+                {phase === 'processing' && counts.busy > 0 && (
+                  <button className="btn danger" onClick={cancel} data-testid="cancel">
+                    Cancelar processamento
+                  </button>
+                )}
+                {phase === 'result' && counts.stale > 0 && (
+                  <button className="btn" onClick={() => start()} disabled={!limitValid} data-testid="start">
+                    Reprocessar {counts.stale} arquivo{counts.stale === 1 ? '' : 's'}
+                  </button>
+                )}
+                {phase === 'result' && zipCount > 0 && (
+                  <button className={`btn${counts.stale > 0 ? ' secondary' : ''}`} onClick={collectZip} disabled={zipping} data-testid="download-all">
+                    {zipping ? 'Montando o pacote…' : `Baixar tudo em ZIP (${zipCount})`}
+                  </button>
+                )}
+                {counts.busy === 0 && (
+                  <button className="btn secondary" onClick={clear} data-testid="clear">
+                    {phase === 'result' ? 'Novo lote' : 'Limpar lista'}
+                  </button>
+                )}
+                </div>
               </div>
-              <div className="stage">{`${batchDone} de ${batchCount} concluído${batchDone === 1 ? '' : 's'}`}</div>
-            </div>
-          )}
 
-          {capacity && phase !== 'result' && <div className="note warn">{capacity}</div>}
-          {overPetition && (
-            <div className="note warn">
-              Este sistema também limita a soma dos arquivos de uma petição a {formatBytes(process.totalPetitionBytes!)} (já com a margem). O lote tem{' '}
-              {formatBytes(batchBytes)}: será preciso protocolar em mais de uma petição.
-            </div>
-          )}
-          {process.exigePdfa && phase !== 'config' && (
-            <div className="note info">
-              Este sistema exige PDF/A na petição inicial. Os arquivos preparados aqui saem em PDF comum: converta para PDF/A depois de compactar e antes de assinar.
-            </div>
-          )}
-          {phase === 'review' && toPrepare > 0 && (
-            <p className="hint">
-              Ao clicar em <strong>Preparar</strong>, os arquivos marcados "será otimizado" são comprimidos (e divididos, se preciso)
-              {counts.stale > 0 ? ' e os marcados "fora da meta atual" são reprocessados' : ''}. Os demais ficam como estão.
-            </p>
-          )}
-          {phase === 'result' && (
-            <p className="hint">
-              Confira cada PDF antes de protocolar. O ZIP vem com os arquivos numerados na ordem do lote (01_, 02_…), sem acentos nem espaços,
-              documentos divididos em pasta própria{process.totalPetitionBytes !== undefined ? ', pastas por petição quando a soma passa do permitido' : ''} e um
-              LEIA-ME.txt com o resumo
-              {zipExcluded > 0 ? `; ${zipExcluded === 1 ? 'fica de fora o arquivo' : `ficam de fora os ${zipExcluded} arquivos`} com erro, com aviso ou fora da meta atual (listados no LEIA-ME)` : ''}.
-            </p>
-          )}
+              {phase === 'processing' && batchCount > 0 && (
+                <div className="overall">
+                  <div className="progress" role="progressbar" aria-label="Progresso do lote" aria-valuemin={0} aria-valuemax={batchCount} aria-valuenow={batchDone}>
+                    <div style={{ width: `${Math.max(2, (batchDone / batchCount) * 100)}%` }} />
+                  </div>
+                  <div className="stage">{`${batchDone} de ${batchCount} concluído${batchDone === 1 ? '' : 's'}`}</div>
+                </div>
+              )}
 
-          <BatchList jobs={jobs} process={process} onRemove={remove} onRetry={retry} onAllow={allow} />
+              {notice && <div className="note warn">{notice}</div>}
+              {capacity && phase !== 'result' && <div className="note warn">{capacity}</div>}
+              {overPetition && (
+                <div className="note warn">
+                  Este sistema limita a soma dos anexos de uma petição a {formatBytes(process.totalPetitionBytes!)} (já com a margem). O lote tem{' '}
+                  {formatBytes(batchBytes)}: será preciso protocolar em mais de uma petição. O ZIP já separa os arquivos por petição.
+                </div>
+              )}
+              {process.exigePdfa && (
+                <div className="note info">
+                  Este sistema exige PDF/A na petição inicial. Os arquivos preparados aqui saem em PDF comum: converta para PDF/A depois de compactar e antes de assinar.
+                </div>
+              )}
+              {phase === 'review' && toPrepare > 0 && (
+                <p className="hint">
+                  Ao clicar em <strong>Preparar</strong>, os arquivos marcados "será otimizado" são comprimidos (e divididos, se preciso)
+                  {counts.stale > 0 ? ' e os marcados "fora da meta atual" são reprocessados' : ''}. Os demais ficam como estão.
+                </p>
+              )}
+              {phase === 'result' && (
+                <p className="hint">
+                  Confira cada PDF antes de protocolar. O ZIP vem com os arquivos numerados na ordem do lote (01_, 02_…), sem acentos nem espaços,
+                  documentos divididos em pasta própria{process.totalPetitionBytes !== undefined ? ', pastas por petição quando a soma passa do permitido' : ''} e um
+                  LEIA-ME.txt com o resumo
+                  {zipExcluded > 0 ? `; ${zipExcluded === 1 ? 'fica de fora o arquivo' : `ficam de fora os ${zipExcluded} arquivos`} com erro, com aviso ou fora da meta atual (listados no LEIA-ME)` : ''}.
+                </p>
+              )}
+
+              <BatchList jobs={jobs} process={process} onRemove={remove} onRetry={retry} onAllow={allow} />
+              <DropZone onFiles={onFiles} variant="compact" />
+            </>
+          )}
         </section>
-      )}
+      </div>
     </div>
   )
 }

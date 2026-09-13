@@ -3,8 +3,8 @@ import { useCallback, useRef, useState, type DragEvent } from 'react'
 interface Props {
   onFiles: (files: File[]) => void
   disabled?: boolean
-  /** Versão menor, quando já há arquivos no lote */
-  compact?: boolean
+  /** "hero": área grande com ícone; "compact": faixa "Adicionar mais PDFs" no fim do lote */
+  variant?: 'hero' | 'compact'
 }
 
 async function collectFiles(items: DataTransferItemList | null, fallback: FileList | null): Promise<File[]> {
@@ -39,9 +39,20 @@ async function collectFiles(items: DataTransferItemList | null, fallback: FileLi
   return fallback ? Array.from(fallback) : out
 }
 
-export function DropZone({ onFiles, disabled, compact }: Props) {
+function UploadIcon() {
+  return (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 17V3" />
+      <path d="m6 9 6-6 6 6" />
+      <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+    </svg>
+  )
+}
+
+export function DropZone({ onFiles, disabled, variant = 'hero' }: Props) {
   const [active, setActive] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const compact = variant === 'compact'
 
   const onDrop = useCallback(
     async (e: DragEvent) => {
@@ -56,7 +67,7 @@ export function DropZone({ onFiles, disabled, compact }: Props) {
 
   return (
     <div
-      className={`dropzone${active ? ' active' : ''}${compact ? ' compact' : ''}`}
+      className={`dropzone ${variant}${active ? ' active' : ''}`}
       role="button"
       tabIndex={0}
       aria-label="Escolher arquivos PDF"
@@ -74,14 +85,13 @@ export function DropZone({ onFiles, disabled, compact }: Props) {
       onDragLeave={() => setActive(false)}
       onDrop={onDrop}
     >
-      {!compact && <div className="icon" aria-hidden="true">📄</div>}
-      <div className="big">{compact ? 'Adicionar mais PDFs' : 'Arraste seus PDFs para cá'}</div>
-      <div className="small">{compact ? 'Arraste ou clique para escolher.' : 'ou clique para escolher no computador. Pode selecionar vários de uma vez, ou uma pasta inteira.'}</div>
       {!compact && (
-        <div style={{ marginTop: 14 }}>
-          <span className="btn">Escolher PDFs</span>
+        <div className="icon-box">
+          <UploadIcon />
         </div>
       )}
+      <div className="big">{compact ? 'Adicionar mais PDFs' : 'Arraste seus PDFs aqui'}</div>
+      <div className="small">{compact ? 'Arraste ou clique para escolher' : 'ou clique para escolher — vários arquivos, ou uma pasta inteira'}</div>
       <input
         ref={inputRef}
         type="file"

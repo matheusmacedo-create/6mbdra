@@ -43,13 +43,15 @@ export function RuleSelector({ settings, onChange, onValidity }: Props) {
   const setCustom = (text: string) => {
     setCustomText(text)
     const n = parseMb(text)
-    if (isValidMb(n)) onChange({ ...settings, ruleId: null, customMb: n })
+    if (isValidMb(n)) onChange({ ...settings, ruleId: null, tribunal: null, customMb: n })
   }
 
   return (
     <div className="rule-selector">
       <div className="field">
-        <label htmlFor="regra">Tribunal e sistema</label>
+        <label htmlFor="regra" className="sr-only">
+          Tribunal e sistema
+        </label>
         <select
           id="regra"
           value={valorSelect}
@@ -83,8 +85,8 @@ export function RuleSelector({ settings, onChange, onValidity }: Props) {
           ))}
         </select>
         <div className="hint">
-          {cobertos} dos {TRIBUNAIS.length} tribunais com regra cadastrada. Não achou o seu? Escolha "Outro limite" e confira o valor na tela de anexar do
-          sistema (<a href="/tribunais/">diretório completo</a>).
+          {cobertos} dos {TRIBUNAIS.length} tribunais com regra. Não achou o seu? Escolha "Outro limite" e confira na tela de anexar do sistema (
+          <a href="/tribunais/">diretório</a>).
         </div>
       </div>
 
@@ -111,7 +113,7 @@ export function RuleSelector({ settings, onChange, onValidity }: Props) {
           )}
           <div className="hint" id="limite-hint">
             Informe o limite exatamente como o tribunal declara: a margem de segurança de {META_PERCENTUAL_PADRAO}% é aplicada por nós. Consideramos 1 MB =
-            1.000.000 bytes (a leitura mais conservadora).
+            1.000.000 bytes.
           </div>
         </div>
       )}
@@ -119,10 +121,10 @@ export function RuleSelector({ settings, onChange, onValidity }: Props) {
       <div className="rule-info" data-testid="rule-info">
         {regra ? (
           <>
-            <div>
-              <strong>{siglaEscolhida} · {rotuloSistema(regra)}</strong> — {tribunalEscolhido?.nome ?? regra.tribunal_nome}
-              {rotuloContexto(regra) ? ` · ${rotuloContexto(regra)}` : ''}
-              {herdada ? ` · regra nacional (${regra.tribunal_sigla})` : ''}
+            <div className="rule-name">
+              {siglaEscolhida} · {rotuloSistema(regra)} <span className="sub">— {tribunalEscolhido?.nome ?? regra.tribunal_nome}</span>
+              {rotuloContexto(regra) ? <span className="sub"> · {rotuloContexto(regra)}</span> : null}
+              {herdada ? <span className="sub"> · regra nacional ({regra.tribunal_sigla})</span> : null}
             </div>
             <dl>
               <div>
@@ -132,45 +134,77 @@ export function RuleSelector({ settings, onChange, onValidity }: Props) {
                   {mostrarBytesDoLimite(regra) ? ` (${formatBytes(limiteBytes(regra))})` : ''}
                 </dd>
               </div>
-              <div><dt>Meta segura</dt><dd>{formatBytes(metaBytes(regra))} ({percentualMeta(regra)}% do limite)</dd></div>
-              {regra.limite_por_pagina_kb && <div><dt>Por página</dt><dd>até {regra.limite_por_pagina_kb} KB (a meta de cada arquivo considera o número de páginas)</dd></div>}
-              {regra.limite_total_peticao_mb && <div><dt>Por petição</dt><dd>soma dos arquivos até {regra.limite_total_peticao_mb} MB</dd></div>}
-              {regra.limite_condicional && <div><dt>Condicional</dt><dd>{regra.limite_condicional.limite_valor} {regra.limite_condicional.limite_unidade} para arquivos com {regra.limite_condicional.min_paginas} páginas ou mais</dd></div>}
-              {regra.exige_pdfa && <div><dt>Formato</dt><dd>exige PDF/A na petição inicial (converta depois de compactar)</dd></div>}
-              <div><dt>Fonte oficial</dt><dd><a href={regra.fonte_url} target="_blank" rel="noreferrer noopener">{regra.fonte_titulo}</a></dd></div>
-              <div><dt>Verificado em</dt><dd>{formatDate(regra.verificado_em)}</dd></div>
-              {regra.situacao === 'em_revisao' && <div><dt>Situação</dt><dd><span className="badge warn">em revisão</span> {regra.motivo_revisao}</dd></div>}
+              <div>
+                <dt>Meta segura</dt>
+                <dd>
+                  {formatBytes(metaBytes(regra))} · {percentualMeta(regra)}%
+                </dd>
+              </div>
+              {regra.limite_por_pagina_kb && (
+                <div>
+                  <dt>Por página</dt>
+                  <dd>até {regra.limite_por_pagina_kb} KB</dd>
+                </div>
+              )}
+              {regra.limite_total_peticao_mb && (
+                <div>
+                  <dt>Por petição</dt>
+                  <dd>até {regra.limite_total_peticao_mb} MB</dd>
+                </div>
+              )}
+              {regra.limite_condicional && (
+                <div>
+                  <dt>Com {regra.limite_condicional.min_paginas}+ páginas</dt>
+                  <dd>
+                    {regra.limite_condicional.limite_valor} {regra.limite_condicional.limite_unidade}
+                  </dd>
+                </div>
+              )}
+              {regra.exige_pdfa && (
+                <div>
+                  <dt>Formato</dt>
+                  <dd>PDF/A na inicial</dd>
+                </div>
+              )}
+              <div>
+                <dt>Verificado em</dt>
+                <dd>{formatDate(regra.verificado_em)}</dd>
+              </div>
             </dl>
-            {regra.observacoes && <p className="hint">{regra.observacoes}</p>}
-            <p className="hint">
-              Regras mudam. Se o sistema recusar o arquivo, ajuste o limite manualmente e <a href="/contato/">avise a gente</a>.
+            {regra.situacao === 'em_revisao' && (
+              <div className="note warn" style={{ marginTop: 12 }}>
+                <span className="badge warn inline">em revisão</span> {regra.motivo_revisao}
+              </div>
+            )}
+            {regra.limite_por_pagina_kb ? <p className="hint" style={{ marginTop: 10 }}>A meta de cada arquivo considera o número de páginas.</p> : null}
+            {regra.exige_pdfa ? <p className="hint" style={{ marginTop: 10 }}>Converta para PDF/A depois de compactar e antes de assinar.</p> : null}
+            {regra.observacoes && (
+              <p className="hint" style={{ marginTop: 10 }}>
+                {regra.observacoes}
+              </p>
+            )}
+            <p className="source">
+              Fonte:{' '}
+              <a href={regra.fonte_url} target="_blank" rel="noreferrer noopener">
+                {regra.fonte_titulo}
+              </a>
+              . Se o sistema recusar, ajuste o limite e <a href="/contato/">avise a gente</a>.
             </p>
           </>
         ) : (
-          <div>
-            Limite: <strong>{formatBytes(resolved.limitBytes)}</strong> · meta segura: <strong>{formatBytes(resolved.targetBytes)}</strong> ({META_PERCENTUAL_PADRAO}% do limite, para
-            o portal não recusar por diferença de contagem).
-          </div>
+          <dl>
+            <div>
+              <dt>Limite informado</dt>
+              <dd>{formatBytes(resolved.limitBytes)}</dd>
+            </div>
+            <div>
+              <dt>Meta segura</dt>
+              <dd>
+                {formatBytes(resolved.targetBytes)} · {META_PERCENTUAL_PADRAO}%
+              </dd>
+            </div>
+          </dl>
         )}
-      </div>
-
-      <div className="toggles">
-        <label className="toggle">
-          <input type="checkbox" checked={settings.autoSplit} onChange={(e) => onChange({ ...settings, autoSplit: e.target.checked })} />
-          <span>
-            <span className="t-label">Dividir em partes quando não couber</span>
-            <br />
-            <span className="t-hint">Se nem a compressão máxima for suficiente, gera parte_01, parte_02… sem cortar páginas.</span>
-          </span>
-        </label>
-        <label className="toggle">
-          <input type="checkbox" checked={settings.grayscale} onChange={(e) => onChange({ ...settings, grayscale: e.target.checked })} />
-          <span>
-            <span className="t-label">Converter para tons de cinza</span>
-            <br />
-            <span className="t-hint">Reduz muito digitalizações coloridas. Deixe desligado se as cores importarem (carimbos, assinaturas, grifos).</span>
-          </span>
-        </label>
       </div>
     </div>
   )
