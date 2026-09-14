@@ -123,44 +123,28 @@ ou `PUBLIC_GTM_ID`. Detalhes em [README-metricas.md](README-metricas.md).
 
 ### Domínio próprio (brpdf.com)
 
-O domínio está registrado na Hostinger e hoje aponta para os nameservers de parking dela
-(`aster.dns-parking.com` / `helios.dns-parking.com`). Um Worker só aceita domínio próprio se a zona
-estiver na Cloudflare, então o caminho é mover o DNS. Ordem, sem pular etapa:
+No ar em **https://brpdf.com**. O registro fica na Hostinger e o DNS na Cloudflare
+(`brynne.ns.cloudflare.com` / `fred.ns.cloudflare.com`); o Worker `6mb` está amarrado aos dois
+hosts como *custom domain*, o que faz a Cloudflare manter sozinha o DNS e o certificado.
 
-1. **Cloudflare → Add a site → `brpdf.com`** (plano Free). Ela devolve dois nameservers
-   `*.ns.cloudflare.com`.
-2. **Hostinger → Domínios → brpdf.com → Nameservers → alterar** para os dois da Cloudflare. A
-   propagação leva de minutos a algumas horas; a Cloudflare avisa por e-mail quando a zona fica
-   *Active*. O site em `workers.dev` continua no ar esse tempo todo.
-3. Com a zona ativa, ligar o Worker ao domínio — em `wrangler.jsonc`:
+`www.brpdf.com` responde 301 para a raiz. O redirecionamento vive no próprio Worker
+(`semWww()` em `src/worker/index.ts`, coberto por `tests/unit/worker.test.ts`) em vez de uma
+Redirect Rule no painel, para ficar versionado e testável. Isso exige `assets.run_worker_first:
+true` no `wrangler.jsonc`: o campo só aceita padrões de caminho, não de host, então restringi-lo a
+`/api/*` faria a camada de arquivos estáticos responder antes e o redirecionamento nunca rodaria.
+O preço é uma invocação de Worker por requisição — ela só compara o host e repassa para
+`env.ASSETS`, e os cabeçalhos de `_headers` continuam valendo. Se um dia o volume justificar,
+trocar por uma Redirect Rule (`Rules → Redirect Rules`) devolve os arquivos estáticos ao caminho
+direto; aí `run_worker_first` volta a ser `["/api/*"]` e `semWww()` sai.
 
-   ```jsonc
-   "routes": [
-     { "pattern": "brpdf.com", "custom_domain": true },
-     { "pattern": "www.brpdf.com", "custom_domain": true }
-   ]
-   ```
+Para mover para outro domínio: trocar os dois `pattern` em `wrangler.jsonc`, o padrão de `url` em
+`src/config/site.mjs`, o host em `semWww()` (nada a trocar — a regra é genérica) e publicar.
 
-   A Cloudflare cria sozinha os registros DNS e o certificado. (Equivale a **Worker → Settings →
-   Domains & Routes → Add → Custom domain**.) Só faça isso **depois** do passo 2: com a zona fora da
-   Cloudflare, o `wrangler deploy` falha.
-4. Publicar apontando os metadados para o domínio novo:
-
-   ```bash
-   SITE_URL=https://brpdf.com npm run deploy
-   ```
-
-   Sem isso, canonical, sitemap e Open Graph continuam apontando para o endereço `workers.dev`.
-   Vale trocar também o último valor de `url` em `src/config/site.mjs`, que é o padrão de quando
-   `SITE_URL` não vem definida, e a variável `SITE_URL` no Workers Builds.
-5. **`www` → raiz**: em Rules → Redirect Rules, redirecionar `www.brpdf.com/*` para
-   `https://brpdf.com/$1` (301), para existir um endereço canônico só.
-6. Conferir: `curl -sI https://brpdf.com/` (200 e os cabeçalhos de `_headers`),
-   `curl -s https://brpdf.com/robots.txt` (o `Sitemap:` precisa citar o domínio novo) e
-   `curl -s https://brpdf.com/ | grep canonical`.
-
-O token de API usado no deploy manual precisa de *Workers Scripts: Edit*; para criar a zona pelo
-terminal, também de *Account → Zone: Create* e *Zone → Zone: Edit*.
+**A Cloudflare injeta conteúdo no `robots.txt`.** Zonas novas vêm com o *managed robots.txt*
+ligado, que acrescenta bloqueios a rastreadores de IA (GPTBot, ClaudeBot, Google-Extended,
+Bytespider…) antes das nossas regras. Buscadores comuns seguem liberados e o `Sitemap:` continua
+correto. Para desligar: **Cloudflare → brpdf.com → Security → Settings → AI Scrapers and
+Crawlers**.
 
 ## Navegadores suportados
 

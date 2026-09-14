@@ -11,12 +11,25 @@
     "directory": "./dist/",
     "not_found_handling": "404-page",
     "html_handling": "auto-trailing-slash",
-    // /api/* nunca é arquivo: vai direto para o Worker, sem passar pela camada de estáticos.
-    "run_worker_first": ["/api/*"]
+    /*
+     * O Worker vê toda requisição antes da camada de arquivos estáticos. Precisa ser assim porque o
+     * redirecionamento de www -> brpdf.com vale para qualquer caminho, e "run_worker_first" só
+     * aceita padrões de caminho, não de host (a alternativa seria uma Redirect Rule no painel, que
+     * não ficaria versionada aqui). O custo é uma invocação de Worker por requisição; o trabalho
+     * dela é comparar o host e repassar para env.ASSETS, e os cabeçalhos de _headers continuam
+     * valendo porque quem serve o arquivo continua sendo a mesma camada.
+     */
+    "run_worker_first": true
   },
   // O Worker existe só para as métricas: /api/* é tratado por ele, todo o resto sai dos arquivos
   // estáticos. Nenhum PDF passa por aqui.
   "main": "./src/worker/index.ts",
+  // Domínio próprio. A Cloudflare cria sozinha o DNS e o certificado de cada um; o Worker
+  // redireciona www para a raiz, então existe um endereço canônico só.
+  "routes": [
+    { "pattern": "brpdf.com", "custom_domain": true },
+    { "pattern": "www.brpdf.com", "custom_domain": true }
+  ],
   "d1_databases": [
     { "binding": "METRICAS", "database_name": "brpdf-metricas", "database_id": "386f4329-8be9-4d60-a2bc-acd95ee53e28" }
   ],

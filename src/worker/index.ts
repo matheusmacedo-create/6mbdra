@@ -201,8 +201,10 @@ async function painel(req: Request, env: Env): Promise<Response> {
 
 /**
  * Um endereço canônico só: www.brpdf.com manda para brpdf.com, com 301, preservando caminho e
- * query. Fica aqui no Worker em vez de uma Redirect Rule da Cloudflare porque assim o
- * comportamento é versionado, testável e não depende de configuração no painel.
+ * query. Fica aqui, e não numa Redirect Rule da Cloudflare, para o comportamento ficar versionado
+ * e testável. Só funciona porque "run_worker_first" está ligado para tudo (wrangler.jsonc): com
+ * ele restrito a /api/*, a camada de arquivos estáticos responderia antes e este código nunca
+ * rodaria numa página comum.
  */
 function semWww(url: URL): Response | null {
   if (!url.hostname.startsWith('www.')) return null
