@@ -253,3 +253,14 @@ tr.sem-regra td { color: var(--muted); }
 .faq summary::before { content: "+"; display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 7px; background: var(--surface-2); color: var(--ink-2); font-weight: 700; flex-shrink: 0; }
 .faq details[open] summary::before { content: "–"; }
 .faq details p { margin: 10px 0 0 36px; color: var(--text-secondary); font-size: 16px; }
+
+/* Faixa de consentimento: só aparece quando o build recebe uma tag do Google (ver src/scripts/ga.ts). */
+.consentimento {
+  position: fixed; inset: auto 0 0 0; z-index: 50;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 20px;
+  padding: 14px 20px; background: var(--surface); border-top: 1px solid var(--border-strong);
+  box-shadow: 0 -2px 12px rgba(24, 24, 27, 0.08);
+}
+.consentimento p { margin: 0; max-width: 640px; font-size: 14.5px; color: var(--ink-2); }
+.consentimento .acoes { display: flex; align-items: center; gap: 10px; }
+.consentimento .acoes a { font-size: 14px; }

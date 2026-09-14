@@ -7,9 +7,17 @@
   "name": "6mb",
   "compatibility_date": "2026-09-01",
   "assets": {
+    "binding": "ASSETS",
     "directory": "./dist/",
     "not_found_handling": "404-page",
     "html_handling": "auto-trailing-slash"
   },
-  "observability": { "enabled": false }
+  // O Worker existe só para as métricas: /api/* é tratado por ele, todo o resto sai dos arquivos
+  // estáticos. Nenhum PDF passa por aqui.
+  "main": "./src/worker/index.ts",
+  "run_worker_first": ["/api/*"],
+  "d1_databases": [
+    { "binding": "METRICAS", "database_name": "brpdf-metricas", "database_id": "386f4329-8be9-4d60-a2bc-acd95ee53e28" }
+  ],
+  "observability": { "enabled": true }
 }

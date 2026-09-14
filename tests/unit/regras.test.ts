@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { execFileSync } from 'node:child_process'
 import { REGRAS, TRIBUNAIS, idPagina, limiteBytes, metaBytes, opcoesPorRamo, paginasDeRegras, regrasDoTribunal, regrasVigentes, rotuloRegra, rotuloContexto, tituloRegra, tribunaisCobertos, type Regra } from '../../src/tool/lib/regras'
 import { resolveSettings, targetForLimit } from '../../src/tool/lib/limits'
-import { DEFAULT_SETTINGS, deriveKind, targetFor, isStale, type Job, type ProcessSettings } from '../../src/tool/lib/types'
+import { DEFAULT_SETTINGS, deriveKind, isProcessable, targetFor, isStale, type Job, type ProcessSettings } from '../../src/tool/lib/types'
 import { track } from '../../src/tool/lib/analytics'
 
 describe('regras', () => {
@@ -104,5 +104,27 @@ describe('cobertura por tribunal (regras nacionais herdadas)', () => {
     const ids = paginasDeRegras().map(idPagina)
     expect(new Set(ids).size).toBe(ids.length)
     expect(ids).toContain('tre-mg-pje')
+  })
+})
+
+describe('análise que não terminou (RF05) não bloqueia o arquivo', () => {
+  const p: ProcessSettings = { limitBytes: 6_000_000, targetBytes: 5_700_000, percent: 95, exigePdfa: false, autoSplit: true, grayscale: false }
+  const base = (size: number, analysis: Job['analysis']): Job => ({
+    id: 'x', file: {} as File, name: 'recibos.pdf', originalSize: size, status: 'analyzed', analysis, progress: 0, stage: '', outputs: [], warnings: [],
+  })
+  const falhou = { valid: false, failed: true, pages: 0, encrypted: false, signed: false, reason: 'A leitura prévia não terminou neste navegador.' }
+
+  it('arquivo grande sem análise fica "não analisado" e pode ser preparado', () => {
+    const j = base(13_000_000, falhou)
+    expect(deriveKind(j, p)).toBe('unknown')
+    expect(isProcessable(j, p)).toBe(true)
+  })
+  it('arquivo pequeno sem análise é mantido como está', () => {
+    expect(deriveKind(base(1_000_000, falhou), p)).toBe('unchanged')
+  })
+  it('PDF que o leitor recusou de fato continua inválido', () => {
+    const j = base(13_000_000, { valid: false, pages: 0, encrypted: false, signed: false, reason: 'A estrutura interna do PDF está danificada.' })
+    expect(deriveKind(j, p)).toBe('invalid')
+    expect(isProcessable(j, p)).toBe(false)
   })
 })

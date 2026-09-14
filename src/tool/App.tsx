@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DEFAULT_SETTINGS, deriveKind, isBusy, isStale as isStaleJob, type Settings, type OutputFile, type Job } from './lib/types'
 import { useJobQueue, type EngineStatus } from './hooks/useJobQueue'
-import { DropZone } from './components/DropZone'
+import { DropZone, type OrigemArquivos } from './components/DropZone'
 import { Options } from './components/Options'
 import { RuleSelector } from './components/RuleSelector'
 import { BatchList } from './components/BatchList'
@@ -67,6 +67,7 @@ const EXCLUDED_REASON: Partial<Record<ReturnType<typeof deriveKind>, string>> = 
   restricted: 'com restricoes de edicao: nao processado (libere na ferramenta se nao houver problema)',
   protected: 'exige senha para abrir: salve uma copia sem senha no programa de origem',
   invalid: 'nao e um PDF legivel',
+  unknown: 'nao foi possivel analisar; tente preparar na ferramenta',
   error: 'nao deu certo (veja o aviso na ferramenta)',
   ready: 'ainda nao processado',
   queued: 'ainda nao processado',
@@ -89,8 +90,9 @@ export default function App() {
       delete document.documentElement.dataset.view
     }
   }, [view])
-  const openTool = useCallback(() => {
+  const openTool = useCallback((origem: string = 'botao') => {
     setView('tool')
+    track('abriu_ferramenta', { origem })
     try {
       const url = new URL(window.location.href)
       url.searchParams.set('view', 'tool')
@@ -102,6 +104,7 @@ export default function App() {
   }, [])
   const goHome = useCallback(() => {
     setView('home')
+    track('voltou_inicio')
     try {
       const url = new URL(window.location.href)
       url.searchParams.delete('view')
@@ -116,9 +119,11 @@ export default function App() {
     const handler = (e: MouseEvent) => {
       if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey) return
       const target = e.target as Element | null
-      if (target?.closest?.('a[data-open-tool]')) {
+      const abrir = target?.closest?.('a[data-open-tool]') as HTMLAnchorElement | null
+      if (abrir) {
         e.preventDefault()
-        openTool()
+        // O atributo diz qual link foi clicado (cabeçalho, card de ferramenta…); sem valor, é só "link".
+        openTool(abrir.dataset.openTool || 'link')
       } else {
         // Links de seção do cabeçalho: voltam à página inicial sem recarregar (o lote continua na memória).
         const home = target?.closest?.('a[data-go-home]') as HTMLAnchorElement | null
@@ -161,11 +166,11 @@ export default function App() {
     jobs.length === 0 ? 'config' : counts.busy > 0 ? 'processing' : counts.analyzing === 0 && counts.ready === 0 && counts.done + counts.error > 0 ? 'result' : 'review'
 
   const onFiles = useCallback(
-    (files: File[]) => {
+    (files: File[], origem: OrigemArquivos) => {
       const pdfs = files.filter((f) => /\.pdf$/i.test(f.name) || f.type === 'application/pdf')
       const ignored = files.length - pdfs.length
-      addFiles(pdfs)
-      if (pdfs.length > 0) openTool()
+      addFiles(pdfs, origem)
+      if (pdfs.length > 0) openTool(origem === 'arrastar' ? 'arrastou_arquivo' : 'escolheu_arquivo')
       const msg = ignored > 0 ? `${ignored} arquivo${ignored === 1 ? ' foi ignorado porque não é' : 's foram ignorados porque não são'} PDF.` : null
       setNotice(msg)
       if (msg) setAnnounce(msg)
@@ -258,6 +263,7 @@ export default function App() {
         petitionBytes: process.totalPetitionBytes,
         siteUrl: SITE.url,
       })
+      track('zip_gerado', { quantidade: plan.fileCount, partes: docs.length, situacao: excluded.length ? 'com_excluidos' : 'completo' })
       downloadZipEntries(plan.entries, plan.zipName, plan.fileCount)
     } finally {
       setZipping(false)

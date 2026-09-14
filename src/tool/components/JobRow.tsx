@@ -15,6 +15,7 @@ interface Props {
 const KIND_LABEL: Record<ReturnType<typeof deriveKind>, { text: string; cls: string }> = {
   analyzing: { text: 'Analisando…', cls: 'info' },
   ready: { text: 'Será otimizado', cls: 'info' },
+  unknown: { text: 'Não analisado', cls: 'warn' },
   unchanged: { text: 'Já cabe · mantido', cls: 'ok' },
   signed: { text: 'Assinado digitalmente', cls: 'warn' },
   restricted: { text: 'Com restrições de edição', cls: 'warn' },
@@ -164,6 +165,12 @@ export function JobRow({ job, process, onRemove, onRetry, onAllow }: Props) {
       )}
       {kind === 'invalid' && (
         <div className="note err indent">Não foi possível ler este arquivo como PDF. {job.analysis?.reason ? `(${job.analysis.reason})` : ''}</div>
+      )}
+      {kind === 'unknown' && (
+        <div className="note warn indent">
+          Não conseguimos ler os detalhes deste PDF (páginas, assinatura, proteção) neste navegador. Isso não quer dizer que ele esteja com problema:
+          clique em <strong>Preparar</strong> para tentar mesmo assim. Se o arquivo estiver mesmo danificado, avisamos com o motivo.
+        </div>
       )}
       {stale && (
         <div className="note warn indent">

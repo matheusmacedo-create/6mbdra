@@ -117,7 +117,7 @@ const dadosEstruturados = {
             os seus arquivos.
           </p>
           <div class="hero-actions">
-            <a class="btn" href="/?view=tool" data-open-tool>Selecionar PDFs</a>
+            <a class="btn" href="/?view=tool" data-open-tool="chamada">Selecionar PDFs</a>
             <a class="btn secondary" href="/tribunais/">Encontrar meu tribunal</a>
           </div>
           <p class="hero-micro">Gratuito, sem limite de uso e pronto em poucos minutos.</p>
@@ -144,7 +144,7 @@ const dadosEstruturados = {
         {FERRAMENTAS.map((f) =>
           f.cta ? (
             <li>
-              <a class="tool-card" href="/?view=tool" data-open-tool>
+              <a class="tool-card" href="/?view=tool" data-open-tool="card">
                 <span class={`mark ${f.cor}`} aria-hidden="true" set:html={icone(f.icone)} />
                 <span class="title">{f.title}</span>
                 <span class="desc">{f.desc}</span>
@@ -229,8 +229,8 @@ const dadosEstruturados = {
     <section class="wrap home-section home-only faq" id="perguntas">
       <div class="section-head"><h2>Perguntas frequentes</h2></div>
       <div class="faq-list">
-        {PERGUNTAS.map((p) => (
-          <details>
+        {PERGUNTAS.map((p, i) => (
+          <details data-faq={i + 1}>
             <summary>{p.q}</summary>
             <p>{p.a}</p>
           </details>

@@ -37,6 +37,11 @@ export interface Analysis {
   signed: boolean
   /** Motivo quando valid = false */
   reason?: string
+  /**
+   * A análise não pôde ser concluída (o worker morreu, faltou memória…). Não diz nada sobre o
+   * arquivo: ele pode estar perfeito. O usuário continua podendo preparar.
+   */
+  failed?: boolean
 }
 
 /**

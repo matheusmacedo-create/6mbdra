@@ -1,7 +1,10 @@
 import { useCallback, useRef, useState, type DragEvent } from 'react'
 
+/** Como os arquivos chegaram: arrastados para a área ou escolhidos no seletor do sistema. */
+export type OrigemArquivos = 'arrastar' | 'escolher'
+
 interface Props {
-  onFiles: (files: File[]) => void
+  onFiles: (files: File[], origem: OrigemArquivos) => void
   disabled?: boolean
   /** "hero": área grande com ícone; "compact": faixa "Adicionar mais PDFs" no fim do lote */
   variant?: 'hero' | 'compact'
@@ -62,7 +65,7 @@ export function DropZone({ onFiles, disabled, variant = 'hero', title }: Props) 
       setActive(false)
       if (disabled) return
       const files = await collectFiles(e.dataTransfer.items, e.dataTransfer.files)
-      onFiles(files)
+      onFiles(files, 'arrastar')
     },
     [onFiles, disabled],
   )
@@ -103,7 +106,7 @@ export function DropZone({ onFiles, disabled, variant = 'hero', title }: Props) 
         data-testid="file-input"
         onChange={(e) => {
           const files = e.target.files ? Array.from(e.target.files) : []
-          onFiles(files)
+          onFiles(files, 'escolher')
           e.target.value = ''
         }}
       />

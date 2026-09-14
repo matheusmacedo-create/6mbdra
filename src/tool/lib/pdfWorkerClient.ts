@@ -6,9 +6,12 @@ import type { SplitResultMessage } from '../workers/pdf.worker'
 export class PdfWorkerClient {
   private client = new RpcClient(() => new Worker(new URL('../workers/pdf.worker.ts', import.meta.url), { type: 'module' }))
 
-  async analyze(bytes: Uint8Array, signal?: AbortSignal): Promise<Analysis> {
-    const buf = bytes.slice().buffer as ArrayBuffer
-    return this.client.call<Analysis>('analyze', { input: buf }, { transfer: [buf], signal, inactivityMs: 5 * 60_000 })
+  /**
+   * Analisa o PDF. O buffer é transferido (não copiado) para não dobrar a memória com arquivos
+   * grandes: quem chama não deve reutilizá-lo depois.
+   */
+  async analyze(buffer: ArrayBuffer, signal?: AbortSignal): Promise<Analysis> {
+    return this.client.call<Analysis>('analyze', { input: buffer }, { transfer: [buffer], signal, inactivityMs: 5 * 60_000 })
   }
 
   async countPages(bytes: Uint8Array, signal?: AbortSignal): Promise<number> {

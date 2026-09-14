@@ -13,6 +13,6 @@ export const SITE = {
     (process.env.CF_PAGES_URL ? new URL(process.env.CF_PAGES_URL).origin : undefined) ??
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ??
     'https://6mb.6mb-app.workers.dev',
-  /** E-mail de contato exibido na página /contato. Provisório: ajuste quando o domínio existir. */
-  contactEmail: 'contato@brpdf.com.br',
+  /** E-mail de contato exibido na página /contato. */
+  contactEmail: 'brpdf@proton.me',
 }

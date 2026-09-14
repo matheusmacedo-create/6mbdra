@@ -15,6 +15,7 @@ export type JobKind =
   | 'analyzing'
   | 'ready' // acima do limite; será otimizado
   | 'unchanged' // já cabe; será mantido idêntico
+  | 'unknown' // não foi possível analisar; pode ser preparado assim mesmo
   | 'signed' // assinatura digital detectada; excluído por padrão
   | 'restricted' // só restrições de edição (abre sem senha); excluído por padrão
   | 'protected' // exige senha de abertura; recusado
@@ -147,7 +148,11 @@ export function deriveKind(j: Job, target: number | ProcessSettings): JobKind {
       return 'error'
     case 'analyzed': {
       const a = j.analysis
-      if (!a || !a.valid) return 'invalid'
+      if (!a) return 'invalid'
+      // Análise que não pôde ser feita não condena o arquivo: se já cabe, fica como está;
+      // se não cabe, o usuário pode tentar preparar (o motor lê PDFs que o leitor prévio não lê).
+      if (a.failed) return j.originalSize <= targetBytes ? 'unchanged' : 'unknown'
+      if (!a.valid) return 'invalid'
       if (a.encrypted) return 'protected'
       // Já cabe: mantido intacto mesmo se assinado (não precisa de processamento).
       if (j.originalSize <= targetBytes) return 'unchanged'
@@ -160,7 +165,8 @@ export function deriveKind(j: Job, target: number | ProcessSettings): JobKind {
 
 /** Pode entrar na fila quando o usuário clicar em "Preparar arquivos"? */
 export function isProcessable(j: Job, target: number | ProcessSettings): boolean {
-  return deriveKind(j, target) === 'ready'
+  const k = deriveKind(j, target)
+  return k === 'ready' || k === 'unknown'
 }
 
 /** Resultado preparado para outra meta e que não cabe na meta atual. */

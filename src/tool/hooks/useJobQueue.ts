@@ -4,6 +4,7 @@ import { processPdf, type PipelineDeps } from '../lib/engine/pipeline'
 import { EngineError } from '../lib/engine/types'
 import { createEngine, GhostscriptEngine } from '../lib/engine'
 import { PdfWorkerClient } from '../lib/pdfWorkerClient'
+import { RpcRemoteError } from '../lib/rpc'
 import { SplitError, type Analysis } from '../lib/splitTypes'
 import { sizeBucket, track } from '../lib/analytics'
 
@@ -68,6 +69,16 @@ function describeError(e: unknown): string {
   return String(e)
 }
 
+/** Em que estado o PDF chegou — é o que o painel mostra em "o que as pessoas trazem". */
+function situacaoDaAnalise(a: Analysis): string {
+  if (a.failed) return 'nao_analisado'
+  if (a.encrypted) return 'senha'
+  if (!a.valid) return 'invalido'
+  if (a.signed) return 'assinado'
+  if (a.restricted) return 'restrito'
+  return 'ok'
+}
+
 export interface EngineStatus {
   state: 'idle' | 'loading' | 'ready' | 'error'
   message?: string
@@ -103,12 +114,20 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
     const gs = deps.engine instanceof GhostscriptEngine ? deps.engine : null
     if (!gs) {
       onEngineStatus?.({ state: 'error', message: 'Navegador sem suporte a WebAssembly ou Web Workers.' })
+      track('motor', { situacao: 'sem_suporte' })
       return
     }
     onEngineStatus?.({ state: 'loading' })
+    const pedidoEm = Date.now()
     gs.warmUp().then(
-      () => onEngineStatus?.({ state: 'ready' }),
-      (e) => onEngineStatus?.({ state: 'error', message: describeError(e) }),
+      () => {
+        onEngineStatus?.({ state: 'ready' })
+        track('motor', { situacao: 'pronto', segundos: Math.round((Date.now() - pedidoEm) / 1000) })
+      },
+      (e) => {
+        onEngineStatus?.({ state: 'error', message: describeError(e) })
+        track('motor', { situacao: 'falhou', categoria: e instanceof EngineError ? e.code : 'UNKNOWN' })
+      },
     )
     return () => {
       deps.engine?.dispose?.()
@@ -122,21 +141,44 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
   const analyze = useCallback(
     async (job: Job) => {
       const patch = (p: Partial<Job>) => dispatch({ type: 'patch', id: job.id, patch: p })
+      const anotar = (a: Analysis) => {
+        patch({ status: 'analyzed', analysis: a })
+        track('arquivo_analisado', { situacao: situacaoDaAnalise(a), faixa: sizeBucket(job.originalSize), paginas: a.pages })
+      }
+      // O buffer é transferido para o worker a cada tentativa, então é lido do arquivo de novo.
+      const tentar = async () => deps.pdfAnalyze.analyze(await job.file.arrayBuffer())
       try {
-        const bytes = new Uint8Array(await job.file.arrayBuffer())
-        const analysis: Analysis = await deps.pdfAnalyze.analyze(bytes)
-        patch({ status: 'analyzed', analysis })
+        anotar(await tentar())
+        return
       } catch (e) {
-        patch({ status: 'analyzed', analysis: { valid: false, pages: 0, encrypted: false, signed: false, reason: describeError(e) } })
+        // O worker respondeu com erro: o problema é o arquivo, e repetir não muda nada.
+        if (e instanceof RpcRemoteError) {
+          anotar({ valid: false, pages: 0, encrypted: false, signed: false, reason: describeError(e) })
+          return
+        }
+        // O worker morreu (memória, aba em segundo plano…). A próxima chamada sobe um worker novo.
+        if (import.meta.env.DEV) console.warn('[brpdf] análise falhou; tentando de novo:', e)
+      }
+      try {
+        anotar(await tentar())
+      } catch (e) {
+        if (e instanceof RpcRemoteError) {
+          anotar({ valid: false, pages: 0, encrypted: false, signed: false, reason: describeError(e) })
+          return
+        }
+        // Não sabemos se o PDF presta: deixamos o usuário tentar preparar assim mesmo.
+        console.warn('[brpdf] não foi possível analisar o arquivo:', e instanceof Error ? e.name : 'desconhecido')
+        anotar({ valid: false, failed: true, pages: 0, encrypted: false, signed: false, reason: 'A leitura prévia não terminou neste navegador.' })
       }
     },
     [deps],
   )
 
   const addFiles = useCallback(
-    (files: FileList | File[]) => {
+    (files: FileList | File[], origem: 'arrastar' | 'escolher' = 'escolher') => {
       const list = Array.from(files).filter((f) => /\.pdf$/i.test(f.name) || f.type === 'application/pdf')
       if (list.length === 0) return 0
+      track('arquivo_adicionado', { quantidade: list.length, origem, faixa: sizeBucket(Math.max(...list.map((f) => f.size))) })
       const newJobs: Job[] = list.map((file) => ({
         id: newId(),
         file,
@@ -161,12 +203,16 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
   const remove = useCallback((id: string) => {
     abortRef.current.get(id)?.abort()
     abortRef.current.delete(id)
+    track('arquivo_removido', { tipo: 'um', quantidade: 1 })
     dispatch({ type: 'remove', id })
   }, [])
 
+  const jobsRef = useRef(jobs)
+  jobsRef.current = jobs
   const clear = useCallback(() => {
     for (const c of abortRef.current.values()) c.abort()
     abortRef.current.clear()
+    track('arquivo_removido', { tipo: 'todos', quantidade: jobsRef.current.length })
     dispatch({ type: 'clear' })
   }, [])
 
@@ -193,14 +239,27 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
     dispatch({ type: 'unqueue' })
     for (const c of abortRef.current.values()) c.abort()
     abortRef.current.clear()
+    const b = batchRef.current
+    if (b) track('lote_cancelado', { quantidade: b.count, segundos: Math.round((Date.now() - b.startedAt) / 1000) })
     batchRef.current = null
     setBatchCount(0)
   }, [])
 
-  const retry = useCallback((id: string) => start([id]), [start])
+  const retry = useCallback(
+    (id: string) => {
+      const j = jobsRef.current.find((x) => x.id === id)
+      track('tentar_novamente', { situacao: j?.status ?? 'desconhecido' })
+      return start([id])
+    },
+    [start],
+  )
 
   /** Libera um arquivo assinado ou com restrições para processamento. */
-  const allow = useCallback((id: string) => dispatch({ type: 'patch', id, patch: { force: true } }), [])
+  const allow = useCallback((id: string) => {
+    const a = jobsRef.current.find((x) => x.id === id)?.analysis
+    track('liberar_arquivo', { tipo: a?.signed ? 'assinado' : 'restrito' })
+    dispatch({ type: 'patch', id, patch: { force: true } })
+  }, [])
 
   // Processa a fila, um arquivo por vez.
   useEffect(() => {

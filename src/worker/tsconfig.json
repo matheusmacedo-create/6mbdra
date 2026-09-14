@@ -1,0 +1,11 @@
+{
+  "//": "O Worker roda no runtime da Cloudflare, não no navegador: tipos próprios para Request/Response não colidirem com os do DOM usados no site.",
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "types": ["@cloudflare/workers-types"],
+    "lib": ["ES2022"],
+    "noEmit": true
+  },
+  "include": ["./**/*"],
+  "exclude": []
+}

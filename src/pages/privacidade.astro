@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro'
 import { SITE } from '../config/site'
+const USA_GOOGLE = Boolean((import.meta.env.PUBLIC_GA4_ID ?? '').trim() || (import.meta.env.PUBLIC_GTM_ID ?? '').trim())
 ---
 <Base title="Privacidade e segurança" description="O que acontece com seus PDFs ao usar a ferramenta: nada sai do seu computador. Entenda como o processamento local funciona e o que medimos." path="/privacidade/">
   <main class="page prose">
@@ -26,14 +27,37 @@ import { SITE } from '../config/site'
       Para saber se a ferramenta funciona e o que melhorar, podemos registrar eventos <strong>agregados e anônimos</strong>: quantidade de lotes
       iniciados e concluídos, quantidade de arquivos por lote, faixa de tamanho (por exemplo "5–20 MB"), tempo de processamento, categorias
       genéricas de erro, downloads e qual tribunal/sistema foi escolhido. Esses eventos <strong>nunca</strong> incluem nome de arquivo, conteúdo,
-      número de processo ou texto extraído — o código da ferramenta bloqueia esses campos na origem. No momento, nenhum provedor de
-      medição está ativo.
+      número de processo ou texto extraído — o código da ferramenta bloqueia esses campos na origem.
+    </p>
+    <p>
+      Esses eventos vão para o nosso próprio servidor (não há intermediário) e ficam numa tabela de contagens. Junto com eles registramos a
+      página visitada, o site que trouxe você (quando existe), o país informado pela rede e se o aparelho é celular ou computador. O
+      <strong>endereço IP não é guardado</strong>: ele é misturado com o navegador, o dia e um segredo do servidor, virando um código curto que
+      serve só para não contar a mesma pessoa duas vezes no mesmo dia — e que muda à meia-noite, sem volta para o IP de origem.
+    </p>
+    <p>
+      Se o seu navegador enviar <em>Do Not Track</em> ou <em>Global Privacy Control</em>, nada é enviado.
     </p>
 
     <h2>Cookies e terceiros</h2>
+    {USA_GOOGLE ? (
+      <Fragment>
+        <p>
+          Além da medição própria, usamos o Google Analytics para entender o uso do site. Ele cria cookies no seu navegador, e por isso só é
+          ativado se você aceitar na faixa que aparece na primeira visita — antes disso, e se você recusar, nenhum cookie do Google é criado.
+          A sua escolha fica guardada no próprio navegador e pode ser refeita limpando os dados do site.
+        </p>
+        <p>
+          O Google recebe os mesmos eventos agregados descritos acima. Ele <strong>não</strong> recebe nem tem como receber os seus documentos:
+          os PDFs nunca saem do seu computador, nem para nós.
+        </p>
+      </Fragment>
+    ) : (
+      <p>Não usamos cookies nem serviços de medição de terceiros: a contagem de uso é feita pelo nosso próprio servidor, sem cookie.</p>
+    )}
     <p>
-      Não usamos cookies. Se um dia houver publicidade, o código de anúncios ficará isolado do processador de PDFs e não terá acesso aos seus
-      arquivos; esta página será atualizada antes de qualquer ativação.
+      Se um dia houver publicidade, o código de anúncios ficará isolado do processador de PDFs e não terá acesso aos seus arquivos; esta página
+      será atualizada antes de qualquer ativação.
     </p>
 
     <h2>Segurança</h2>

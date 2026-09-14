@@ -1,0 +1,171 @@
+---
+import Base from '../layouts/Base.astro'
+---
+<Base
+  title="Painel de uso"
+  description="Painel interno de acompanhamento de uso da ferramenta."
+  path="/painel/"
+  noindex
+>
+  <main class="page painel">
+    <h1>Painel de uso</h1>
+    <p class="lead">
+      Acompanhamento do uso da ferramenta: quantas pessoas chegam, quantos arquivos são preparados e o que dá errado. Só contagens — nenhum
+      documento, nome de arquivo ou número de processo passa por aqui.
+    </p>
+
+    <form id="entrar" class="painel-login" hidden>
+      <label for="token">Senha do painel</label>
+      <input id="token" name="token" type="password" autocomplete="current-password" required />
+      <button class="btn" type="submit">Entrar</button>
+      <p id="erro-login" class="erro" hidden></p>
+    </form>
+
+    <section id="conteudo" hidden aria-label="Números de uso">
+      <div class="painel-barra">
+        <div class="periodos" role="group" aria-label="Período">
+          <button type="button" data-dias="7" aria-pressed="false">7 dias</button>
+          <button type="button" data-dias="30" aria-pressed="true">30 dias</button>
+          <button type="button" data-dias="90" aria-pressed="false">90 dias</button>
+        </div>
+        <div class="acoes">
+          <button type="button" id="atualizar" class="btn small">Atualizar</button>
+          <button type="button" id="sair" class="btn small secondary">Sair</button>
+        </div>
+      </div>
+      <p id="desde" class="desde"></p>
+      <p id="estado" class="estado" role="status" aria-live="polite"></p>
+
+      <div id="kpis" class="kpis"></div>
+
+      <h2>Movimento por dia</h2>
+      <p class="legenda"><span class="chave acessos"></span> acessos <span class="chave visitantes"></span> visitantes</p>
+      <div id="serie" class="serie"></div>
+
+      <h2>Funil, do acesso ao download</h2>
+      <p class="legenda">Pessoas distintas que chegaram a cada etapa no período — não quantas vezes cada etapa aconteceu.</p>
+      <div id="funil" class="funil"></div>
+
+      <div class="painel-grid">
+        <section>
+          <h2>O que as pessoas trazem</h2>
+          <div id="entradas"></div>
+        </section>
+        <section>
+          <h2>Tamanho dos originais</h2>
+          <div id="tamanhos"></div>
+        </section>
+        <section>
+          <h2>Resultado dos arquivos</h2>
+          <div id="situacoes"></div>
+        </section>
+        <section>
+          <h2>Carga do compactador</h2>
+          <div id="motor"></div>
+        </section>
+        <section>
+          <h2>Por que deu errado</h2>
+          <div id="erros"></div>
+        </section>
+        <section>
+          <h2>Tribunais escolhidos</h2>
+          <div id="tribunais"></div>
+        </section>
+        <section>
+          <h2>Páginas mais vistas</h2>
+          <div id="paginas"></div>
+        </section>
+        <section>
+          <h2>De onde vêm</h2>
+          <div id="origens"></div>
+        </section>
+        <section>
+          <h2>Dispositivo</h2>
+          <div id="dispositivos"></div>
+        </section>
+      </div>
+
+      <h2>Últimos eventos</h2>
+      <p class="legenda">Os 60 registros mais recentes de arquivo preparado, erro e lote concluído.</p>
+      <div id="ultimos"></div>
+    </section>
+  </main>
+
+  <script>
+    import '../scripts/painel'
+  </script>
+</Base>
+
+<style is:global>
+  /* Global de propósito: o painel monta tabelas e cartões por JavaScript, e elementos criados
+     depois do render não recebem o atributo de escopo do Astro. Todo seletor começa em .painel. */
+  .painel { max-width: 1180px; }
+  .painel h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.8px; margin: 8px 0 10px; }
+  .painel h2 { font-size: 19px; font-weight: 700; letter-spacing: -0.2px; margin: 32px 0 10px; }
+  .painel .lead { max-width: 720px; }
+
+  .painel .painel-login { display: grid; gap: 8px; max-width: 320px; margin: 28px 0; }
+  .painel .painel-login label { font-size: 14px; font-weight: 600; color: var(--ink-2); }
+  .painel .painel-login input {
+    font: inherit; padding: 10px 12px; border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm); background: var(--surface); color: var(--ink);
+  }
+  .painel .painel-login input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .painel .erro { color: var(--ic-red); font-size: 14px; margin: 0; }
+
+  .painel .painel-barra { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; margin: 24px 0 6px; }
+  .painel .periodos { display: inline-flex; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); overflow: hidden; }
+  .painel .periodos button {
+    font: inherit; font-size: 14px; font-weight: 600; padding: 8px 14px; border: 0;
+    background: var(--surface); color: var(--ink-2); cursor: pointer;
+  }
+  .painel .periodos button + button { border-left: 1px solid var(--border); }
+  .painel .periodos button[aria-pressed='true'] { background: var(--accent); color: #fff; }
+  .painel .acoes { display: flex; gap: 8px; }
+
+  .painel .desde, .painel .legenda { font-size: 13.5px; color: var(--muted); margin: 0 0 4px; }
+  .painel .estado { font-size: 14px; color: var(--muted); min-height: 20px; margin: 4px 0; }
+  .painel .vazio { font-size: 14.5px; color: var(--muted); margin: 6px 0; }
+
+  .painel .kpis { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); margin: 12px 0 8px; }
+  .painel .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+  .painel .kpi .t { display: block; font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .painel .kpi .v { display: block; font-size: 30px; font-weight: 800; letter-spacing: -1px; margin: 4px 0 2px; }
+  .painel .kpi .d { display: block; font-size: 13.5px; color: var(--muted); }
+
+  .painel .legenda .chave { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; }
+  .painel .legenda .chave.acessos { background: var(--accent-soft); border: 1px solid var(--accent); }
+  .painel .legenda .chave.visitantes { background: var(--accent); margin-left: 12px; }
+
+  .painel .serie {
+    display: flex; align-items: flex-end; gap: 4px; overflow-x: auto;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 14px 10px;
+  }
+  .painel .serie .col { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1 0 22px; min-width: 22px; }
+  .painel .serie .pilha { position: relative; width: 100%; height: 140px; }
+  .painel .serie .b { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); border-radius: 3px 3px 0 0; min-height: 1px; }
+  .painel .serie .b.acessos { width: 100%; background: var(--accent-soft); }
+  .painel .serie .b.visitantes { width: 48%; background: var(--accent); }
+  .painel .serie .rot { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+  .painel .funil { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; display: grid; gap: 14px; }
+  .painel .funil .etapa { display: grid; gap: 5px; }
+  .painel .funil .cabeca { display: flex; justify-content: space-between; gap: 12px; font-size: 14.5px; }
+  .painel .funil .cabeca .nome { font-weight: 600; }
+  .painel .funil .cabeca .valor { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .painel .funil .trilho { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+  .painel .funil .preenchida { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+  .painel .funil .perda { font-size: 12.5px; color: var(--muted); }
+
+  .painel .painel-grid { display: grid; gap: 20px 26px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+
+  .painel table {
+    border-collapse: collapse; width: 100%; font-size: 14px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden;
+  }
+  .painel th, .painel td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .painel th { color: var(--muted); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .painel td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .painel tbody tr:last-child td { border-bottom: 0; }
+  .painel .rules-table { overflow-x: auto; }
+</style>
