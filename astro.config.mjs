@@ -5,7 +5,7 @@ import { SITE } from './src/config/site.mjs'
 
 // Medição do Google (GA4 / Tag Manager): só entra na CSP quando o build recebe um identificador.
 // Sem eles o site não fala com nenhum domínio de fora — ver src/scripts/ga.ts.
-const USA_GOOGLE = Boolean((process.env.PUBLIC_GA4_ID ?? '').trim() || (process.env.PUBLIC_GTM_ID ?? '').trim())
+const USA_GOOGLE = Boolean((SITE.analytics.ga4 ?? '').trim() || (SITE.analytics.gtm ?? '').trim())
 const GOOGLE_TAG = 'https://www.googletagmanager.com'
 const GOOGLE_CONNECT = USA_GOOGLE ? ` ${GOOGLE_TAG} https://*.google-analytics.com https://*.analytics.google.com` : ''
 const GOOGLE_IMG = USA_GOOGLE ? ` ${GOOGLE_TAG} https://*.google-analytics.com` : ''

@@ -1,7 +1,7 @@
 ---
 import Base from '../layouts/Base.astro'
 import { SITE } from '../config/site'
-const USA_GOOGLE = Boolean((import.meta.env.PUBLIC_GA4_ID ?? '').trim() || (import.meta.env.PUBLIC_GTM_ID ?? '').trim())
+const USA_GOOGLE = Boolean((SITE.analytics.ga4 ?? '').trim() || (SITE.analytics.gtm ?? '').trim())
 ---
 <Base title="Privacidade e segurança" description="O que acontece com seus PDFs ao usar a ferramenta: nada sai do seu computador. Entenda como o processamento local funciona e o que medimos." path="/privacidade/">
   <main class="page prose">
@@ -43,9 +43,10 @@ const USA_GOOGLE = Boolean((import.meta.env.PUBLIC_GA4_ID ?? '').trim() || (impo
     {USA_GOOGLE ? (
       <Fragment>
         <p>
-          Além da medição própria, usamos o Google Analytics para entender o uso do site. Ele cria cookies no seu navegador, e por isso só é
-          ativado se você aceitar na faixa que aparece na primeira visita — antes disso, e se você recusar, nenhum cookie do Google é criado.
-          A sua escolha fica guardada no próprio navegador e pode ser refeita limpando os dados do site.
+          Além da medição própria, usamos o Google Analytics para entender o uso do site. Como ele cria cookies, <strong>o código do Google só é
+          baixado depois que você aceita</strong> na faixa que aparece na primeira visita. Se você recusar — ou simplesmente não responder — o seu
+          navegador não chega a falar com o Google: nem cookie, nem requisição. A sua escolha fica guardada no próprio navegador e pode ser refeita
+          limpando os dados do site.
         </p>
         <p>
           O Google recebe os mesmos eventos agregados descritos acima. Ele <strong>não</strong> recebe nem tem como receber os seus documentos:
@@ -63,7 +64,10 @@ const USA_GOOGLE = Boolean((import.meta.env.PUBLIC_GA4_ID ?? '').trim() || (impo
     <h2>Segurança</h2>
     <ul>
       <li>Versões das dependências fixadas e revisadas antes de cada publicação.</li>
-      <li>Política de segurança de conteúdo (CSP) que impede scripts de terceiros e conexões para fora do próprio site.</li>
+      <li>
+        Política de segurança de conteúdo (CSP) que bloqueia scripts de terceiros e conexões para fora do próprio site
+        {USA_GOOGLE ? ', com uma única exceção declarada: o Google Analytics, e mesmo ele só depois que você aceita' : ''}.
+      </li>
       <li>PDFs com senha são recusados (não tentamos remover proteções) e PDFs assinados digitalmente ficam de fora por padrão, com aviso.</li>
       <li>Código-fonte aberto sob licença AGPL-3.0, para qualquer pessoa auditar o que a ferramenta faz.</li>
     </ul>

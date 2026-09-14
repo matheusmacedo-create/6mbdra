@@ -293,6 +293,48 @@ test('arrastar e soltar entrega os PDFs e "Limpar lista" volta para a etapa 1', 
   await expect(page.getByTestId('step-hint')).toHaveText('1 de 4 — Selecionar PDFs')
 })
 
+test('a medição do Google só entra depois do aceite (LGPD)', async ({ page }) => {
+  const externas: string[] = []
+  page.on('request', (r) => {
+    const u = new URL(r.url())
+    if (u.hostname !== 'localhost' && u.hostname !== '127.0.0.1') externas.push(r.url())
+  })
+  await page.goto('/')
+  const faixa = page.locator('.consentimento')
+  await expect(faixa, 'a faixa de consentimento precisa aparecer na primeira visita').toBeVisible()
+  await expect(faixa).toContainText(/cookies de medição/i)
+
+  // 1. Antes de responder: nenhum contato com o Google e nenhum cookie.
+  await page.waitForTimeout(1500)
+  expect(externas, `saiu requisição para fora sem aceite: ${externas.join(', ')}`).toHaveLength(0)
+  expect(await page.context().cookies()).toHaveLength(0)
+
+  // 2. Recusar: a faixa some, a escolha fica guardada e continua sem contato nenhum.
+  await faixa.getByRole('button', { name: 'Recusar' }).click()
+  await expect(faixa).toHaveCount(0)
+  await page.reload()
+  await expect(page.locator('.consentimento'), 'a faixa não volta depois da escolha').toHaveCount(0)
+  await page.waitForTimeout(1500)
+  expect(externas, `saiu requisição para fora após recusar: ${externas.join(', ')}`).toHaveLength(0)
+  expect(await page.context().cookies()).toHaveLength(0)
+
+  // 3. Aceitar: aí sim a tag do Google é baixada.
+  await page.evaluate(() => localStorage.removeItem('brpdf.consentimento'))
+  await page.reload()
+  await page.locator('.consentimento').getByRole('button', { name: 'Aceitar' }).click()
+  await expect.poll(() => externas.filter((u) => u.includes('googletagmanager.com')).length, { timeout: 15_000 }).toBeGreaterThan(0)
+  // E o consentimento foi concedido na dataLayer, não só no visual. O gtag empilha o objeto
+  // `arguments`, que é parecido com array mas não é um: a checagem vai por índice.
+  const concedido = await page.evaluate(() => {
+    const camadas = (window as unknown as { dataLayer?: unknown[] }).dataLayer ?? []
+    return camadas.some((entrada) => {
+      const args = entrada as Record<number, unknown>
+      return args?.[0] === 'consent' && args?.[1] === 'update' && (args?.[2] as Record<string, string>)?.analytics_storage === 'granted'
+    })
+  })
+  expect(concedido, 'o consentimento precisa ser propagado para a dataLayer').toBe(true)
+})
+
 test('páginas públicas respondem e apontam para a ferramenta', async ({ page }) => {
   for (const path of ['/tribunais/', '/tribunais/trt2-pje-jt/', '/tribunais/tjsp-esaj/', '/guias/', '/metodologia/', '/privacidade/', '/termos/', '/contato/']) {
     const res = await page.goto(path)

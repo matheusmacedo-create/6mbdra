@@ -1,22 +1,29 @@
 /**
  * Google Analytics 4 / Google Tag Manager — opcional e desligado por padrão.
  *
- * Só entra em cena quando o build recebe os identificadores:
- *   PUBLIC_GA4_ID=G-XXXXXXXXXX   → carrega o gtag.js e envia os eventos direto para o GA4
- *   PUBLIC_GTM_ID=GTM-XXXXXXX    → carrega o contêiner do Tag Manager e empurra tudo para o dataLayer
+ * Só entra em cena quando SITE.analytics traz identificador (src/config/site.mjs, com
+ * PUBLIC_GA4_ID / PUBLIC_GTM_ID podendo sobrescrever no build):
+ *   ga4: 'G-XXXXXXXXXX'  → carrega o gtag.js e envia os eventos direto para o GA4
+ *   gtm: 'GTM-XXXXXXX'   → carrega o contêiner do Tag Manager e empurra tudo para o dataLayer
  * (com os dois definidos, o Tag Manager manda: configure o GA4 dentro do contêiner)
  *
  * Sem nenhum dos dois, nada do Google é baixado, nenhum cookie é criado e a CSP continua fechada —
  * o painel próprio em /painel/ segue funcionando sozinho.
  *
- * Como o Google usa cookies, aqui vale o Modo de Consentimento v2: tudo começa negado e só é
- * liberado se a pessoa aceitar na faixa de consentimento. Antes disso o GA4 recebe apenas pings
- * sem cookie. Quem recusa não recebe nenhum.
+ * Como o Google usa cookies, tudo começa negado (Modo de Consentimento v2) E a tag só é baixada
+ * depois que a pessoa aceita. Quem recusa — ou simplesmente ignora a faixa — não tem nenhum contato
+ * com o Google: nem cookie, nem requisição. Isso custa os "pings sem cookie" do consent mode, mas
+ * mantém de pé a promessa do site de não falar com ninguém de fora; a contagem completa de acessos
+ * continua vindo do painel próprio, que não usa cookie e não depende de consentimento.
+ *
+ * Os eventos disparados antes do "aceitar" ficam na dataLayer: quando a tag carrega, ela processa
+ * a fila e nada da sessão se perde.
  */
 import type { EventName, EventProps } from '../tool/lib/analytics'
+import { SITE } from '../config/site.mjs'
 
-const GA4 = (import.meta.env.PUBLIC_GA4_ID ?? '').trim()
-const GTM = (import.meta.env.PUBLIC_GTM_ID ?? '').trim()
+const GA4 = (SITE.analytics.ga4 ?? '').trim()
+const GTM = (SITE.analytics.gtm ?? '').trim()
 
 /** true quando o build recebeu algum identificador do Google. */
 export const googleConfigurado = Boolean(GA4 || GTM)
@@ -88,6 +95,8 @@ function mostrarFaixa() {
   const decidir = (escolha: Escolha) => {
     gravarEscolha(escolha)
     gtag('consent', 'update', estado(escolha === 'aceito' ? 'granted' : 'denied'))
+    // A tag só desce agora, e só com o sim. Ela processa a fila já acumulada na dataLayer.
+    if (escolha === 'aceito') carregarTag()
     faixa.remove()
   }
   recusar.addEventListener('click', () => decidir('recusado'))
@@ -103,17 +112,12 @@ function mostrarFaixa() {
 }
 
 let pronto = false
+let tagCarregada = false
 
-/** Carrega a tag do Google (se houver) e mostra a faixa de consentimento na primeira visita. */
-export function iniciarGoogle() {
-  if (!googleConfigurado || pronto) return
-  pronto = true
-
-  const escolha = lerEscolha()
-  // Modo de Consentimento v2: nada é liberado antes de a pessoa dizer sim.
-  gtag('consent', 'default', { ...estado('denied'), wait_for_update: 500 })
-  if (escolha === 'aceito') gtag('consent', 'update', estado('granted'))
-
+/** Baixa a tag do Google. Só é chamada depois de um "aceitar" — nunca antes. */
+function carregarTag() {
+  if (tagCarregada) return
+  tagCarregada = true
   if (GTM) {
     window.dataLayer?.push({ 'gtm.start': Date.now(), event: 'gtm.js' })
     carregarScript(`https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(GTM)}`)
@@ -123,16 +127,35 @@ export function iniciarGoogle() {
     // O caminho já basta: nunca mandamos a query, que pode trazer ?regra=.
     gtag('config', GA4, { page_path: location.pathname, anonymize_ip: true })
   }
+}
 
-  if (!escolha) mostrarFaixa()
+/** Prepara a dataLayer e mostra a faixa de consentimento na primeira visita. */
+export function iniciarGoogle() {
+  if (!googleConfigurado || pronto) return
+  pronto = true
+
+  // Só empurra objetos para a dataLayer: nenhuma rede acontece aqui.
+  gtag('consent', 'default', { ...estado('denied'), wait_for_update: 500 })
+
+  const escolha = lerEscolha()
+  if (escolha === 'aceito') {
+    gtag('consent', 'update', estado('granted'))
+    carregarTag()
+  } else if (!escolha) {
+    mostrarFaixa()
+  }
 }
 
 /**
  * Espelha um evento do brpdf no Google. O "acesso" fica de fora porque o próprio gtag/GTM já conta
  * a visualização de página — mandá-lo de novo contaria a mesma visita duas vezes.
  */
+/** Teto da fila: se a pessoa nunca aceitar, a dataLayer não pode crescer para sempre. */
+const FILA_MAX = 200
+
 export function enviarParaGoogle(nome: EventName, props: EventProps) {
   if (!googleConfigurado || nome === 'acesso') return
+  if (!tagCarregada && (window.dataLayer?.length ?? 0) >= FILA_MAX) return
   if (GTM) window.dataLayer?.push({ event: nome, ...props })
   else gtag('event', nome, props)
 }

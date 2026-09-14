@@ -117,8 +117,50 @@ Alternativas: Cloudflare Pages (importe o repositório como Pages; build `npm ru
 `dist`; mesmo `_headers`) e Vercel (`vercel.json` equivalente, mas o plano Hobby não permite uso
 comercial). Ajuste `src/config/site.mjs` (nome, URL, e-mail) antes de publicar.
 
-Analytics: nenhum provedor vem ativo. `src/tool/lib/analytics.ts` expõe `track()` com eventos
-agregados (sem nome/conteúdo de arquivo); para ligar um provedor, defina `window.__analytics`.
+Medição de uso: eventos agregados (sem nome nem conteúdo de arquivo) vão para o painel próprio em
+`/painel/`; GA4 e Tag Manager são opcionais e ficam desligados até o build receber `PUBLIC_GA4_ID`
+ou `PUBLIC_GTM_ID`. Detalhes em [README-metricas.md](README-metricas.md).
+
+### Domínio próprio (brpdf.com)
+
+O domínio está registrado na Hostinger e hoje aponta para os nameservers de parking dela
+(`aster.dns-parking.com` / `helios.dns-parking.com`). Um Worker só aceita domínio próprio se a zona
+estiver na Cloudflare, então o caminho é mover o DNS. Ordem, sem pular etapa:
+
+1. **Cloudflare → Add a site → `brpdf.com`** (plano Free). Ela devolve dois nameservers
+   `*.ns.cloudflare.com`.
+2. **Hostinger → Domínios → brpdf.com → Nameservers → alterar** para os dois da Cloudflare. A
+   propagação leva de minutos a algumas horas; a Cloudflare avisa por e-mail quando a zona fica
+   *Active*. O site em `workers.dev` continua no ar esse tempo todo.
+3. Com a zona ativa, ligar o Worker ao domínio — em `wrangler.jsonc`:
+
+   ```jsonc
+   "routes": [
+     { "pattern": "brpdf.com", "custom_domain": true },
+     { "pattern": "www.brpdf.com", "custom_domain": true }
+   ]
+   ```
+
+   A Cloudflare cria sozinha os registros DNS e o certificado. (Equivale a **Worker → Settings →
+   Domains & Routes → Add → Custom domain**.) Só faça isso **depois** do passo 2: com a zona fora da
+   Cloudflare, o `wrangler deploy` falha.
+4. Publicar apontando os metadados para o domínio novo:
+
+   ```bash
+   SITE_URL=https://brpdf.com npm run deploy
+   ```
+
+   Sem isso, canonical, sitemap e Open Graph continuam apontando para o endereço `workers.dev`.
+   Vale trocar também o último valor de `url` em `src/config/site.mjs`, que é o padrão de quando
+   `SITE_URL` não vem definida, e a variável `SITE_URL` no Workers Builds.
+5. **`www` → raiz**: em Rules → Redirect Rules, redirecionar `www.brpdf.com/*` para
+   `https://brpdf.com/$1` (301), para existir um endereço canônico só.
+6. Conferir: `curl -sI https://brpdf.com/` (200 e os cabeçalhos de `_headers`),
+   `curl -s https://brpdf.com/robots.txt` (o `Sitemap:` precisa citar o domínio novo) e
+   `curl -s https://brpdf.com/ | grep canonical`.
+
+O token de API usado no deploy manual precisa de *Workers Scripts: Edit*; para criar a zona pelo
+terminal, também de *Account → Zone: Create* e *Zone → Zone: Edit*.
 
 ## Navegadores suportados
 

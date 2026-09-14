@@ -15,4 +15,17 @@ export const SITE = {
     'https://6mb.6mb-app.workers.dev',
   /** E-mail de contato exibido na página /contato. */
   contactEmail: 'brpdf@proton.me',
+  /**
+   * Medição externa. O identificador do GA4 não é segredo: ele aparece no HTML de qualquer site que
+   * o use. Fica versionado aqui para o build de produção não depender de ninguém lembrar da
+   * variável; PUBLIC_GA4_ID / PUBLIC_GTM_ID no ambiente têm precedência (inclusive com valor vazio,
+   * para gerar um build sem medição alguma).
+   *
+   * Com algum dos dois preenchido, a CSP passa a permitir os domínios do Google (astro.config.mjs),
+   * entra o Modo de Consentimento v2 e aparece a faixa de consentimento (src/scripts/ga.ts).
+   */
+  analytics: {
+    ga4: process.env.PUBLIC_GA4_ID ?? 'G-4TLWSQ2CRM',
+    gtm: process.env.PUBLIC_GTM_ID ?? '',
+  },
 }
