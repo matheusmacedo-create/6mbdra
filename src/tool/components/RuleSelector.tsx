@@ -10,6 +10,10 @@ interface Props {
   onChange: (s: Settings) => void
   /** Avisa quando o limite manual digitado é inválido (o botão Preparar fica bloqueado). */
   onValidity?: (valid: boolean) => void
+  /** Versão enxuta (cartão do herói): só o limite e a meta, sem a ficha completa da regra. */
+  compact?: boolean
+  /** Rótulo do campo (o herói usa "Tribunal e sistema"; na ferramenta o título do card já diz). */
+  label?: string
 }
 
 function parseMb(text: string): number {
@@ -22,7 +26,7 @@ function isValidMb(n: number): boolean {
 
 const fmtMb = (n: number) => n.toLocaleString('pt-BR')
 
-export function RuleSelector({ settings, onChange, onValidity }: Props) {
+export function RuleSelector({ settings, onChange, onValidity, compact = false, label }: Props) {
   const regras = regrasVigentes()
   const grupos = opcoesPorRamo(regras)
   const regra = settings.ruleId ? regraPorId(settings.ruleId) : undefined
@@ -49,8 +53,8 @@ export function RuleSelector({ settings, onChange, onValidity }: Props) {
   return (
     <div className="rule-selector">
       <div className="field">
-        <label htmlFor="regra" className="sr-only">
-          Tribunal e sistema
+        <label htmlFor="regra" className={label ? undefined : 'sr-only'}>
+          {label ?? 'Tribunal e sistema'}
         </label>
         <select
           id="regra"
@@ -85,8 +89,9 @@ export function RuleSelector({ settings, onChange, onValidity }: Props) {
           ))}
         </select>
         <div className="hint">
-          {cobertos} dos {TRIBUNAIS.length} tribunais com regra. Não achou o seu? Escolha "Outro limite" e confira na tela de anexar do sistema (
-          <a href="/tribunais/">diretório</a>).
+          {cobertos} dos {TRIBUNAIS.length} tribunais com regra cadastrada.{' '}
+          {compact ? '' : 'Não achou o seu? Escolha "Outro limite" e confira na tela de anexar do sistema. '}
+          <a href="/tribunais/">Ver o diretório</a>.
         </div>
       </div>
 
@@ -112,14 +117,26 @@ export function RuleSelector({ settings, onChange, onValidity }: Props) {
             </div>
           )}
           <div className="hint" id="limite-hint">
-            Informe o limite exatamente como o tribunal declara: a margem de segurança de {META_PERCENTUAL_PADRAO}% é aplicada por nós. Consideramos 1 MB =
-            1.000.000 bytes.
+            {compact
+              ? 'Informe o limite do tribunal; a margem de segurança é aplicada por nós.'
+              : `Informe o limite exatamente como o tribunal declara: a margem de segurança de ${META_PERCENTUAL_PADRAO}% é aplicada por nós. Consideramos 1 MB = 1.000.000 bytes.`}
           </div>
         </div>
       )}
 
       <div className="rule-info" data-testid="rule-info">
-        {regra ? (
+        {compact ? (
+          <dl>
+            <div>
+              <dt>Limite do sistema</dt>
+              <dd>{formatBytes(resolved.limitBytes)}</dd>
+            </div>
+            <div>
+              <dt>Meta segura</dt>
+              <dd>{formatBytes(resolved.targetBytes)}</dd>
+            </div>
+          </dl>
+        ) : regra ? (
           <>
             <div className="rule-name">
               {siglaEscolhida} · {rotuloSistema(regra)} <span className="sub">— {tribunalEscolhido?.nome ?? regra.tribunal_nome}</span>
@@ -172,14 +189,14 @@ export function RuleSelector({ settings, onChange, onValidity }: Props) {
               </div>
             </dl>
             {regra.situacao === 'em_revisao' && (
-              <div className="note warn" style={{ marginTop: 12 }}>
+              <div className="note warn spaced">
                 <span className="badge warn inline">em revisão</span> {regra.motivo_revisao}
               </div>
             )}
-            {regra.limite_por_pagina_kb ? <p className="hint" style={{ marginTop: 10 }}>A meta de cada arquivo considera o número de páginas.</p> : null}
-            {regra.exige_pdfa ? <p className="hint" style={{ marginTop: 10 }}>Converta para PDF/A depois de compactar e antes de assinar.</p> : null}
+            {regra.limite_por_pagina_kb ? <p className="hint spaced">A meta de cada arquivo considera o número de páginas.</p> : null}
+            {regra.exige_pdfa ? <p className="hint spaced">Converta para PDF/A depois de compactar e antes de assinar.</p> : null}
             {regra.observacoes && (
-              <p className="hint" style={{ marginTop: 10 }}>
+              <p className="hint spaced">
                 {regra.observacoes}
               </p>
             )}
@@ -206,6 +223,12 @@ export function RuleSelector({ settings, onChange, onValidity }: Props) {
           </dl>
         )}
       </div>
+      {!compact && (
+        <p className="hint explain">
+          <strong>Limite</strong> é o tamanho que o sistema aceita. A <strong>meta segura</strong> é um pouco menor, porque alguns portais contam os
+          megabytes de outro jeito e recusam arquivos no limite exato. Preparamos seus PDFs pela meta.
+        </p>
+      )}
     </div>
   )
 }

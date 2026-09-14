@@ -23,13 +23,19 @@ const { title, description, path = Astro.url.pathname, noindex = false } = Astro
 const canonical = new URL(path, SITE.url).href
 const fullTitle = path === '/' ? `${SITE.name} — ${title}` : `${title} · ${SITE.name}`
 const current = (p: string) => (path === p || (p !== '/' && path.startsWith(p)) ? 'page' : undefined)
+const LINKS = [
+  { href: '/?view=tool', label: 'Compactar PDF', match: undefined, tool: true },
+  { href: '/tribunais/', label: 'Limites por tribunal', match: '/tribunais/' },
+  { href: '/#ferramentas', label: 'Ferramentas', match: undefined, home: true },
+  { href: '/#seguranca', label: 'Segurança', match: undefined, home: true },
+]
 ---
 <!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0f3d3e" />
+    <meta name="theme-color" content="#101f3d" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
@@ -47,34 +53,62 @@ const current = (p: string) => (path === p || (p !== '/' && path.startsWith(p)) 
     <header class="site-header">
       <div class="inner">
         <a class="brand" href="/" aria-label={`${SITE.name} — página inicial`}>
-          <span class="logo" aria-hidden="true">{SITE.name}</span>
-          <span class="brand-name">Preparador de PDFs</span>
+          <span class="logo" aria-hidden="true">6</span>
+          <span class="brand-text">
+            <span class="brand-name">{SITE.name}</span>
+            <span class="brand-sub">PDF Jurídico</span>
+          </span>
         </a>
         <nav class="site-nav" aria-label="Principal">
-          <a href="/#ferramentas" aria-current={current('/')} data-go-home>Ferramentas</a>
-          <a href="/tribunais/" aria-current={current('/tribunais/')}>Limites por tribunal</a>
-          <a href="/guias/" aria-current={current('/guias/')}>Guias</a>
-          <a href="/metodologia/" aria-current={current('/metodologia/')}>Metodologia</a>
+          {LINKS.map((l) => (
+            <a
+              href={l.href}
+              aria-current={l.match ? current(l.match) : undefined}
+              data-open-tool={l.tool ? '' : undefined}
+              data-go-home={l.home ? '' : undefined}
+            >
+              {l.label}
+            </a>
+          ))}
         </nav>
         <a class="btn header-cta" href="/?view=tool" data-open-tool>Preparar PDFs</a>
+        <details class="nav-toggle">
+          <summary aria-label="Abrir o menu">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          </summary>
+          <nav class="panel" aria-label="Menu">
+            {LINKS.map((l) => (
+              <a
+                href={l.href}
+                aria-current={l.match ? current(l.match) : undefined}
+                data-open-tool={l.tool ? '' : undefined}
+                data-go-home={l.home ? '' : undefined}
+              >
+                {l.label}
+              </a>
+            ))}
+          </nav>
+        </details>
       </div>
     </header>
     <slot />
     <footer class="site-footer">
       <div class="inner">
         <nav aria-label="Rodapé">
-          <a href="/privacidade/">Privacidade e segurança</a>
+          <a href="/privacidade/">Privacidade</a>
           <a href="/termos/">Termos de uso</a>
           <a href="/metodologia/">Metodologia</a>
           <a href="/contato/">Contato</a>
         </nav>
         <p>
-          {SITE.name} é um serviço independente, gratuito e sem cadastro. Não é oficial nem vinculado a nenhum tribunal ou ao CNJ. Os limites publicados
-          vêm de fontes oficiais e podem mudar: confira sempre no sistema do tribunal.
+          O {SITE.name} é gratuito, independente e não possui vínculo com tribunais ou com o CNJ. Confira sempre o limite informado no sistema de
+          peticionamento.
         </p>
         <p>
-          Software livre (AGPL-3.0). O motor de compressão é o <a href="https://www.ghostscript.com/" rel="noreferrer noopener" target="_blank">Ghostscript</a>,
-          executado em WebAssembly no seu navegador. Nenhum documento é enviado à internet.
+          Software livre AGPL-3.0. <a href="https://www.ghostscript.com/" rel="noreferrer noopener" target="_blank">Ghostscript</a> executado em
+          WebAssembly no navegador.
         </p>
       </div>
     </footer>

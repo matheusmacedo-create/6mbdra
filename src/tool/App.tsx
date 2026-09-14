@@ -117,11 +117,17 @@ export default function App() {
       if (target?.closest?.('a[data-open-tool]')) {
         e.preventDefault()
         openTool()
-      } else if (target?.closest?.('a[data-go-home]')) {
-        // Link "Ferramentas" do cabeçalho: volta à página inicial sem recarregar (o lote continua na memória).
+      } else {
+        // Links de seção do cabeçalho: voltam à página inicial sem recarregar (o lote continua na memória).
+        const home = target?.closest?.('a[data-go-home]') as HTMLAnchorElement | null
+        if (!home) return
         e.preventDefault()
         goHome()
-        requestAnimationFrame(() => document.getElementById('ferramentas')?.scrollIntoView({ block: 'start' }))
+        const id = home.hash.slice(1)
+        requestAnimationFrame(() => {
+          const alvo = id ? document.getElementById(id) : null
+          if (alvo) alvo.scrollIntoView({ block: 'start' })
+        })
       }
     }
     document.addEventListener('click', handler)
@@ -279,9 +285,22 @@ export default function App() {
   const engineStatus = (
     <div className="engine-status" data-testid="engine-status" data-state={engine.state}>
       <span className={`dot${engine.state === 'ready' ? ' ready' : engine.state === 'error' ? ' err' : ''}`} aria-hidden="true" />
-      {engine.state === 'loading' && 'Preparando o motor de compressão (só na primeira vez, cerca de 11 MB)…'}
-      {engine.state === 'ready' && `Motor pronto · meta de ${formatBytes(process.targetBytes)} por arquivo`}
-      {engine.state === 'error' && `${engine.message ?? 'O motor de compressão não carregou.'} Ainda é possível dividir arquivos em partes.`}
+      {engine.state === 'loading' && (
+        <span>
+          <strong>Carregando o compactador…</strong> só na primeira visita, cerca de 11 MB. Você já pode escolher o tribunal e adicionar os arquivos.
+        </span>
+      )}
+      {engine.state === 'ready' && (
+        <span>
+          <strong>Tudo pronto.</strong> Cada arquivo será preparado para até {formatBytes(process.targetBytes)}.
+        </span>
+      )}
+      {engine.state === 'error' && (
+        <span>
+          <strong>O compactador não carregou.</strong> {engine.message ?? 'Recarregue a página para tentar de novo.'} A divisão em partes continua
+          funcionando.
+        </span>
+      )}
       {engine.state === 'idle' && 'Iniciando…'}
     </div>
   )
@@ -295,21 +314,28 @@ export default function App() {
     return (
       <div className="tool landing" data-phase={phase}>
         {liveRegion}
-        <DropZone onFiles={onFiles} variant="hero" />
-        {notice && (
-          <div className="note warn" style={{ marginTop: 12 }}>
-            {notice}
+        <div className="hero-card">
+          <h2>Prepare seu lote agora</h2>
+          <RuleSelector settings={settings} onChange={setSettings} onValidity={setLimitValid} compact label="Tribunal e sistema" />
+          <DropZone onFiles={onFiles} variant="hero" title="Arraste seus PDFs aqui" />
+          {notice && <div className="note warn">{notice}</div>}
+          {jobs.length > 0 && (
+            <p className="hint resume">
+              Você tem {jobs.length} arquivo{jobs.length === 1 ? '' : 's'} no lote.{' '}
+              <a href="/?view=tool" data-open-tool>
+                Voltar ao lote
+              </a>
+            </p>
+          )}
+          <div className="local-badge">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="4" y="10" width="16" height="11" rx="2" />
+              <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+            </svg>
+            Processamento local
           </div>
-        )}
-        {engineStatus}
-        {jobs.length > 0 && (
-          <p className="hint resume">
-            Você tem {jobs.length} arquivo{jobs.length === 1 ? '' : 's'} no lote.{' '}
-            <a href="/?view=tool" data-open-tool>
-              Voltar ao lote
-            </a>
-          </p>
-        )}
+          {engineStatus}
+        </div>
       </div>
     )
   }
@@ -326,20 +352,27 @@ export default function App() {
             goHome()
           }}
         >
-          ← Ferramentas
+          ← Voltar às ferramentas
         </a>
-        <h1>Compactar para o tribunal</h1>
+        <h1>Preparar PDFs para protocolo</h1>
+        <span className="local-badge">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="4" y="10" width="16" height="11" rx="2" />
+            <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+          </svg>
+          Seus arquivos permanecem neste dispositivo
+        </span>
       </div>
       <Stepper phase={phase} />
 
       <div className="tool-grid">
         <aside className="aside">
           <section className="card" aria-labelledby="h-config">
-            <h2 id="h-config">Tribunal e sistema</h2>
+            <h2 id="h-config">Destino do protocolo</h2>
             <RuleSelector settings={settings} onChange={setSettings} onValidity={setLimitValid} />
           </section>
           <section className="card" aria-labelledby="h-opts">
-            <h2 id="h-opts">Opções</h2>
+            <h2 id="h-opts">Como preparar</h2>
             <Options settings={settings} onChange={setSettings} />
             {engineStatus}
           </section>
@@ -348,10 +381,10 @@ export default function App() {
         <section className="card main" aria-labelledby="h-batch">
           {jobs.length === 0 ? (
             <>
-              <h2 id="h-batch">Adicione os PDFs</h2>
-              <DropZone onFiles={onFiles} variant="hero" />
+              <h2 id="h-batch">Adicione os documentos</h2>
+              <DropZone onFiles={onFiles} variant="hero" title="Arraste seus PDFs para começar" />
               {notice && (
-                <div className="note warn" style={{ marginTop: 12 }}>
+                <div className="note warn spaced">
                   {notice}
                 </div>
               )}
@@ -399,7 +432,7 @@ export default function App() {
                 )}
                 {phase === 'result' && zipCount > 0 && (
                   <button className={`btn${counts.stale > 0 ? ' secondary' : ''}`} onClick={collectZip} disabled={zipping} data-testid="download-all">
-                    {zipping ? 'Montando o pacote…' : `Baixar tudo em ZIP (${zipCount})`}
+                    {zipping ? 'Montando o pacote…' : `Baixar lote em ZIP (${zipCount})`}
                   </button>
                 )}
                 {counts.busy === 0 && (

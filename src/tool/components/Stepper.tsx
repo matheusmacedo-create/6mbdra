@@ -1,10 +1,10 @@
 export type Phase = 'config' | 'review' | 'processing' | 'result'
 
 const STEPS: { key: Phase; label: string }[] = [
-  { key: 'config', label: 'Configurar' },
-  { key: 'review', label: 'Revisar o lote' },
-  { key: 'processing', label: 'Preparar' },
-  { key: 'result', label: 'Baixar' },
+  { key: 'config', label: 'Escolher limite' },
+  { key: 'review', label: 'Revisar documentos' },
+  { key: 'processing', label: 'Preparar arquivos' },
+  { key: 'result', label: 'Baixar lote' },
 ]
 
 export function Stepper({ phase }: { phase: Phase }) {

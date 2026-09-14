@@ -1,130 +1,246 @@
 ---
 import Base from '../layouts/Base.astro'
 import App from '../tool/App'
-import { REGRAS, TRIBUNAIS, limiteBytes, regrasVigentes, tribunaisCobertos } from '../tool/lib/regras'
-import { formatBytes } from '../tool/lib/format'
+import { TRIBUNAIS, tribunaisCobertos } from '../tool/lib/regras'
 import { getCollection } from 'astro:content'
-const limites = regrasVigentes().map(limiteBytes)
+import { SITE } from '../config/site'
+
 const cobertos = tribunaisCobertos().length
-const limiteMin = limites.length ? Math.min(...limites) : 1_000_000
-const limiteMax = limites.length ? Math.max(...limites) : 50_000_000
 const guias = (await getCollection('guias')).sort((a, b) => a.data.title.localeCompare(b.data.title, 'pt-BR')).slice(0, 4)
-const ferramentas = [
-  { mark: '↓', cls: 'info', title: 'Compactar para o tribunal', desc: 'Reduz cada PDF até a meta do sistema escolhido, preservando texto e OCR.', href: '/?view=tool' },
-  { mark: '÷', cls: 'ok', title: 'Dividir em partes', desc: 'Quando nem a compressão máxima resolve, corta por páginas inteiras.', href: '/?view=tool' },
-  { mark: '+', cls: 'warn', title: 'Juntar PDFs', desc: 'Une anexos na ordem certa antes de protocolar.', soon: true },
-  { mark: '↻', cls: 'neutral', title: 'Girar páginas', desc: 'Endireita digitalizações de cabeça para baixo.', soon: true },
-  { mark: '✎', cls: 'info', title: 'Reordenar e remover', desc: 'Reorganiza ou descarta páginas de um lote digitalizado.', soon: true },
-  { mark: '≡', cls: 'ok', title: 'Pacote em ZIP', desc: 'Arquivos numerados na ordem, sem acentos, com LEIA-ME do lote.', href: '/?view=tool' },
+
+const ICONES: Record<string, string> = {
+  comprimir: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v7"/><path d="m8 7 4 4 4-4"/><path d="M12 21v-7"/><path d="m8 17 4-4 4 4"/></svg>',
+  dividir: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"/><rect x="5" y="3" width="14" height="5" rx="1.5"/><rect x="5" y="16" width="14" height="5" rx="1.5"/></svg>',
+  zip: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5z"/><path d="M12 3v18"/><path d="m4 7.5 8 4.5 8-4.5"/></svg>',
+  juntar: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="10" height="13" rx="2"/><path d="M17 8h2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-1"/></svg>',
+  paginas: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/></svg>',
+  favorito: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12a1 1 0 0 1 1 1v15l-7-4-7 4V5a1 1 0 0 1 1-1z"/></svg>',
+}
+const icone = (k: string) => ICONES[k] ?? ''
+
+const FERRAMENTAS = [
+  {
+    icone: 'comprimir',
+    title: 'Compactar para o tribunal',
+    desc: 'Escolha o sistema e receba cada PDF abaixo da margem segura aceita no protocolo.',
+    status: 'Disponível',
+    cta: 'Compactar agora',
+  },
+  {
+    icone: 'dividir',
+    title: 'Dividir por limite',
+    desc: 'Cria partes numeradas, por páginas inteiras, quando o arquivo não pode ser reduzido.',
+    status: 'Disponível',
+    cta: 'Dividir PDF',
+  },
+  {
+    icone: 'zip',
+    title: 'Preparar lote em ZIP',
+    desc: 'Baixe tudo em ordem, com nomes padronizados e um resumo para facilitar o protocolo.',
+    status: 'Disponível',
+    cta: 'Preparar lote',
+  },
+  { icone: 'juntar', title: 'Juntar PDFs', desc: 'Una procurações, contratos e anexos na ordem desejada antes de protocolar.', status: 'Em breve' },
+  { icone: 'paginas', title: 'Organizar páginas', desc: 'Reordene, remova ou gire páginas de documentos digitalizados em poucos cliques.', status: 'Em breve' },
 ]
-const confianca = [
-  { title: 'Nada sai do seu computador', desc: 'A compressão roda no navegador. Depois de carregar a página você pode até desligar a internet.' },
-  { title: 'Texto continua pesquisável', desc: 'Reduzimos só as imagens: texto, fontes, marcadores e a camada de OCR ficam intactos.' },
-  { title: 'Limites com fonte e data', desc: 'Cada regra tem trecho literal, link oficial e a data em que foi conferida.' },
+
+const PASSOS = [
+  { n: '01', t: 'Escolha o tribunal', d: 'Informe o sistema ou use um limite personalizado.' },
+  { n: '02', t: 'Adicione os documentos', d: 'Selecione vários PDFs ou uma pasta inteira de uma vez.' },
+  { n: '03', t: 'Baixe tudo pronto', d: 'Receba arquivos conferidos, numerados e dentro da meta.' },
 ]
+
+const PERGUNTAS = [
+  { q: 'Meus documentos são enviados para algum servidor?', a: 'Não. Todo o processamento acontece no navegador e nenhum PDF é enviado para a internet.' },
+  { q: 'O texto continua pesquisável?', a: 'Sim. A ferramenta preserva texto, fontes e a camada de OCR durante a compressão.' },
+  { q: 'E se o PDF não couber mesmo comprimido?', a: 'Com a divisão automática ativada, o arquivo é separado em partes numeradas sem cortar páginas.' },
+  { q: 'Posso preparar vários arquivos de uma vez?', a: 'Sim. O usuário pode selecionar vários PDFs ou uma pasta e baixar o lote em um único ZIP organizado.' },
+  { q: 'Existe cobrança, cadastro ou limite diário?', a: 'Não. O 6MB é gratuito, não exige conta e pode ser utilizado quantas vezes o escritório precisar.' },
+]
+
+const SEGURANCA = [
+  { t: 'Processamento local', d: 'Depois de carregar a ferramenta, o usuário pode até ficar offline.' },
+  { t: 'Texto e OCR preservados', d: 'O conteúdo pesquisável continua disponível no arquivo final.' },
+  { t: 'Sem cadastro', d: 'Nenhuma conta, e-mail ou assinatura para começar.' },
+]
+const dadosEstruturados = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebApplication',
+      name: '6MB · PDF Jurídico',
+      url: SITE.url,
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Navegador (Chrome, Edge, Firefox, Safari)',
+      inLanguage: 'pt-BR',
+      isAccessibleForFree: true,
+      description:
+        'Comprima, divida e organize PDFs para PJe, eproc, e-SAJ e Projudi. Gratuito, sem cadastro e sem enviar documentos para a internet.',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'BRL' },
+      featureList: [
+        'Compressão de PDF até o limite do tribunal',
+        'Divisão automática em partes por páginas inteiras',
+        'Lote em ZIP com nomes padronizados',
+        'Processamento local, sem envio de arquivos',
+      ],
+    },
+    {
+      '@type': 'FAQPage',
+      mainEntity: PERGUNTAS.map((p) => ({
+        '@type': 'Question',
+        name: p.q,
+        acceptedAnswer: { '@type': 'Answer', text: p.a },
+      })),
+    },
+  ],
+}
 ---
 <Base
-  title="Compacte e divida PDFs para o peticionamento eletrônico"
-  description="Prepare vários PDFs de uma vez para caberem no limite do tribunal (PJe, eproc, e-SAJ, Projudi). Grátis, sem cadastro e sem enviar arquivos: tudo roda no seu navegador."
+  title="PDF pronto para protocolar"
+  description="Comprima, divida e organize PDFs para PJe, eproc, e-SAJ e Projudi. Gratuito, sem cadastro e sem enviar documentos para a internet."
   path="/"
 >
+  <Fragment slot="head">
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(dadosEstruturados)} />
+  </Fragment>
   <main>
-    <section class="hero home-only">
-      <p class="eyebrow">Grátis · sem cadastro · nada sai do seu computador</p>
-      <h1>Seus PDFs dentro do limite do tribunal em um minuto</h1>
-      <p class="lead">Escolha o tribunal, arraste os arquivos e baixe tudo pronto para protocolar. Compressão e divisão em partes rodam no seu navegador.</p>
+    <section class="hero-band">
+      <div class="wrap hero">
+        <div class="hero-copy home-only">
+          <p class="eyebrow">PDFs para peticionamento eletrônico</p>
+          <h1>PDF pronto para protocolar.<br />Sem erro de tamanho.</h1>
+          <p class="lead">
+            Comprima, divida e organize vários documentos de uma vez para PJe, eproc, e-SAJ e Projudi. Sem cadastro, sem instalar programas e sem enviar
+            os seus arquivos.
+          </p>
+          <div class="hero-actions">
+            <a class="btn" href="/?view=tool" data-open-tool>Selecionar PDFs</a>
+            <a class="btn ghost-light" href="/tribunais/">Encontrar meu tribunal</a>
+          </div>
+          <p class="hero-micro">Gratuito, sem limite de uso e pronto em poucos minutos.</p>
+        </div>
+        <App client:only="react" />
+      </div>
     </section>
 
-    <App client:only="react" />
+    <section class="trust-bar home-only" aria-label="Resumo do serviço">
+      <ul class="wrap">
+        <li><span class="num">R$ 0</span><span class="cap">Gratuito de verdade</span></li>
+        <li><span class="num">{cobertos}</span><span class="cap">Tribunais mapeados</span></li>
+        <li><span class="num">100%</span><span class="cap">Processado no navegador</span></li>
+        <li><span class="num">OCR</span><span class="cap">Texto pesquisável preservado</span></li>
+      </ul>
+    </section>
 
     <section class="wrap home-section home-only" id="ferramentas">
-      <h2>Ferramentas</h2>
-      <p class="sub">Tudo o que o protocolo exige, sem instalar nada.</p>
+      <div class="section-head">
+        <h2>Resolva o PDF sem interromper o trabalho</h2>
+        <p>Uma bancada simples para preparar anexos, petições e documentos digitalizados.</p>
+      </div>
       <ul class="tools-grid">
-        {ferramentas.map((t) =>
-          t.soon ? (
+        {FERRAMENTAS.map((f) =>
+          f.cta ? (
             <li>
-              <div class="tool-card soon" aria-label={`${t.title} (em breve)`}>
-                <span class="soon-tag">Em breve</span>
-                <span class={`mark ${t.cls}`} aria-hidden="true">{t.mark}</span>
-                <span class="title">{t.title}</span>
-                <span class="desc">{t.desc}</span>
-              </div>
+              <a class="tool-card" href="/?view=tool" data-open-tool>
+                <span class="mark" aria-hidden="true" set:html={icone(f.icone)} />
+                <span class="title">{f.title}</span>
+                <span class="desc">{f.desc}</span>
+                <span class="status"><span class="pill ok">{f.status}</span></span>
+                <span class="card-cta">{f.cta} →</span>
+              </a>
             </li>
           ) : (
             <li>
-              <a class="tool-card" href={t.href} data-open-tool>
-                <span class={`mark ${t.cls}`} aria-hidden="true">{t.mark}</span>
-                <span class="title">{t.title}</span>
-                <span class="desc">{t.desc}</span>
-              </a>
+              <div class="tool-card soon">
+                <span class="mark" aria-hidden="true" set:html={icone(f.icone)} />
+                <span class="title">{f.title}</span>
+                <span class="desc">{f.desc}</span>
+                <span class="status"><span class="pill soon">{f.status}</span></span>
+              </div>
             </li>
           ),
         )}
+        <li>
+          <div class="tool-card bookmark">
+            <span class="mark" aria-hidden="true" set:html={icone('favorito')} />
+            <span class="title">Deixe na aba do escritório</span>
+            <span class="desc">Use <kbd>Ctrl</kbd> + <kbd>D</kbd> para salvar o 6MB nos favoritos e voltar sempre que precisar.</span>
+          </div>
+        </li>
       </ul>
     </section>
 
-    <section class="wrap home-section home-only" aria-label="Garantias">
-      <ul class="trust-grid">
-        {confianca.map((c) => (
-          <li class="trust-card">
-            <div class="title">{c.title}</div>
-            <div class="desc">{c.desc}</div>
+    <section class="wrap home-section home-only" id="como-funciona">
+      <div class="section-head">
+        <h2>Três passos. Nenhuma configuração técnica.</h2>
+        <p>O 6MB escolhe uma margem segura, tenta primeiro a compressão mais leve e divide apenas quando for necessário.</p>
+      </div>
+      <ol class="steps">
+        {PASSOS.map((p) => (
+          <li class="step-card">
+            <span class="n">{p.n}</span>
+            <span class="t">{p.t}</span>
+            <span class="d">{p.d}</span>
           </li>
         ))}
-      </ul>
-    </section>
-
-    <section class="wrap home-section home-only">
-      <div class="band">
-        <div>
-          <h2>Limites de {cobertos} tribunais, com fonte oficial e data</h2>
-          <p>PJe, eproc, e-SAJ e Projudi. Conferimos as fontes toda semana e aplicamos {REGRAS.meta_segura_percentual_padrao}% do limite como meta segura, para o portal não recusar por diferença de contagem.</p>
-        </div>
-        <a class="btn light" href="/tribunais/">Ver limites por tribunal</a>
-      </div>
+      </ol>
     </section>
 
     <div class="wrap home-only"><div class="ad-slot" data-enabled="false" aria-hidden="true"></div></div>
 
+    <section class="band-navy home-only" id="seguranca">
+      <div class="wrap security">
+        <div class="section-head">
+          <p class="eyebrow">Sigilo em primeiro lugar</p>
+          <h2>Seus documentos jurídicos continuam seus.</h2>
+          <p>
+            A preparação acontece dentro do seu navegador. Arquivos, nomes de documentos e números de processo não são enviados para o 6MB.
+          </p>
+        </div>
+        <ul class="security-grid">
+          {SEGURANCA.map((s) => (
+            <li>
+              <span class="t">{s.t}</span>
+              <span class="d">{s.d}</span>
+            </li>
+          ))}
+        </ul>
+        <a class="btn light" href="/privacidade/">Entender a privacidade</a>
+      </div>
+    </section>
+
+    <section class="wrap home-section home-only">
+      <div class="courts-card">
+        <div>
+          <h2>Não precisa decorar a regra de cada sistema.</h2>
+          <p>
+            Consulte PJe, eproc, e-SAJ e Projudi por tribunal, instância e tipo de petição. Cada regra mostra a fonte oficial e a data da última
+            conferência.
+          </p>
+          <span class="highlight">{cobertos} de {TRIBUNAIS.length} tribunais com regra cadastrada</span>
+        </div>
+        <a class="btn navy" href="/tribunais/">Consultar tribunais</a>
+      </div>
+    </section>
+
     <section class="wrap home-section home-only faq" id="perguntas">
-      <h2>Perguntas frequentes</h2>
+      <div class="section-head"><h2>Perguntas frequentes</h2></div>
       <div class="faq-list">
-      <details>
-        <summary>Meus documentos são enviados para algum servidor?</summary>
-        <p>Não. A compressão roda dentro do seu navegador, com o processador do seu computador. Nenhum arquivo, nome de arquivo ou número de processo é transmitido. Você pode até desligar a internet depois que a página carregar.</p>
-      </details>
-      <details>
-        <summary>O texto continua pesquisável depois?</summary>
-        <p>Sim. Ao comprimir, o motor (Ghostscript) reduz apenas as imagens do PDF e mantém texto, fontes, marcadores e a camada de OCR de digitalizações. Se você já tinha texto selecionável, continua tendo. Só quando o arquivo precisa ser dividido em partes é que marcadores, links internos e campos de formulário não acompanham as partes (o texto continua).</p>
-      </details>
-      <details>
-        <summary>Como vocês decidem o quanto comprimir?</summary>
-        <p>Começamos pelo nível mais leve que provavelmente cabe e só apertamos se for necessário. Se sobra folga, voltamos a um nível mais leve. O piso é 100 dpi (ainda legível para números pequenos); abaixo disso preferimos dividir o arquivo.</p>
-      </details>
-      <details>
-        <summary>E se mesmo assim não couber?</summary>
-        <p>O arquivo é dividido em partes numeradas (parte_01_de_03, parte_02_de_03…), cada uma dentro da meta, sem cortar páginas. Você protocola cada parte como um documento.</p>
-      </details>
-      <details>
-        <summary>Como fica o download?</summary>
-        <p>Baixe um a um (<code>contrato_otimizado.pdf</code>, <code>laudo_parte_01_de_03.pdf</code>) ou tudo em um único ZIP, já organizado: arquivos numerados na ordem do lote, sem acentos nem espaços, partes em pasta própria, pastas por petição quando o sistema limita a soma dos anexos, e um LEIA-ME com o resumo.</p>
-      </details>
-      <details>
-        <summary>Por que a ferramenta recusa PDFs com senha e avisa sobre assinados?</summary>
-        <p>Não removemos proteções: destrave o PDF no programa de origem antes. Um PDF assinado digitalmente perde a assinatura se for alterado, então ele fica de fora por padrão — o certo é preparar o arquivo antes de assinar.</p>
-      </details>
-      <details>
-        <summary>Qual é o limite do meu tribunal?</summary>
-        <p>Varia bastante por tribunal, sistema, instância e tipo de petição: na nossa base há limites de {formatBytes(limiteMin)} a {formatBytes(limiteMax)} por arquivo, com regra cadastrada para {cobertos} dos {TRIBUNAIS.length} tribunais do país (base versão {REGRAS.versao}). Consulte o <a href="/tribunais/">diretório</a> ou a tela de anexar documentos do sistema e, se não achar, informe o limite manualmente.</p>
-      </details>
+        {PERGUNTAS.map((p) => (
+          <details>
+            <summary>{p.q}</summary>
+            <p>{p.a}</p>
+          </details>
+        ))}
       </div>
     </section>
 
     {guias.length > 0 && (
       <section class="wrap home-section home-only guias">
-        <h2>Guias</h2>
-        <p class="sub">Como digitalizar, dividir, nomear e conferir antes de protocolar.</p>
+        <div class="section-head">
+          <h2>Guias</h2>
+          <p>Como digitalizar, dividir, nomear e conferir antes de protocolar.</p>
+        </div>
         <ul class="grid-cards">
           {guias.map((g) => (
             <li>
@@ -140,14 +256,14 @@ const confianca = [
 </Base>
 
 <script>
-  // Evita o "piscar" das seções da página inicial quando a URL já pede a ferramenta.
+  // Evita o "piscar" das seções institucionais quando a URL já pede a ferramenta.
   if (/[?&](view=tool|regra=)/.test(location.search)) document.documentElement.dataset.view = 'tool'
 </script>
 
 <style>
+  .courts-card h2 { margin: 0 0 8px; font-size: 26px; font-weight: 800; letter-spacing: -0.6px; }
+  .courts-card p { margin: 0; color: var(--muted); font-size: 16.5px; }
   .faq-list { max-width: 760px; }
-  .faq h2 { margin-bottom: 8px; }
-  .faq-list p { font-size: 15.5px; }
-  .guias { padding-bottom: 48px; }
-  .more { margin-top: 14px; }
+  .guias { padding-bottom: 56px; }
+  .more { margin-top: 16px; }
 </style>

@@ -63,12 +63,12 @@ export function JobRow({ job, process, onRemove, onRetry, onAllow }: Props) {
             </button>
           )}
           {kind === 'done' && job.outputs.length === 1 && (
-            <button className={`btn small${stale ? ' secondary' : ''}`} onClick={() => downloadFile(job.outputs[0])}>
+            <button className={`btn small ${stale ? 'secondary' : 'navy'}`} onClick={() => downloadFile(job.outputs[0])}>
               Baixar ({formatBytes(job.outputs[0].size)})
             </button>
           )}
           {kind === 'done' && job.outputs.length > 1 && (
-            <button className={`btn small${stale ? ' secondary' : ''}`} onClick={() => downloadZip(job.outputs, `${baseName(job.name)}_partes.zip`, 'partes')}>
+            <button className={`btn small ${stale ? 'secondary' : 'navy'}`} onClick={() => downloadZip(job.outputs, `${baseName(job.name)}_partes.zip`, 'partes')}>
               Baixar as {job.outputs.length} partes (.zip)
             </button>
           )}

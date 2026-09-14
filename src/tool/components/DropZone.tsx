@@ -5,6 +5,8 @@ interface Props {
   disabled?: boolean
   /** "hero": área grande com ícone; "compact": faixa "Adicionar mais PDFs" no fim do lote */
   variant?: 'hero' | 'compact'
+  /** Chamada principal da área grande (o herói e a ferramenta usam textos diferentes) */
+  title?: string
 }
 
 async function collectFiles(items: DataTransferItemList | null, fallback: FileList | null): Promise<File[]> {
@@ -49,7 +51,7 @@ function UploadIcon() {
   )
 }
 
-export function DropZone({ onFiles, disabled, variant = 'hero' }: Props) {
+export function DropZone({ onFiles, disabled, variant = 'hero', title }: Props) {
   const [active, setActive] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const compact = variant === 'compact'
@@ -67,7 +69,7 @@ export function DropZone({ onFiles, disabled, variant = 'hero' }: Props) {
 
   return (
     <div
-      className={`dropzone ${variant}${active ? ' active' : ''}`}
+      className={`dropzone zone-${variant}${active ? ' active' : ''}`}
       role="button"
       tabIndex={0}
       aria-label="Escolher arquivos PDF"
@@ -90,8 +92,8 @@ export function DropZone({ onFiles, disabled, variant = 'hero' }: Props) {
           <UploadIcon />
         </div>
       )}
-      <div className="big">{compact ? 'Adicionar mais PDFs' : 'Arraste seus PDFs aqui'}</div>
-      <div className="small">{compact ? 'Arraste ou clique para escolher' : 'ou clique para escolher — vários arquivos, ou uma pasta inteira'}</div>
+      <div className="big">{compact ? 'Adicionar mais PDFs' : (title ?? 'Arraste seus PDFs aqui')}</div>
+      <div className="small">{compact ? 'Arraste ou clique para escolher' : 'ou clique para selecionar vários arquivos ou uma pasta'}</div>
       <input
         ref={inputRef}
         type="file"
