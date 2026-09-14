@@ -55,7 +55,7 @@ const PERGUNTAS = [
   { q: 'O texto continua pesquisável?', a: 'Sim. A ferramenta preserva texto, fontes e a camada de OCR durante a compressão.' },
   { q: 'E se o PDF não couber mesmo comprimido?', a: 'Com a divisão automática ativada, o arquivo é separado em partes numeradas sem cortar páginas.' },
   { q: 'Posso preparar vários arquivos de uma vez?', a: 'Sim. O usuário pode selecionar vários PDFs ou uma pasta e baixar o lote em um único ZIP organizado.' },
-  { q: 'Existe cobrança, cadastro ou limite diário?', a: 'Não. O 6MB é gratuito, não exige conta e pode ser utilizado quantas vezes o escritório precisar.' },
+  { q: 'Existe cobrança, cadastro ou limite diário?', a: 'Não. O brpdf é gratuito, não exige conta e pode ser utilizado quantas vezes o escritório precisar.' },
 ]
 
 const SEGURANCA = [
@@ -68,7 +68,7 @@ const dadosEstruturados = {
   '@graph': [
     {
       '@type': 'WebApplication',
-      name: '6MB · PDF Jurídico',
+      name: 'brpdf · PDF Jurídico',
       url: SITE.url,
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'Navegador (Chrome, Edge, Firefox, Safari)',
@@ -164,7 +164,7 @@ const dadosEstruturados = {
           <div class="tool-card bookmark">
             <span class="mark" aria-hidden="true" set:html={icone('favorito')} />
             <span class="title">Deixe na aba do escritório</span>
-            <span class="desc">Use <kbd>Ctrl</kbd> + <kbd>D</kbd> para salvar o 6MB nos favoritos e voltar sempre que precisar.</span>
+            <span class="desc">Use <kbd>Ctrl</kbd> + <kbd>D</kbd> para salvar o brpdf nos favoritos e voltar sempre que precisar.</span>
           </div>
         </li>
       </ul>
@@ -173,7 +173,7 @@ const dadosEstruturados = {
     <section class="wrap home-section home-only" id="como-funciona">
       <div class="section-head">
         <h2>Três passos. Nenhuma configuração técnica.</h2>
-        <p>O 6MB escolhe uma margem segura, tenta primeiro a compressão mais leve e divide apenas quando for necessário.</p>
+        <p>O brpdf escolhe uma margem segura, tenta primeiro a compressão mais leve e divide apenas quando for necessário.</p>
       </div>
       <ol class="steps">
         {PASSOS.map((p) => (
@@ -194,7 +194,7 @@ const dadosEstruturados = {
           <p class="eyebrow">Sigilo em primeiro lugar</p>
           <h2>Seus documentos jurídicos continuam seus.</h2>
           <p>
-            A preparação acontece dentro do seu navegador. Arquivos, nomes de documentos e números de processo não são enviados para o 6MB.
+            A preparação acontece dentro do seu navegador. Arquivos, nomes de documentos e números de processo não são enviados para o brpdf.
           </p>
         </div>
         <ul class="security-grid">

@@ -1,4 +1,4 @@
-# 6MB — Preparador de PDFs para peticionamento eletrônico
+# brpdf — Preparador de PDFs para peticionamento eletrônico
 
 Site estático + ferramenta no navegador para advogadas, advogados e equipes que precisam deixar
 vários PDFs dentro do limite de tamanho por arquivo dos sistemas de peticionamento (PJe, eproc,
@@ -80,7 +80,9 @@ Para rodar localmente atrás de proxy: `NODE_USE_ENV_PROXY=1 node scripts/check-
 
 ## Deploy
 
-V0 no ar em **https://6mb.6mb-app.workers.dev** (Worker `6mb`, publicado com `npm run deploy`).
+No ar em **https://6mb.6mb-app.workers.dev** (Worker `6mb`, publicado com `npm run deploy`).
+O endereço e o nome do Worker ainda usam o nome antigo do projeto; trocar exige criar um Worker novo
+(ou apontar um domínio próprio, como `brpdf.com.br`, em Settings → Domains & Routes).
 
 Site 100 % estático (`dist/`), publicado como **Cloudflare Worker com arquivos estáticos**
 (`wrangler.jsonc`; plano gratuito compatível com uso comercial; o `gs.wasm` de 16 MB fica abaixo do

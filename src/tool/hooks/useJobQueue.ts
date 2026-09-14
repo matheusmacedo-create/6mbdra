@@ -262,8 +262,8 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
           return
         }
         // Em produção não registramos o detalhe (cauda do log do motor pode ecoar metadados do documento).
-        if (import.meta.env.DEV) console.error('[6MB] Falha ao processar um arquivo:', e, e instanceof EngineError ? e.detail : '')
-        else console.error('[6MB] Falha ao processar um arquivo:', e instanceof EngineError ? e.code : 'UNKNOWN')
+        if (import.meta.env.DEV) console.error('[brpdf] Falha ao processar um arquivo:', e, e instanceof EngineError ? e.detail : '')
+        else console.error('[brpdf] Falha ao processar um arquivo:', e instanceof EngineError ? e.code : 'UNKNOWN')
         const code = e instanceof EngineError ? e.code : e instanceof SplitError ? e.code : 'UNKNOWN'
         track('erro', { categoria: code, faixa: sizeBucket(next.originalSize) })
         patch({ status: 'error', stage: 'Erro', progress: 0, finishedAt: Date.now(), error: describeError(e) })

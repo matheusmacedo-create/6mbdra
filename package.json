@@ -1,5 +1,5 @@
 {
-  "name": "6mbdra",
+  "name": "brpdf",
   "private": true,
   "version": "0.2.0",
   "description": "Preparador de PDFs para peticionamento eletrônico: compacta e divide PDFs no navegador para caberem no limite do tribunal.",

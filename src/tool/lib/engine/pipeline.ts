@@ -102,8 +102,8 @@ export async function processPdf(
       if (e instanceof EngineError && (e.code === 'ABORTED' || e.code === 'PASSWORD' || e.code === 'INVALID')) throw e
       // PAGES_MISMATCH, TIMEOUT, OOM, UNKNOWN…: o original é dividido sem compressão.
       engineFailure = e instanceof EngineError ? e : new EngineError('A compressão falhou.', 'UNKNOWN', e instanceof Error ? e.message : String(e))
-      if (import.meta.env.DEV) console.warn('[6MB] motor falhou; o arquivo será dividido sem compressão:', engineFailure, engineFailure.detail ?? '')
-      else console.warn('[6MB] motor falhou; o arquivo será dividido sem compressão:', engineFailure.code)
+      if (import.meta.env.DEV) console.warn('[brpdf] motor falhou; o arquivo será dividido sem compressão:', engineFailure, engineFailure.detail ?? '')
+      else console.warn('[brpdf] motor falhou; o arquivo será dividido sem compressão:', engineFailure.code)
     }
   }
 

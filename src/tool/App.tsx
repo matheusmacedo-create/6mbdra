@@ -17,7 +17,9 @@ import { SITE } from '../config/site.mjs'
 import { track } from './lib/analytics'
 import './tool.css'
 
-const STORAGE_KEY = '6mb:settings:v2'
+const STORAGE_KEY = 'brpdf:settings:v1'
+/** Chave usada antes do nome atual: lida uma vez para ninguém perder as preferências. */
+const LEGACY_STORAGE_KEY = '6mb:settings:v2'
 
 type View = 'home' | 'tool'
 
@@ -33,7 +35,7 @@ function initialView(): View {
 function loadSettings(): Settings {
   let s = DEFAULT_SETTINGS
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY)
     if (raw) s = { ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as Partial<Settings>) }
   } catch {
     // armazenamento indisponível: usa o padrão
