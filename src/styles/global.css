@@ -18,14 +18,14 @@
   --border: #e8eaee;
   --border-strong: #d5d8de;
 
-  /* Cor de ação */
-  --accent: #e5322d;
-  --accent-hover: #c8201c;
-  --accent-soft: #fdeceb;
+  /* Cor de ação: azul da bandeira brasileira */
+  --accent: #002776;
+  --accent-hover: #00379e;
+  --accent-soft: #e8eefa;
 
   /* Ícones das ferramentas: fundo suave + traço saturado */
   --ic-red-bg: #fdeceb;   --ic-red: #d92d20;
-  --ic-blue-bg: #e8f1fe;  --ic-blue: #1570ef;
+  --ic-blue-bg: #e8eefa;  --ic-blue: #002776;
   --ic-green-bg: #e6f7ee; --ic-green: #039855;
   --ic-purple-bg: #efecfe; --ic-purple: #6938ef;
   --ic-yellow-bg: #fdf3d7; --ic-yellow: #b9540a;
