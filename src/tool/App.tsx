@@ -535,9 +535,23 @@ export default function App() {
                       Preparar PDFs
                     </button>
                   ) : (
-                    <span className="hint" data-testid="nothing-to-prepare">
-                      {counts.blocked > 0 ? 'Nada a preparar: veja os avisos acima.' : 'Todos os arquivos já cabem na meta. Nada a preparar.'}
-                    </span>
+                    <>
+                      {/*
+                        * Nada a comprimir não é beco sem saída: os arquivos que já cabem seguem
+                        * valendo como lote, com os nomes padronizados e o LEIA-ME. Sem isto a pessoa
+                        * escolhia os arquivos e ficava sem nenhuma ação possível nesta tela.
+                        */}
+                      {zipCount > 0 && (
+                        <button className="btn block" onClick={collectZip} disabled={zipping} data-testid="download-all">
+                          {zipping ? 'Montando o pacote…' : `Baixar lote em ZIP (${zipCount})`}
+                        </button>
+                      )}
+                      <span className="hint" data-testid="nothing-to-prepare">
+                        {counts.blocked > 0
+                          ? `Nada a comprimir: veja os avisos acima.${zipCount > 0 ? ' Os demais já estão prontos para baixar.' : ''}`
+                          : 'Todos os arquivos já cabem na meta — nada a comprimir. Baixe o lote pronto acima.'}
+                      </span>
+                    </>
                   )}
                   {counts.analyzing === 0 && toPrepare > 0 && (
                     <p className="hint">

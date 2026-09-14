@@ -335,6 +335,26 @@ test('a medição do Google só entra depois do aceite (LGPD)', async ({ page })
   expect(concedido, 'o consentimento precisa ser propagado para a dataLayer').toBe(true)
 })
 
+test('arquivos que já cabem não viram beco sem saída: o lote continua baixável', async ({ page }) => {
+  await openApp(page)
+  // Limite folgado de propósito: os dois arquivos cabem e não há nada a comprimir.
+  await addAndPrepare(page, [fx.text, fx.text], 50)
+  await expect(page.getByTestId('nothing-to-prepare')).toContainText(/nada a comprimir/i)
+  await expect(page.getByTestId('start'), 'não existe o que preparar').toHaveCount(0)
+  // E, ainda assim, dá para levar o lote embora.
+  const zip = page.getByTestId('download-all')
+  await expect(zip).toBeVisible()
+  await expect(zip).toHaveText(/Baixar lote em ZIP \(2\)/)
+  const [download] = await Promise.all([page.waitForEvent('download'), zip.click()])
+  const bytes = readFileSync((await download.path())!)
+  expect(bytes.subarray(0, 2).toString()).toBe('PK')
+  const conteudo = bytes.toString('latin1')
+  const raiz = download.suggestedFilename().replace(/\.zip$/, '')
+  expect(conteudo).toContain(`${raiz}/LEIA-ME.txt`)
+  expect(conteudo).toContain(`${raiz}/01_text.pdf`)
+  expect(conteudo).toContain(`${raiz}/02_text.pdf`)
+})
+
 test('páginas públicas respondem e apontam para a ferramenta', async ({ page }) => {
   for (const path of ['/tribunais/', '/tribunais/trt2-pje-jt/', '/tribunais/tjsp-esaj/', '/guias/', '/metodologia/', '/privacidade/', '/termos/', '/contato/']) {
     const res = await page.goto(path)
