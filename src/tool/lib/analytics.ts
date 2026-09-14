@@ -29,6 +29,7 @@ export type EventName =
   | 'arquivo_removido'
   | 'liberar_arquivo' // liberou um PDF assinado ou com restrições
   // 4. processou
+  | 'juntou_documentos' // virou um PDF só
   | 'lote_iniciado'
   | 'lote_cancelado'
   | 'lote_concluido'

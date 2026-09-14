@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { type Job, type ProcessSettings, isBusy, isProcessable, isStale, splitBudget, targetFor } from '../lib/types'
+import { type Job, type ProcessSettings, isBusy, isProcessable, isStale, podeJuntar, splitBudget, targetFor } from '../lib/types'
 import { processPdf, type PipelineDeps } from '../lib/engine/pipeline'
 import { EngineError } from '../lib/engine/types'
 import { createEngine, GhostscriptEngine } from '../lib/engine'
@@ -7,6 +7,7 @@ import { PdfWorkerClient } from '../lib/pdfWorkerClient'
 import { RpcRemoteError } from '../lib/rpc'
 import { SplitError, type Analysis } from '../lib/splitTypes'
 import { sizeBucket, track } from '../lib/analytics'
+import { ordenarPorNome } from '../lib/ordenar'
 
 type Action =
   | { type: 'add'; jobs: Job[] }
@@ -15,11 +16,30 @@ type Action =
   | { type: 'clear' }
   | { type: 'enqueue'; ids: string[] }
   | { type: 'unqueue' }
+  | { type: 'mover'; id: string; delta: -1 | 1 }
+  | { type: 'juntou'; remover: string[]; job: Job }
 
 function reducer(state: Job[], action: Action): Job[] {
   switch (action.type) {
     case 'add':
-      return [...state, ...action.jobs]
+      // O lote novo entra já em ordem de protocolo; o que já estava na lista não é remexido,
+      // para não desfazer um ajuste manual de quem reordenou antes.
+      return [...state, ...ordenarPorNome(action.jobs, (j) => j.name)]
+    case 'mover': {
+      const i = state.findIndex((j) => j.id === action.id)
+      const destino = i + action.delta
+      if (i < 0 || destino < 0 || destino >= state.length) return state
+      const copia = [...state]
+      ;[copia[i], copia[destino]] = [copia[destino], copia[i]]
+      return copia
+    }
+    case 'juntou': {
+      // O documento juntado ocupa o lugar do primeiro que entrou nele.
+      const posicao = state.findIndex((j) => action.remover.includes(j.id))
+      const restantes = state.filter((j) => !action.remover.includes(j.id))
+      const i = posicao < 0 ? restantes.length : Math.min(posicao, restantes.length)
+      return [...restantes.slice(0, i), action.job, ...restantes.slice(i)]
+    }
     case 'patch':
       return state.map((j) => (j.id === action.id ? { ...j, ...action.patch } : j))
     case 'remove':
@@ -88,6 +108,8 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
   const [jobs, dispatch] = useReducer(reducer, [])
   /** Quantos arquivos entraram no lote em andamento (0 fora do processamento). */
   const [batchCount, setBatchCount] = useState(0)
+  /** Junção em andamento: o botão principal espera por ela antes de começar a preparar. */
+  const [juntando, setJuntando] = useState(false)
   const processRef = useRef(process)
   processRef.current = process
   const runningRef = useRef<string | null>(null)
@@ -245,6 +267,45 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
     setBatchCount(0)
   }, [])
 
+  /**
+   * Junta os documentos aproveitáveis num PDF só, na ordem da lista, e coloca o resultado na fila.
+   *
+   * O arquivo juntado vira um job comum: daí para a frente ele passa pela compressão e pela divisão
+   * como qualquer outro — o que resolve sozinho o caso de a soma estourar o limite do tribunal.
+   * Devolve quantos documentos entraram (0 quando não havia o que juntar).
+   */
+  const juntar = useCallback(async (): Promise<number> => {
+    const elegiveis = jobsRef.current.filter(podeJuntar)
+    if (elegiveis.length < 2) return 0
+    setJuntando(true)
+    try {
+      const entradas = await Promise.all(elegiveis.map(async (j) => ({ nome: j.name, bytes: await j.file.arrayBuffer() })))
+      const r = await deps.pdfWork.merge(entradas)
+      const nome = 'documentos_juntados.pdf'
+      const arquivo = new File([r.bytes as BlobPart], nome, { type: 'application/pdf' })
+      const novo: Job = {
+        id: newId(),
+        file: arquivo,
+        name: nome,
+        originalSize: arquivo.size,
+        status: 'analyzing',
+        progress: 0,
+        stage: 'Analisando…',
+        outputs: [],
+        warnings: r.avisos,
+      }
+      dispatch({ type: 'juntou', remover: elegiveis.map((j) => j.id), job: novo })
+      track('juntou_documentos', { quantidade: elegiveis.length, paginas: r.paginas, faixa: sizeBucket(arquivo.size) })
+      await analyze(novo)
+      return elegiveis.length
+    } finally {
+      setJuntando(false)
+    }
+  }, [deps, analyze])
+
+  /** Sobe ou desce um documento na lista. A ordem da lista é a ordem do PDF juntado e do ZIP. */
+  const mover = useCallback((id: string, delta: -1 | 1) => dispatch({ type: 'mover', id, delta }), [])
+
   const retry = useCallback(
     (id: string) => {
       const j = jobsRef.current.find((x) => x.id === id)
@@ -333,5 +394,5 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
     })()
   }, [jobs, deps])
 
-  return { jobs, batchCount, addFiles, remove, clear, start, cancel, retry, allow }
+  return { jobs, batchCount, juntando, addFiles, remove, clear, start, cancel, retry, allow, juntar, mover }
 }

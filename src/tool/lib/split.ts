@@ -41,7 +41,7 @@ async function buildRange(src: PDFDocument, from: number, to: number): Promise<U
  * e imagens fazem o tamanho real não ser exatamente proporcional).
  */
 /** Estruturas do catálogo que copyPages não leva junto (spec: avisar em vez de prometer "intacto"). */
-function droppedFeatures(src: PDFDocument): string[] {
+export function droppedFeatures(src: PDFDocument): string[] {
   const has = (k: string) => src.catalog.has(PDFName.of(k))
   const out: string[] = []
   if (has('AcroForm')) out.push('campos de formulário')

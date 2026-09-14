@@ -23,7 +23,7 @@ const EVENTOS = new Set([
   'acesso', 'tempo_pagina', 'link_externo', 'faq_aberto',
   'abriu_ferramenta', 'voltou_inicio', 'motor', 'regra_selecionada', 'opcao_alterada',
   'arquivo_adicionado', 'arquivo_analisado', 'arquivo_removido', 'liberar_arquivo',
-  'lote_iniciado', 'lote_cancelado', 'lote_concluido', 'arquivo_resultado', 'tentar_novamente', 'erro',
+  'juntou_documentos', 'lote_iniciado', 'lote_cancelado', 'lote_concluido', 'arquivo_resultado', 'tentar_novamente', 'erro',
   'zip_gerado', 'download',
 ])
 

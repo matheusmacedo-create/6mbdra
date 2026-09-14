@@ -121,6 +121,25 @@ Medição de uso: eventos agregados (sem nome nem conteúdo de arquivo) vão par
 `/painel/`; GA4 e Tag Manager são opcionais e ficam desligados até o build receber `PUBLIC_GA4_ID`
 ou `PUBLIC_GTM_ID`. Detalhes em [README-metricas.md](README-metricas.md).
 
+### Juntar documentos
+
+Opção da etapa 2, visível só quando há mais de um documento aproveitável: os PDFs viram um arquivo
+só (`documentos_juntados.pdf`) na ordem da lista, e esse arquivo entra na compressão e na divisão
+como qualquer outro — é o que resolve o caso de a soma estourar o limite do tribunal.
+
+**Documento assinado digitalmente nunca entra na junção** (`podeJuntar()` em
+`src/tool/lib/types.ts`). Juntar copia as páginas para um arquivo novo e a assinatura não sobrevive
+a isso; o que restaria é a imagem de uma assinatura, sem validade. Nem o "Processar mesmo assim",
+que autoriza a compressão, vale aqui. Documento com senha e análise que não terminou também ficam
+de fora — sem saber se há assinatura, juntar seria apostar no documento de outra pessoa.
+
+A ordem de entrada vem de `src/tool/lib/ordenar.ts`, que lê **só o nome do arquivo**: prefixo
+numérico (`01 - peticao`) manda em tudo; sem ele, vale a ordem convencional de uma petição (peça,
+procuração, atos constitutivos, documentos pessoais, provas, guias); e no empate, ordem natural do
+nome. Ler o conteúdo exigiria camada de texto, que digitalização não tem — justamente o caso que
+esta ferramenta existe para resolver. A ordem é sugestão: a lista tem setas para ajustar, e ela
+vale tanto para o arquivo juntado quanto para a numeração do ZIP.
+
 ### Domínio próprio (brpdf.com)
 
 No ar em **https://brpdf.com**. O registro fica na Hostinger e o DNS na Cloudflare

@@ -76,6 +76,8 @@ export interface Settings {
   autoSplit: boolean
   /** Converter para tons de cinza */
   grayscale: boolean
+  /** Juntar todos os documentos aproveitáveis num PDF só, na ordem da lista */
+  merge: boolean
 }
 
 /** O que o pipeline precisa saber para processar um arquivo. */
@@ -122,6 +124,7 @@ export const DEFAULT_SETTINGS: Settings = {
   customMb: 6,
   autoSplit: true,
   grayscale: false,
+  merge: false,
 }
 
 export function isBusy(j: Job): boolean {
@@ -167,6 +170,23 @@ export function deriveKind(j: Job, target: number | ProcessSettings): JobKind {
 export function isProcessable(j: Job, target: number | ProcessSettings): boolean {
   const k = deriveKind(j, target)
   return k === 'ready' || k === 'unknown'
+}
+
+/**
+ * Pode entrar numa junção?
+ *
+ * A regra é mais dura que a da compressão, de propósito. Juntar copia as páginas para um arquivo
+ * novo, e a assinatura digital do original não sobrevive a isso: o que resta é a imagem de uma
+ * assinatura, sem validade. Por isso documento assinado fica de fora SEMPRE — nem o "liberar",
+ * que serve para autorizar a compressão, vale aqui. Análise que não terminou também fica de fora:
+ * sem saber se há assinatura, juntar seria apostar no documento de outra pessoa.
+ */
+export function podeJuntar(j: Job): boolean {
+  const a = j.analysis
+  if (j.status !== 'analyzed' || !a) return false
+  if (a.signed || a.encrypted || a.failed || !a.valid) return false
+  if (a.restricted && !j.force) return false
+  return true
 }
 
 /** Resultado preparado para outra meta e que não cabe na meta atual. */

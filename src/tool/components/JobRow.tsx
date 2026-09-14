@@ -10,6 +10,11 @@ interface Props {
   onRemove: (id: string) => void
   onRetry: (id: string) => void
   onAllow: (id: string) => void
+  /** Move o documento na lista. Ausente quando a ordem não importa (durante e depois do preparo). */
+  onMove?: (id: string, delta: -1 | 1) => void
+  /** Posição 1-based, para o rótulo acessível dizer "3 de 7" em vez de só "subir". */
+  posicao?: number
+  total?: number
 }
 
 const KIND_LABEL: Record<ReturnType<typeof deriveKind>, { text: string; cls: string }> = {
@@ -31,7 +36,7 @@ function pageRangeLabel(range: [number, number]): string {
   return range[0] === range[1] ? `página ${range[0]}` : `páginas ${range[0]}–${range[1]}`
 }
 
-export function JobRow({ job, process, onRemove, onRetry, onAllow }: Props) {
+export function JobRow({ job, process, onRemove, onRetry, onAllow, onMove, posicao, total }: Props) {
   const targetBytes = targetFor(job, process)
   const kind = deriveKind(job, process)
   const stale = isStaleJob(job, process)
@@ -45,7 +50,31 @@ export function JobRow({ job, process, onRemove, onRetry, onAllow }: Props) {
   return (
     <div className="job" data-testid="job" data-kind={kind}>
       <div className="job-top">
-        <span className="pdf-icon" aria-hidden="true">PDF</span>
+        {onMove && posicao !== undefined && total !== undefined ? (
+          <div className="job-ordem">
+            <button
+              className="seta"
+              onClick={() => onMove(job.id, -1)}
+              disabled={posicao === 1}
+              aria-label={`Subir ${job.name} (posição ${posicao} de ${total})`}
+              data-testid="subir"
+            >
+              <span aria-hidden="true">↑</span>
+            </button>
+            <span className="numero" aria-hidden="true">{posicao}</span>
+            <button
+              className="seta"
+              onClick={() => onMove(job.id, 1)}
+              disabled={posicao === total}
+              aria-label={`Descer ${job.name} (posição ${posicao} de ${total})`}
+              data-testid="descer"
+            >
+              <span aria-hidden="true">↓</span>
+            </button>
+          </div>
+        ) : (
+          <span className="pdf-icon" aria-hidden="true">PDF</span>
+        )}
         <div className="job-title">
           <div className="job-name">{job.name}</div>
           <div className="job-meta">

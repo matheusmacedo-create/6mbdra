@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { DEFAULT_SETTINGS, deriveKind, isBusy, isStale as isStaleJob, type Settings, type OutputFile, type Job } from './lib/types'
+import { DEFAULT_SETTINGS, deriveKind, isBusy, isStale as isStaleJob, podeJuntar, type Settings, type OutputFile, type Job } from './lib/types'
 import { useJobQueue, type EngineStatus } from './hooks/useJobQueue'
 import { DropZone, type OrigemArquivos } from './components/DropZone'
 import { Options } from './components/Options'
@@ -164,7 +164,7 @@ export default function App() {
     document.addEventListener('click', handler)
     return () => document.removeEventListener('click', handler)
   }, [openTool, goHome, focarUpload])
-  const { jobs, batchCount, addFiles, remove, clear, start, cancel, retry, allow } = useJobQueue(process, setEngine)
+  const { jobs, batchCount, juntando, addFiles, remove, clear, start, cancel, retry, allow, juntar, mover } = useJobQueue(process, setEngine)
   jobsCountRef.current = jobs.length
 
   useEffect(() => {
@@ -313,6 +313,27 @@ export default function App() {
 
   // Quantos entram ao clicar em Preparar: prontos + resultados preparados para outra meta.
   const toPrepare = counts.ready + counts.stale
+  /** Documentos que podem virar um só. Assinados nunca entram — ver podeJuntar(). */
+  const juntaveis = jobs.filter(podeJuntar).length
+  /** Ficam de fora da junção (assinado, com senha, ilegível): a pessoa precisa saber antes. */
+  const foraDaJuncao = jobs.length - juntaveis
+  const assinadosForaDaJuncao = jobs.filter((j) => j.analysis?.signed).length
+  const vaiJuntar = settings.merge && juntaveis > 1
+
+  /**
+   * O botão principal é um só. Com a opção marcada ele primeiro junta e só depois prepara — assim
+   * o arquivo juntado passa pela compressão e pela divisão como qualquer outro, o que resolve
+   * sozinho o caso de a soma dos documentos estourar o limite do tribunal.
+   */
+  const preparar = async () => {
+    try {
+      if (vaiJuntar) await juntar()
+    } catch (e) {
+      setNotice(`Não foi possível juntar os documentos: ${e instanceof Error ? e.message : 'erro desconhecido'}`)
+      return
+    }
+    start()
+  }
   const batchDone = Math.max(0, Math.min(batchCount, batchCount - counts.busy))
 
   /*
@@ -497,7 +518,7 @@ export default function App() {
                 </p>
               )}
 
-              <BatchList jobs={jobs} process={process} onRemove={remove} onRetry={retry} onAllow={allow} />
+              <BatchList jobs={jobs} process={process} onRemove={remove} onRetry={retry} onAllow={allow} onMove={phase === 'review' && jobs.length > 1 ? mover : undefined} />
               <DropZone onFiles={onFiles} variant="compact" />
           </section>
 
@@ -509,6 +530,44 @@ export default function App() {
             <section className="card destino" aria-labelledby="h-destino">
               <h2 id="h-destino">Destino do protocolo</h2>
               <RuleSelector settings={settings} onChange={setSettings} onValidity={setLimitValid} compact label="Tribunal e sistema" />
+
+              {phase === 'review' && juntaveis > 1 && (
+                <div className="juntar">
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={settings.merge}
+                      data-testid="juntar"
+                      onChange={(e) => {
+                        track('opcao_alterada', { tipo: 'juntar', situacao: e.target.checked ? 'ligado' : 'desligado' })
+                        setSettings({ ...settings, merge: e.target.checked })
+                      }}
+                    />
+                    <span>
+                      <span className="t-label">Juntar tudo em um único PDF</span>
+                      <br />
+                      <span className="t-hint">
+                        {juntaveis} documentos viram um arquivo só, na ordem da lista. Útil quando o sistema limita a quantidade de anexos.
+                      </span>
+                    </span>
+                  </label>
+                  {settings.merge && (
+                    <p className="hint aviso-juntar" data-testid="aviso-juntar">
+                      A <strong>ordem da lista acima</strong> é a ordem do arquivo final — use as setas para ajustar.
+                      {foraDaJuncao > 0 && (
+                        <>
+                          {' '}
+                          {foraDaJuncao === 1 ? '1 documento fica' : `${foraDaJuncao} documentos ficam`} de fora e {foraDaJuncao === 1 ? 'continua' : 'continuam'} separado
+                          {foraDaJuncao === 1 ? '' : 's'}
+                          {assinadosForaDaJuncao > 0
+                            ? ': juntar copia as páginas para um arquivo novo, e a assinatura digital não sobrevive a isso.'
+                            : ' (documento com senha ou ilegível).'}
+                        </>
+                      )}
+                    </p>
+                  )}
+                </div>
+              )}
 
               <details className="avancadas">
                 <summary>Opções avançadas</summary>
@@ -524,15 +583,15 @@ export default function App() {
                     <button className="btn block" disabled data-testid="start">
                       Analisando…
                     </button>
-                  ) : toPrepare > 0 ? (
+                  ) : toPrepare > 0 || vaiJuntar ? (
                     <button
                       className="btn block"
-                      onClick={() => start()}
-                      disabled={!limitValid}
+                      onClick={() => void preparar()}
+                      disabled={!limitValid || juntando}
                       title={limitValid ? undefined : 'Corrija o limite informado'}
                       data-testid="start"
                     >
-                      Preparar PDFs
+                      {juntando ? 'Juntando…' : 'Preparar PDFs'}
                     </button>
                   ) : (
                     <>

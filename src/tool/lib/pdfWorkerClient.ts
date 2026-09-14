@@ -1,8 +1,8 @@
 import { RpcClient, RpcRemoteError } from './rpc'
 import { SplitError, type SplitBudget, type SplitResult, type Analysis } from './splitTypes'
-import type { SplitResultMessage } from '../workers/pdf.worker'
+import type { MergeResultMessage, SplitResultMessage } from '../workers/pdf.worker'
 
-/** Cliente do worker de pdf-lib (análise, contagem de páginas e divisão em partes). */
+/** Cliente do worker de pdf-lib (análise, contagem de páginas, divisão em partes e junção). */
 export class PdfWorkerClient {
   private client = new RpcClient(() => new Worker(new URL('../workers/pdf.worker.ts', import.meta.url), { type: 'module' }))
 
@@ -17,6 +17,31 @@ export class PdfWorkerClient {
   async countPages(bytes: Uint8Array, signal?: AbortSignal): Promise<number> {
     const buf = bytes.slice().buffer as ArrayBuffer
     return this.client.call<number>('count', { input: buf }, { transfer: [buf], signal, inactivityMs: 5 * 60_000 })
+  }
+
+  /**
+   * Junta vários PDFs em um só, na ordem recebida. Os buffers são transferidos para o worker (não
+   * copiados): quem chama não deve reutilizá-los depois.
+   */
+  async merge(
+    entradas: { nome: string; bytes: ArrayBuffer }[],
+    onProgress?: (feitos: number, total: number) => void,
+    signal?: AbortSignal,
+  ): Promise<{ bytes: Uint8Array; paginas: number; avisos: string[] }> {
+    const r = await this.client.call<MergeResultMessage>(
+      'merge',
+      { inputs: entradas },
+      {
+        transfer: entradas.map((e) => e.bytes),
+        signal,
+        inactivityMs: 10 * 60_000,
+        onProgress: (_frac, stage) => {
+          const [feitos, total] = (stage ?? '').split('/').map(Number)
+          if (Number.isFinite(feitos) && Number.isFinite(total)) onProgress?.(feitos, total)
+        },
+      },
+    )
+    return { bytes: new Uint8Array(r.bytes), paginas: r.paginas, avisos: r.avisos }
   }
 
   async split(bytes: Uint8Array, maxBytes: number, onProgress?: (done: number, total: number) => void, signal?: AbortSignal, budget?: SplitBudget): Promise<SplitResult> {

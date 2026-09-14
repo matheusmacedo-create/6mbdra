@@ -202,3 +202,18 @@ input[aria-invalid="true"] { border-color: var(--err); outline: 2px solid var(--
 
 /* Na primeira tela o aviso de falha do motor aparece centralizado, abaixo do upload. */
 .landing .engine-status, .tool-vazia .engine-status { max-width: 760px; margin: 16px auto 0; text-align: left; }
+
+/* ---------- Juntar documentos ---------- */
+.juntar { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-3); }
+.juntar .aviso-juntar { margin: 0; padding-left: 30px; }
+.juntar .aviso-juntar strong { color: var(--text-secondary); }
+
+/* Setas de ordem na lista: a ordem vale para o PDF juntado e para a numeração do ZIP. */
+.job-ordem { display: grid; justify-items: center; gap: 1px; flex: 0 0 auto; width: 34px; }
+.job-ordem .seta {
+  width: 28px; height: 20px; padding: 0; display: grid; place-items: center; cursor: pointer;
+  border: 1px solid var(--border-strong); border-radius: 6px; background: var(--surface); color: var(--ink-2); font-size: 12px; line-height: 1;
+}
+.job-ordem .seta:hover:not(:disabled) { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.job-ordem .seta:disabled { opacity: 0.35; cursor: not-allowed; }
+.job-ordem .numero { font-size: 12px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }

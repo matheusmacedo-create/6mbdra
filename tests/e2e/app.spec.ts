@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import { PDFDocument } from 'pdf-lib'
+import { unzipSync } from 'fflate'
 import { readFileSync, statSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { ensureFixtures, type Fixtures } from './fixtures'
@@ -80,9 +81,17 @@ test('arquivos já dentro da meta são mantidos e entram no zip como originais',
   expect(zip.slice(0, 2)).toBe('PK')
   const root = download.suggestedFilename().replace(/\.zip$/, '')
   expect(zip).toContain(`${root}/LEIA-ME.txt`)
-  expect(zip).toContain(`${root}/01_text.pdf`)
-  expect(zip).toContain(`${root}/02_scan_big.pdf`)
   expect(zip).toContain('mantido como estava')
+  /*
+   * A numeração do ZIP segue a ordem da lista na tela, não a ordem em que os arquivos foram
+   * escolhidos: ao entrar, o lote é posto em ordem de protocolo (ver ordenarPorNome). Conferir a
+   * relação, e não nomes fixos, é o que continua valendo se a heurística de ordem mudar.
+   */
+  const naTela = await page.getByTestId('job').locator('.job-name').allTextContents()
+  naTela.forEach((nome, i) => {
+    const esperado = `${root}/${String(i + 1).padStart(2, '0')}_${nome}`
+    expect(zip, `posição ${i + 1} do ZIP`).toContain(esperado)
+  })
 })
 
 test('arquivo corrompido é apontado na análise, sem bloquear os demais', async ({ page }) => {
@@ -353,6 +362,69 @@ test('arquivos que já cabem não viram beco sem saída: o lote continua baixáv
   expect(conteudo).toContain(`${raiz}/LEIA-ME.txt`)
   expect(conteudo).toContain(`${raiz}/01_text.pdf`)
   expect(conteudo).toContain(`${raiz}/02_text.pdf`)
+})
+
+test('juntar documentos: vira um PDF só, na ordem da lista', async ({ page }) => {
+  await openApp(page)
+  await addAndPrepare(page, [fx.text, fx.text, fx.text], 50)
+  const paginasPorArquivo = await pageCount(fx.text)
+
+  // A opção só existe porque há mais de um documento aproveitável.
+  const juntar = page.getByTestId('juntar')
+  await expect(juntar).toBeVisible()
+  await expect(juntar).not.toBeChecked()
+  await juntar.check()
+  await expect(page.getByTestId('aviso-juntar')).toContainText(/ordem da lista/i)
+
+  await page.getByTestId('start').click()
+  await waitFinished(page, 1)
+  // Três viraram um.
+  await expect(page.getByTestId('job')).toHaveCount(1)
+  await expect(page.getByTestId('job')).toContainText('documentos_juntados.pdf')
+  // A análise do arquivo juntado já mostra a soma das páginas na própria lista.
+  await expect(page.getByTestId('job').locator('.job-meta')).toContainText(`${paginasPorArquivo * 3} páginas`)
+
+  // Com limite folgado nada é comprimido, então o arquivo sai pelo ZIP do lote.
+  const [download] = await Promise.all([page.waitForEvent('download'), page.getByTestId('download-all').click()])
+  const zip = unzipSync(readFileSync((await download.path())!))
+  const juntado = Object.entries(zip).find(([nome]) => nome.endsWith('documentos_juntados.pdf'))
+  expect(juntado, `o PDF juntado precisa estar no ZIP: ${Object.keys(zip).join(', ')}`).toBeDefined()
+  const bytes = Buffer.from(juntado![1])
+  expect(bytes.subarray(0, 4).toString()).toBe('%PDF')
+  const doc = await PDFDocument.load(bytes)
+  expect(doc.getPageCount(), 'soma das páginas dos três documentos').toBe(paginasPorArquivo * 3)
+})
+
+test('juntar nunca engole documento assinado', async ({ page }) => {
+  await openApp(page)
+  await addAndPrepare(page, [fx.text, fx.text, fx.signedBig], 50)
+  await expect(page.getByTestId('job')).toHaveCount(3)
+
+  await page.getByTestId('juntar').check()
+  // O aviso precisa dizer o que fica de fora e por quê — é o ponto em que se perde validade jurídica.
+  await expect(page.getByTestId('aviso-juntar')).toContainText(/assinatura digital não sobrevive/i)
+
+  await page.getByTestId('start').click()
+  await expect.poll(async () => page.locator('[data-testid="job"][data-kind="done"], [data-testid="job"][data-kind="signed"], [data-testid="job"][data-kind="unchanged"]').count(), { timeout: 280_000 }).toBe(2)
+  // Sobraram dois: o juntado e o assinado, intocado.
+  await expect(page.getByTestId('job')).toHaveCount(2)
+  const nomes = await page.getByTestId('job').locator('.job-name').allTextContents()
+  expect(nomes).toContain('documentos_juntados.pdf')
+  expect(nomes.some((n) => n.includes('signed'))).toBe(true)
+  await expect(page.locator('[data-testid="job"]', { hasText: 'signed' })).toContainText(/Assinado digitalmente|Já cabe/)
+})
+
+test('as setas mudam a ordem e a ordem manda no arquivo juntado', async ({ page }) => {
+  await openApp(page)
+  await addAndPrepare(page, [fx.text, fx.scanBig], 50)
+  const antes = await page.getByTestId('job').locator('.job-name').allTextContents()
+  // Desce o primeiro: a lista inverte.
+  await page.getByTestId('job').first().getByTestId('descer').click()
+  const depois = await page.getByTestId('job').locator('.job-name').allTextContents()
+  expect(depois).toEqual([antes[1], antes[0]])
+  // Nos extremos as setas ficam desabilitadas, sem sumir.
+  await expect(page.getByTestId('job').first().getByTestId('subir')).toBeDisabled()
+  await expect(page.getByTestId('job').last().getByTestId('descer')).toBeDisabled()
 })
 
 test('páginas públicas respondem e apontam para a ferramenta', async ({ page }) => {
