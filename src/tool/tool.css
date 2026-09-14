@@ -7,13 +7,13 @@
 /* ---------- Área de soltar arquivos ---------- */
 .dropzone { cursor: pointer; text-align: center; transition: border-color 0.15s, background 0.15s; outline: none; }
 .dropzone.zone-hero { border: 2px dashed var(--border-strong); border-radius: var(--radius); background: var(--surface-3); padding: 30px 20px; }
-.dropzone.zone-hero:hover, .dropzone.zone-hero.active, .dropzone.zone-hero:focus-visible { border-color: var(--ink); background: var(--surface-2); }
-.dropzone .icon-box { display: inline-grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; background: var(--ink); color: var(--brand-ink); margin-bottom: 14px; }
+.dropzone.zone-hero:hover, .dropzone.zone-hero.active, .dropzone.zone-hero:focus-visible { border-color: var(--accent); background: var(--accent-soft); }
+.dropzone .icon-box { display: inline-grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; background: var(--accent); color: #fff; margin-bottom: 14px; }
 
 .dropzone .big { font-size: 19px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
 .dropzone .small { color: var(--muted); font-size: 15px; }
 .dropzone.zone-compact { margin-top: 16px; border: 2px dashed var(--border-strong); border-radius: var(--radius-sm); padding: 16px; background: var(--surface-3); }
-.dropzone.zone-compact:hover, .dropzone.zone-compact.active, .dropzone.zone-compact:focus-visible { border-color: var(--ink); background: var(--surface-2); }
+.dropzone.zone-compact:hover, .dropzone.zone-compact.active, .dropzone.zone-compact:focus-visible { border-color: var(--accent); background: var(--accent-soft); }
 .dropzone.zone-compact .big { font-size: 15px; margin-bottom: 2px; }
 .dropzone.zone-compact .small { font-size: 14px; }
 
