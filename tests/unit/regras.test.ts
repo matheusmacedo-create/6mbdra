@@ -79,22 +79,30 @@ describe('regras', () => {
 })
 
 describe('cobertura por tribunal (regras nacionais herdadas)', () => {
-  it('lista os 92 tribunais e aplica a regra nacional do PJe-JT a cada TRT', () => {
+  it('lista os 92 tribunais e aplica as regras nacionais (PJe-JT e PJe eleitoral) a quem elas abrangem', () => {
     expect(TRIBUNAIS).toHaveLength(92)
-    const trt2 = regrasDoTribunal('TRT2')
-    expect(trt2.length).toBeGreaterThan(0)
-    expect(trt2[0].herdada).toBe(true)
-    expect(trt2[0].regra.id).toBe('csjt-pje-jt')
-    expect(idPagina(trt2[0])).toBe('trt2-pje-jt')
+    // TRT sem página própria: herda a regra nacional do CSJT
+    const trt7 = regrasDoTribunal('TRT7')
+    expect(trt7).toHaveLength(1)
+    expect(trt7[0].herdada).toBe(true)
+    expect(trt7[0].regra.id).toBe('csjt-pje-jt')
+    expect(idPagina(trt7[0])).toBe('trt7-pje-jt')
     // TRT4 tem regra própria do mesmo sistema: a nacional não é repetida
-    const trt4 = regrasDoTribunal('TRT4')
-    expect(trt4.map((x) => x.regra.id)).toEqual(['trt4-pje-jt'])
-    expect(tribunaisCobertos().length).toBeGreaterThanOrEqual(50)
+    expect(regrasDoTribunal('TRT4').map((x) => x.regra.id)).toEqual(['trt4-pje-jt'])
+    // TRE: herda a Portaria do TSE
+    const tre = regrasDoTribunal('TRE-SP')
+    expect(tre.map((x) => x.regra.id)).toEqual(['tse-pje'])
+    expect(idPagina(tre[0])).toBe('tre-sp-pje')
+    expect(tribunaisCobertos().length).toBeGreaterThanOrEqual(85)
   })
   it('agrupa as opções por ramo e gera páginas sem ids repetidos', () => {
     const grupos = opcoesPorRamo()
-    expect(grupos.get('trabalho')!.filter((o) => o.tribunal.sigla.startsWith('TRT')).length).toBe(24)
+    // Todos os 24 TRTs aparecem (alguns com mais de uma regra: PJe-JT e sistema paralelo)
+    const siglasTrt = new Set(grupos.get('trabalho')!.map((o) => o.tribunal.sigla).filter((s) => s.startsWith('TRT')))
+    expect(siglasTrt.size).toBe(24)
+    expect(new Set(grupos.get('eleitoral')!.map((o) => o.tribunal.sigla)).size).toBe(27)
     const ids = paginasDeRegras().map(idPagina)
     expect(new Set(ids).size).toBe(ids.length)
+    expect(ids).toContain('tre-mg-pje')
   })
 })

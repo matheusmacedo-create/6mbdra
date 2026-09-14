@@ -1,11 +1,11 @@
 # Aderência à especificação V1
 
-Estado em 11/09/2026, após revisão adversarial (corretude, privacidade, regras, especificação, build/deploy, UX/acessibilidade). "Onde" aponta o código ou o teste que comprova.
+Estado em 14/09/2026, após revisão adversarial (corretude, privacidade, regras, especificação, build/deploy, UX/acessibilidade). "Onde" aponta o código ou o teste que comprova.
 
 | Requisito | Situação | Onde |
 |---|---|---|
 | RF01 Selecionar vários PDFs no mesmo lote | Feito | `DropZone` (múltiplos, pastas); e2e "processa vários arquivos" |
-| RF02 Escolher tribunal e sistema (limite, fonte, verificação) | Feito | `RuleSelector` agrupado por ramo; `src/data/regras.json` (limites por página/petição, condicionais, PDF/A, regras nacionais com `abrange`); `src/data/tribunais.json` com os 92 tribunais e contador de cobertura |
+| RF02 Escolher tribunal e sistema (limite, fonte, verificação) | Feito | `RuleSelector` agrupado por ramo; `src/data/regras.json` (limites por página/petição, condicionais, PDF/A, regras nacionais com `abrange`); `src/data/tribunais.json` com os 92 tribunais; 53 regras cobrindo 85 deles |
 | RF03 Limite personalizado | Feito | `RuleSelector` (campo MB), `resolveSettings` |
 | RF04 Meta segura (95 %) | Feito | `metaBytes`, `targetForLimit`, `targetFor` (por arquivo, considerando páginas); único percentual no arquivo de regras |
 | RF05 Análise preliminar (assinado, protegido, inválido) antes de alterar | Feito | `analyze.ts` + `pdfCrypt.ts` (distingue senha de abertura de restrições de edição com senha de usuário vazia), `deriveKind`; e2e "PDF assinado", "arquivo corrompido", "PDF só com restrições" |
@@ -31,15 +31,24 @@ Estado em 11/09/2026, após revisão adversarial (corretude, privacidade, regras
 | §15.3 Piloto com profissionais | Pendente | Depende de pessoas reais |
 | §19 Nome público, domínio, e-mail de contato, ferramenta de analytics | Pendente (decisão do dono) | `src/config/site.mjs`; hospedagem pronta em `wrangler.jsonc` (Cloudflare Workers, ver README "Colocar no ar") |
 
-## Regras pesquisadas mas não cadastradas (fonte oficial inacessível ou não confirmada)
+## Tribunais ainda sem regra (7 de 92)
 
-Pesquisa feita em 10/09/2026 com verificação independente. Ficam fora da base até uma conferência humana:
+Pesquisa em 13/09/2026, com verificação independente de cada fonte. Ficam fora da base até uma
+conferência humana (a ferramenta cobre esses tribunais pelo limite manual):
 
-- **TJRJ · PJe** — indícios de 5 MB por PDF (dicas de sistema do PJe-RJ, 2022); os PDFs do portal não puderam ser baixados (TLS).
-- **TJRS · eproc** — indícios de 11 MB (padrão do eproc); site recusou conexão.
-- **TJRN · PJe** — indícios de 5 MB (Portaria Conjunta 33/2020, feitos criminais); hosts com HTTP 403.
-- **TRF3 · PJe / PEPWEB (JEFs)** — indícios de 10 MB por arquivo e ~250 KB por página; hosts com HTTP 503.
-- **TJMS · e-SAJ** — indícios de 30 MB por arquivo, 300 KB por página, 90 MB por petição; só fonte da OAB/MS.
-- **STJ · e-STJ** — indícios de 30 MB (documento principal) e 100 MB (anexos), total 500 MB; folder oficial devolveu 403.
-- **TSE/TREs · PJe** — Portaria TSE 886/2017 define limites; site bloqueia acesso automatizado.
-- **TRT1 · PJe-JT** — 10 MB (Ato Conjunto 48/2021), coberto pela regra nacional "CSJT"; página própria com HTTP 403.
+- **TJRS · eproc** — indícios de 11 MB (padrão do eproc, FAQ oficial arquivada em 2023). Todos os
+  hosts `*.tjrs.jus.br` aplicam bloqueio geográfico a acessos de fora do Brasil.
+- **TJRN · PJe** — hosts `*.tjrn.jus.br` respondem "Acesso Bloqueado" a acessos estrangeiros.
+- **TJPB · PJe** — indícios de 2 MB (Cartilha PJe 2.0, 2018) e 1,2 MB (2022); domínio atrás de
+  desafio JavaScript da Cloudflare.
+- **TJPI · PJe** — portal responde com bloqueio de WAF; indícios só do sistema legado ThemisWeb.
+- **TJAP · Tucujuris** — sistema próprio, domínio atrás da Cloudflare; nenhum valor oficial.
+- **STM · e-Proc da Justiça Militar da União** — nenhuma fonte oficial do limite por PDF no sistema
+  judicial. O único valor publicado (30 MB / 100 MB) é do SEI-JMU, que é **administrativo**: o
+  próprio manual manda usar o e-Proc para processos judiciais.
+- **TJM-SP** — a FAQ do PJe do tribunal (3 MB) estava em `ww2.tjmsp.jus.br`, host que hoje não
+  existe mais no DNS; só há cópia arquivada.
+
+Também ficaram de fora, por não serem peticionamento judicial: o SEI do STJ (30/100 MB), o SEI-JMU
+do STM e o portal de atendimento (CPA) do TJCE. Para conferir qualquer um deles é preciso um
+navegador com IP no Brasil.

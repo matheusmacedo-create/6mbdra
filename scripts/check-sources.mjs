@@ -131,7 +131,8 @@ const urls = [...new Set(rules.map((r) => r.fonte_url))]
 const results = await mapLimit(urls, CONCURRENCY, (url) => fetchSource(url))
 
 const findings = []
-const newLock = { ...lock }
+// Só as fontes citadas pelas regras atuais entram no lock: regras removidas não deixam entradas órfãs.
+const newLock = {}
 
 urls.forEach((url, idx) => {
   const r = results[idx]
