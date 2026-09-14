@@ -168,9 +168,13 @@ html[data-view="tool"] .hero-band > .wrap { max-width: none; padding: 0; }
 html[data-view="tool"] .hero { display: block; padding: 0; gap: 0; text-align: left; min-height: 0; }
 
 .hero {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-  /* Uma dobra inteira menos o cabeçalho: a área de upload aparece sem rolar. */
-  min-height: calc(100vh - 76px); padding: 48px 20px 40px;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  /*
+   * Sem min-height de uma dobra inteira. Com ela e centralização vertical, sobravam ~160px de
+   * espaço morto dividido entre topo e base em telas altas — e a área de upload já ocupa a dobra
+   * por conta própria. O piso abaixo só existe para a seção não encolher em conteúdo curto.
+   */
+  min-height: 620px; padding: 48px 20px 40px;
 }
 .hero-content { width: 100%; max-width: 900px; margin: 0 auto; }
 .hero-title {
@@ -179,7 +183,7 @@ html[data-view="tool"] .hero { display: block; padding: 0; gap: 0; text-align: l
 }
 .hero-description { max-width: 680px; margin: 20px auto 0; color: var(--muted); font-size: 1.125rem; line-height: 1.6; }
 @media (max-width: 560px) {
-  .hero { min-height: calc(100svh - 62px); padding: 36px 16px 32px; }
+  .hero { min-height: 0; padding: 36px 16px 32px; }
   .hero-description { font-size: 1rem; margin-top: 16px; }
   /* Sem os pontinhos: em duas linhas eles sobrariam no começo da segunda. */
   .trust-line { gap: 8px 16px; }
@@ -304,7 +308,13 @@ tr.sem-regra td { color: var(--muted); }
 .mais-sobre { margin: 18px 0 0; font-size: 15px; color: var(--muted); }
 .mais-sobre a { color: var(--accent); font-weight: 600; text-decoration: underline; }
 
-/* Espaço reservado para a ilha React: evita o salto de layout entre o HTML servido e a hidratação. */
-.ilha-ferramenta { width: 100%; }
-html:not([data-view="tool"]) .ilha-ferramenta { min-height: 430px; }
-@media (max-width: 560px) { html:not([data-view="tool"]) .ilha-ferramenta { min-height: 360px; } }
+/*
+ * Espaço reservado para a ilha React: evita o salto de layout entre o HTML servido e a hidratação.
+ * 370px é a altura medida do conteúdo (área de upload + linha de confiança + etapa) — reservar mais
+ * que isso não melhora o CLS e deixa um vão morto no fim do herói.
+ */
+/*
+ * 400px, e não a altura do conteúdo (368px): a margem superior da área de upload escapa por
+ * colapso de margem e soma 32px à caixa. Reservar menos que o total deixaria o salto de volta.
+ */
+.ilha-ferramenta { width: 100%; min-height: 400px; }
