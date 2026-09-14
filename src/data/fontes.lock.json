@@ -27,7 +27,8 @@
   "https://www.tjmg.jus.br/data/files/54/42/1A/D2/404AF910A6FF69F99208CCA8/MANUAL%20DOS%20ADVOGADOS%20-%20Jul26.pdf": {
     "hash": "755ce7826cea9d84d69f9d5a5a2e135f77b80ec1835d58bfa3b4ec2cf74c640f",
     "verificado_em": "2026-09-14",
-    "falhas": 0
+    "falhas": 1,
+    "ultima_falha": "2026-09-14 HTTP 403"
   },
   "https://wwa.tjto.jus.br/elegis/Home/Imprimir/423": {
     "hash": "9b68556c1700ad79cb19ca7057932dae7e9305d05c7f96605a98a6903958cd95",
@@ -55,22 +56,24 @@
     "falhas": 0
   },
   "https://www.tjrj.jus.br/documents/d/guest/manual_do_usuario-peticao_inicial_eletronica_de_2a_instancia_petinicelet-portal_de_servicos_v_1-7": {
-    "falhas": 4,
+    "falhas": 5,
     "ultima_falha": "2026-09-14 TLS: UNABLE_TO_VERIFY_LEAF_SIGNATURE (cadeia de certificados incompleta ou inválida no servidor; conferir no navegador)"
   },
   "https://www.tjrj.jus.br/documents/10136/33017/manual-peticao-eletronica-intercorrente.pdf/87234c72-e8ee-4fe5-8bb0-cba9611ab06f?version=1.8": {
-    "falhas": 4,
+    "falhas": 5,
     "ultima_falha": "2026-09-14 TLS: UNABLE_TO_VERIFY_LEAF_SIGNATURE (cadeia de certificados incompleta ou inválida no servidor; conferir no navegador)"
   },
   "https://www.tjmg.jus.br/portal-tjmg/acoes-e-programas/gestao-de-primeira/processo-judicial-eletronico-fluxo-unificado-civel/anexar-arquivosno-pje.htm": {
     "hash": "104df755525e9700cbcdde7550998d7ea7a005d48126dddf51babbb37928d7d7",
     "verificado_em": "2026-09-14",
-    "falhas": 0
+    "falhas": 1,
+    "ultima_falha": "2026-09-14 HTTP 403"
   },
   "https://www.tjmg.jus.br/portal-tjmg/informes/pje-ampliacao-da-extensao-e-do-tamanho-dos-arquivos.htm": {
     "hash": "e6e04919d9a89a1f8ba8c233615089c4e8cc251a1cc5b76d413a07585c79599f",
     "verificado_em": "2026-09-14",
-    "falhas": 0
+    "falhas": 1,
+    "ultima_falha": "2026-09-14 HTTP 403"
   },
   "https://portal.tjpe.jus.br/web/processo-judicial-eletronico/informacoes-auxiliares": {
     "hash": "c9b90d69919a7a253964dc175b9f22ef06c09d437775a8c9ab490ef89a57f28a",
@@ -85,7 +88,8 @@
   "https://www.tjes.jus.br/wp-content/uploads/manual-PJe-CIASE.pdf": {
     "hash": "5720c627f363ec1bd7f0bd39174b81d61cb7e18ec3614903c2578a7e01a9f510",
     "verificado_em": "2026-09-14",
-    "falhas": 0
+    "falhas": 1,
+    "ultima_falha": "2026-09-14 HTTP 403"
   },
   "https://www.tjma.jus.br/midia/tj/noticia/504128": {
     "hash": "57d7d0d9e3c095af15d56a4a6093d7644fe260e69d8efa6e37aea4705295bf59",
@@ -125,7 +129,8 @@
   "https://www.trt4.jus.br/portais/trt4/modulos/noticias/492460": {
     "hash": "6917a4dc2ac0d8d1659fbc1b323265334d136f7df2c46bcfe5ea4ec35a6d527a",
     "verificado_em": "2026-09-14",
-    "falhas": 0
+    "falhas": 1,
+    "ultima_falha": "2026-09-14 HTTP 403"
   },
   "https://www.trf1.jus.br/trf1/pje/perguntas-frequentes": {
     "hash": "fad7452dea1cbbbe15935389a7dfe175d41b022eff29df993168657008703bf5",
@@ -138,7 +143,7 @@
     "falhas": 0
   },
   "https://portal.stf.jus.br/textos/verTexto.asp?servico=processoFAQV2&pagina=faqv2": {
-    "falhas": 3,
+    "falhas": 4,
     "ultima_falha": "2026-09-14 TLS: UNABLE_TO_VERIFY_LEAF_SIGNATURE (cadeia de certificados incompleta ou inválida no servidor; conferir no navegador)"
   },
   "https://projudi.tjpr.jus.br/projudi/noticias.jsp": {
@@ -167,23 +172,23 @@
     "falhas": 0
   },
   "https://web.trf3.jus.br/atos-normativos/atos-normativos-dir/Presid%C3%AAncia/Resolu%C3%A7%C3%B5es/2021/Resolu%C3%A7%C3%A3o0482.htm": {
-    "falhas": 3,
+    "falhas": 4,
     "ultima_falha": "2026-09-14 timeout"
   },
   "https://portal.trf6.jus.br/wp-content/uploads/2023/09/Regulamento-01.pdf": {
-    "falhas": 3,
+    "falhas": 4,
     "ultima_falha": "2026-09-14 fetch failed"
   },
   "https://sti.tjms.jus.br/confluence/pages/viewpage.action?pageId=238953364": {
-    "falhas": 3,
+    "falhas": 4,
     "ultima_falha": "2026-09-14 fetch failed"
   },
   "https://www.tjrj.jus.br/documents/d/guest/manual_do_usuario_usuario_externo_advogado-parte_pje_v_1-4": {
-    "falhas": 3,
+    "falhas": 4,
     "ultima_falha": "2026-09-14 TLS: UNABLE_TO_VERIFY_LEAF_SIGNATURE (cadeia de certificados incompleta ou inválida no servidor; conferir no navegador)"
   },
   "https://www.tjrj.jus.br/documents/d/guest/dica_de_sistema_-_distribuicao_por_dependencia_pje_v_1-4-1": {
-    "falhas": 3,
+    "falhas": 4,
     "ultima_falha": "2026-09-14 TLS: UNABLE_TO_VERIFY_LEAF_SIGNATURE (cadeia de certificados incompleta ou inválida no servidor; conferir no navegador)"
   },
   "https://www.tjba.jus.br/portal/pje-passa-por-atualizacoes-e-garante-mais-facilidade-rapidez-e-eficiencia-para-os-usuarios/": {
@@ -209,7 +214,8 @@
   "https://conhecimento-setic.trt13.jus.br/books/pdf/page/tamanho-maximo-de-documentos-pdfs-aceitos-pelos-sistemas-pje-proad-sispae-gmail-e-malote-digital": {
     "hash": "bb40585b7e4bbbf078869dba857beb57a5b4ba8c58642215345873333b94f6b2",
     "verificado_em": "2026-09-14",
-    "falhas": 0
+    "falhas": 1,
+    "ultima_falha": "2026-09-14 HTTP 403"
   },
   "https://portal.trt3.jus.br/internet/servicos/peticionamento-eletronico-spe-srre/duvidas-frequentes": {
     "hash": "7710084a2a8f54086feb29eeb5d5259efa311ce5fb535807d99edf3d1aae4548",
@@ -217,7 +223,7 @@
     "falhas": 0
   },
   "https://centraldeajuda.stj.jus.br/perguntas/peticionamento-central-do-processo-eletronico-cpe/": {
-    "falhas": 3,
+    "falhas": 4,
     "ultima_falha": "2026-09-14 HTTP 403"
   },
   "https://tjmmg.jus.br/eproc-orientacoes/": {
