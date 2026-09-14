@@ -117,7 +117,12 @@ const dadosEstruturados = {
             Comprima seus documentos no limite certo do tribunal. Grátis, sem cadastro e sem enviar arquivos.
           </p>
         </div>
-        <App client:only="react" />
+        {/*
+          * A ilha React só existe depois de hidratar. Sem altura reservada, o herói se recentraliza
+          * quando ela monta e isso conta como deslocamento de layout (CLS), que é fator de
+          * ranqueamento. A altura corresponde à área de upload + linha de confiança + etapa.
+          */}
+        <div class="ilha-ferramenta"><App client:only="react" /></div>
       </div>
     </section>
 

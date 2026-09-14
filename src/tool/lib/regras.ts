@@ -181,23 +181,54 @@ export function rotuloRegra(r: Regra): string {
   return `${r.tribunal_sigla} · ${rotuloSistema(r)} · ${formatLimite(r)}${ctx ? ` (${ctx})` : ''}`
 }
 
-/** Título de página/SEO com o contexto quando não é a regra geral. */
-export function tituloRegra(r: Regra): string {
-  const base = `no ${rotuloSistema(r)} do ${r.tribunal_sigla}: ${formatLimite(r)}`
+/**
+ * Nome do sistema sem o parêntese explicativo, para título e descrição.
+ * "Portal de Serviços (petição eletrônica)" -> "Portal de Serviços".
+ * O nome completo continua no corpo da página; aqui o que importa é caber no resultado da busca.
+ */
+export function sistemaCurto(r: Regra): string {
+  const completo = rotuloSistema(r)
+  const parenteses = /^(.*?)\s*\(([^)]*)\)\s*$/.exec(completo)
+  if (!parenteses) return completo.trim()
+  const [, antes, dentro] = parenteses
+  /*
+   * Quando o parêntese guarda a sigla — "Central do Processo Eletrônico (CPE)" — é ela que deve
+   * ficar: é mais curta e é como o sistema é chamado. Quando guarda explicação — "Portal de
+   * Serviços (petição eletrônica)" — o que fica é o nome, e a explicação sai.
+   */
+  const ehSigla = dentro.length <= 6 && dentro === dentro.toUpperCase() && /[A-Z]/.test(dentro)
+  return (ehSigla ? dentro : antes).trim()
+}
+
+/** Como o tipo de peticionamento aparece no título e na descrição, curto o bastante para caber. */
+export function contextoCurto(r: Regra): string {
   switch (r.tipo_peticionamento) {
     case 'principal':
-      return `Limite do documento principal (opção "Arquivo PDF") ${base}`
+      return 'documento principal'
     case 'anexos':
-      return `Limite dos anexos em PDF ${base}`
+      return 'anexos'
     case 'inicial':
-      return `Limite de PDF na petição inicial ${base}`
+      return 'petição inicial'
     case 'intermediário':
-      return `Limite de PDF na petição intermediária ${base}`
+      return 'petição intermediária'
     case 'recurso':
-      return `Limite de PDF em recursos ${base}`
+      return 'recursos'
     default:
-      return `Limite de PDF ${base}`
+      return ''
   }
+}
+
+/**
+ * Título de página/SEO.
+ *
+ * A ordem não é estética: o Google corta o título perto de 60 caracteres, e o que precisa
+ * sobreviver ao corte é a RESPOSTA — sigla, sistema e o valor do limite. Por isso o contexto
+ * ("petição intermediária") vai para o fim, onde truncar não custa nada. Antes ele vinha na
+ * frente e empurrava o limite para depois do caractere 90 em alguns tribunais.
+ */
+export function tituloRegra(r: Regra): string {
+  const ctx = contextoCurto(r)
+  return `Limite de PDF no ${sistemaCurto(r)} do ${r.tribunal_sigla}: ${formatLimite(r)}${ctx ? ` (${ctx})` : ''}`
 }
 
 /** Agrupa por tribunal preservando a ordem do arquivo. */

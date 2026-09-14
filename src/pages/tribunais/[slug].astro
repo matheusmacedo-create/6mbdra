@@ -1,8 +1,9 @@
 ---
 import Base from '../../layouts/Base.astro'
-import { formatLimite, idPagina, limiteBytes, metaBytes, mostrarBytesDoLimite, paginasDeRegras, percentualMeta, regrasDoTribunal, rotuloContexto, rotuloSistema, slugSistema, tituloRegraDoTribunal, type RegraDoTribunal } from '../../tool/lib/regras'
+import { contextoCurto, formatLimite, idPagina, limiteBytes, metaBytes, mostrarBytesDoLimite, paginasDeRegras, percentualMeta, regrasDoTribunal, rotuloContexto, rotuloSistema, sistemaCurto, slugSistema, tituloRegraDoTribunal, type RegraDoTribunal } from '../../tool/lib/regras'
 import { sistemaPorSlug } from '../../tool/lib/sistemas'
 import { formatBytes, formatDate } from '../../tool/lib/format'
+import { SITE } from '../../config/site'
 
 export function getStaticPaths() {
   return paginasDeRegras().map((x) => ({ params: { slug: idPagina(x) }, props: { pagina: x } }))
@@ -16,12 +17,67 @@ const outras = regrasDoTribunal(sigla).filter((x) => idPagina(x) !== idPagina(pa
 const linkFerramenta = herdada ? `/?regra=${regra.id}&tribunal=${encodeURIComponent(sigla)}` : `/?regra=${regra.id}`
 /** Existe página do sistema? (sistemas de um tribunal só não têm) */
 const paginaDoSistema = sistemaPorSlug(slugSistema(regra))
+
+/*
+ * Perguntas frequentes desta regra. Todas as respostas saem dos dados do próprio tribunal, então
+ * cada página tem conteúdo diferente — o oposto de repetir o mesmo bloco em 107 páginas, que seria
+ * conteúdo duplicado. Servem para dois públicos ao mesmo tempo: quem lê e o buscador, que pode
+ * usá-las como resposta direta.
+ */
+const PERGUNTAS: { q: string; a: string }[] = [
+  {
+    q: `Qual o tamanho máximo de PDF no ${sistemaCurto(regra)} do ${sigla}?`,
+    a: `${formatLimite(regra)} por arquivo${contexto ? ` (${contexto})` : ''}. Valor conferido em ${formatDate(regra.verificado_em)} na fonte oficial do tribunal. Confira também na tela de anexar antes de protocolar: regra muda sem aviso.`,
+  },
+  {
+    q: `O que fazer se o PDF passar de ${formatLimite(regra)}?`,
+    a: `Comprima o arquivo até abaixo do limite; se nem a compressão mais forte couber, divida em partes por páginas inteiras. O brpdf faz as duas coisas no navegador, de graça e sem enviar o documento para nenhum servidor.`,
+  },
+  ...(regra.limite_por_pagina_kb
+    ? [{
+        q: `O ${sigla} tem limite por página?`,
+        a: `Sim: ${regra.limite_por_pagina_kb} KB por página, além do limite de ${formatLimite(regra)} por arquivo. Documento curto e pesado é o que mais sofre com esse limite — uma digitalização colorida de três páginas pode passar dele mesmo cabendo no limite por arquivo.`,
+      }]
+    : []),
+  ...(regra.limite_total_peticao_mb
+    ? [{
+        q: `Existe limite para a soma dos anexos de uma petição no ${sigla}?`,
+        a: `Sim: ${regra.limite_total_peticao_mb} MB no conjunto. Cada arquivo pode estar dentro do limite individual e a petição ainda ser recusada pela soma. Nesse caso, ou os arquivos são reduzidos mais, ou o protocolo é dividido em mais de uma petição.`,
+      }]
+    : []),
+  ...(regra.exige_pdfa
+    ? [{
+        q: `O ${sigla} exige PDF/A?`,
+        a: `Sim, na petição inicial. Converta para PDF/A depois de comprimir e antes de assinar: comprimir depois da conversão pode quebrar a conformidade, e qualquer alteração depois da assinatura a invalida.`,
+      }]
+    : []),
+  {
+    q: `Comprimir o PDF atrapalha a assinatura digital ou o texto pesquisável?`,
+    a: `O texto continua: a compressão reduz as imagens, não a camada de texto, então a busca por palavra segue funcionando. A assinatura digital, ao contrário, não sobrevive a nenhuma alteração — por isso comprima antes de assinar, nunca depois.`,
+  },
+]
+
+const dadosEstruturados = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Início', item: SITE.url },
+        { '@type': 'ListItem', position: 2, name: 'Tribunais', item: new URL('/tribunais/', SITE.url).href },
+        { '@type': 'ListItem', position: 3, name: titulo, item: new URL(`/tribunais/${idPagina(pagina)}/`, SITE.url).href },
+      ],
+    },
+    { '@type': 'FAQPage', mainEntity: PERGUNTAS.map((p) => ({ '@type': 'Question', name: p.q, acceptedAnswer: { '@type': 'Answer', text: p.a } })) },
+  ],
+}
 ---
 <Base
   title={titulo}
-  description={`${tribunal.nome}: cada PDF anexado no ${rotuloSistema(regra)}${contexto ? ` (${contexto})` : ''} pode ter até ${formatLimite(regra)}. Fonte oficial, data de verificação e meta segura para não ter o arquivo recusado.`}
+  description={`${sigla}: cada PDF anexado no ${sistemaCurto(regra)}${contextoCurto(regra) ? ` (${contextoCurto(regra)})` : ''} pode ter até ${formatLimite(regra)}. Fonte oficial, data da conferência e a meta segura.`}
   path={`/tribunais/${idPagina(pagina)}/`}
 >
+  <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dadosEstruturados)} /></Fragment>
   <main class="page prose">
     <p><a href="/tribunais/">← Todos os tribunais</a></p>
     <h1>{titulo}</h1>
@@ -75,6 +131,11 @@ const paginaDoSistema = sistemaPorSlug(slugSistema(regra))
     <div class="callout warn">
       Este site não é oficial nem vinculado ao {sigla}. O limite pode ter mudado depois da nossa conferência: em caso de dúvida, vale o que o
       sistema mostra na tela de anexar documentos. Achou uma divergência? <a href="/contato/">Avise a gente</a>.
+    </div>
+
+    <h2>Perguntas frequentes</h2>
+    <div class="faq-list">
+      {PERGUNTAS.map((p) => (<details><summary>{p.q}</summary><p>{p.a}</p></details>))}
     </div>
 
     {outras.length > 0 && (

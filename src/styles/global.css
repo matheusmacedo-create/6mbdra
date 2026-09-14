@@ -303,3 +303,8 @@ tr.sem-regra td { color: var(--muted); }
 .site-footer .rodape-ferramentas + nav { padding-top: 12px; border-top: 1px solid var(--border); }
 .mais-sobre { margin: 18px 0 0; font-size: 15px; color: var(--muted); }
 .mais-sobre a { color: var(--accent); font-weight: 600; text-decoration: underline; }
+
+/* Espaço reservado para a ilha React: evita o salto de layout entre o HTML servido e a hidratação. */
+.ilha-ferramenta { width: 100%; }
+html:not([data-view="tool"]) .ilha-ferramenta { min-height: 430px; }
+@media (max-width: 560px) { html:not([data-view="tool"]) .ilha-ferramenta { min-height: 360px; } }

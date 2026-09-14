@@ -76,6 +76,39 @@ Miram o problema antes de a pessoa saber que existe ferramenta: "pdf digitalizad
   doorway page e pune.
 - **Página por combinação tribunal × tarefa** (53 × 3 = 159 páginas finas) — mesmo problema.
 
+## Auditoria: o que foi medido e corrigido
+
+Revisão sobre as 132 páginas construídas. **Nada estava quebrado** — nenhuma página sem título,
+descrição, H1 ou canonical; nenhum duplicado; JSON-LD todo válido; `lang` correto; 404 devolvendo
+404 de verdade; Googlebot recebendo 200 com HTML real. O que foi corrigido eram perdas silenciosas:
+
+| Achado | Antes | Depois |
+| --- | --- | --- |
+| Título com a resposta depois do corte do Google | pior caso no caractere 90 | sempre antes do 60 |
+| Descrição acima do que o buscador exibe | 103 páginas | 2 |
+| Página sem prévia de compartilhamento | 130 de 130 | 0 |
+| Página de conteúdo sem dados estruturados | 107 | 0 |
+| Página com menos de 300 palavras | 16 | 2 |
+| CLS da página inicial | 0,061 | 0,009 |
+
+Três decisões merecem explicação:
+
+**Título das páginas de tribunal.** O contexto ("petição intermediária") foi para o fim. Não é
+estética: o Google corta perto de 60 caracteres, e o que precisa sobreviver ao corte é a resposta —
+sigla, sistema e o valor do limite. Antes, `Limite de PDF na petição intermediária no Portal de
+Serviços (petição eletrônica) do TJRJ: 6 MB` empurrava o "6 MB" para depois do caractere 90.
+
+**Nome curto do sistema.** `sistemaCurto()` tira o parêntese explicativo, mas mantém a sigla quando
+é ela que está lá: "Central do Processo Eletrônico (CPE)" vira "CPE", "Portal de Serviços (petição
+eletrônica)" vira "Portal de Serviços".
+
+**FAQ nas páginas de tribunal.** Cada resposta é montada com os dados daquele tribunal — limite,
+data de conferência, limite por página, exigência de PDF/A. Por isso as 107 páginas têm conteúdo
+diferente, e não o mesmo bloco repetido, que seria conteúdo duplicado.
+
+`tests/unit/meta.test.ts` roda essa auditoria a cada build e quebra se algo regredir.
+`tests/unit/links.test.ts` confere que nenhum link interno aponta para página inexistente.
+
 ## Dados estruturados
 
 - `/` — `WebApplication` + `FAQPage`

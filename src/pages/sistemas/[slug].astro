@@ -18,8 +18,8 @@ const titulo = uniforme
   : `Limite de PDF no ${sistema.nome}: de ${formatLimite(faixa!.min)} a ${formatLimite(faixa!.max)}`
 
 const descricao = uniforme
-  ? `O ${sistema.nome} aceita até ${formatLimite(faixa.min)} por arquivo nos ${nTribunais} tribunais que o usam. Tabela por tribunal com fonte oficial, data de conferência e ferramenta gratuita para deixar o PDF no tamanho.`
-  : `O limite por arquivo no ${sistema.nome} muda de tribunal para tribunal: vai de ${formatLimite(faixa!.min)} a ${formatLimite(faixa!.max)}. Veja o do seu tribunal, com fonte oficial e data de conferência.`
+  ? `O ${sistema.nome} aceita até ${formatLimite(faixa.min)} por arquivo nos ${nTribunais} tribunais que o usam. Tabela por tribunal, com fonte oficial e data de conferência.`
+  : `O limite por arquivo no ${sistema.nome} muda de tribunal para tribunal: vai de ${formatLimite(faixa!.min)} a ${formatLimite(faixa!.max)}. Veja o do seu, com fonte oficial e data.`
 
 // Agrupa por ramo, que é como o advogado pensa (estadual, federal, trabalho…).
 const porRamo = [...new Set(sistema.tribunais.map((t) => t.ramo))].map((ramo) => ({
