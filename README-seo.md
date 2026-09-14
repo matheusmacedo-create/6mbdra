@@ -126,12 +126,32 @@ Site novo não ranqueia em semana. O que acontece de verdade:
 Impressão antes de clique é o normal. Comemorar impressão no mês 1 e clique no mês 4 é ler o
 funil certo; esperar clique no mês 1 é desistir antes da hora.
 
+## O painel conta o rastreamento, e isso chega antes do Search Console
+
+`/painel/` tem a seção **Rastreamento pelos buscadores**, alimentada pelo Worker — não por
+JavaScript. Isso importa porque **rastreador não roda JavaScript**: o Googlebot nunca apareceria
+na medição do navegador.
+
+É o sinal mais precoce que existe. Entre publicar e o Search Console mostrar o primeiro número há
+dias de silêncio; nesse intervalo, ver "Google · Página de tribunal · 37 passadas" é a prova de
+que o rastreamento começou. A leitura:
+
+- **Zero passadas na primeira semana** — normal. O Google precisa descobrir o site.
+- **Passadas só na home** — ele chegou mas não seguiu os links. Verifique o sitemap no Search
+  Console.
+- **Passadas nas páginas de tribunal e de sistema** — é o que queremos: o conteúdo que diferencia
+  está sendo lido.
+- **Passadas caem a quase zero depois de semanas ativas** — o Google concluiu que não vale
+  revisitar. Sinal de conteúdo considerado fraco.
+
+É contador agregado por dia, rastreador e tipo de página — não guarda URL nem IP.
+
 ## Os três painéis, e o que cada um responde
 
 | Ferramenta | Responde | Não responde |
 | --- | --- | --- |
 | **Search Console** | apareci? onde? para quê? | o que a pessoa fez depois |
-| **`/painel/`** | quantos preparam e baixam de fato; qual tribunal; o que dá errado | de onde vieram na busca |
+| **`/painel/`** | quantos preparam e baixam de fato; qual tribunal; o que dá errado; **se o Google está rastreando** | em que posição aparecemos |
 | **GA4** | comportamento agregado de quem aceitou cookie | tudo de quem recusou |
 
 O painel próprio conta **todo mundo** (sem cookie, sem consentimento). O GA4 só conta quem
