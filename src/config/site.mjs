@@ -24,6 +24,15 @@ export const SITE = {
    * Com algum dos dois preenchido, a CSP passa a permitir os domínios do Google (astro.config.mjs),
    * entra o Modo de Consentimento v2 e aparece a faixa de consentimento (src/scripts/ga.ts).
    */
+  /**
+   * Verificação de propriedade do site. O código do Search Console não é segredo (fica no HTML),
+   * mas também não é fixo: cada propriedade tem o seu. Defina PUBLIC_GOOGLE_SITE_VERIFICATION no
+   * build, ou verifique por registro TXT no DNS — que vale para o domínio inteiro e não depende
+   * do HTML continuar no ar.
+   */
+  verificacao: {
+    google: process.env.PUBLIC_GOOGLE_SITE_VERIFICATION ?? '',
+  },
   analytics: {
     ga4: process.env.PUBLIC_GA4_ID ?? 'G-4TLWSQ2CRM',
     gtm: process.env.PUBLIC_GTM_ID ?? '',

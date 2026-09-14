@@ -297,3 +297,9 @@ tr.sem-regra td { color: var(--muted); }
 .consentimento p { margin: 0; max-width: 640px; font-size: 14.5px; color: var(--ink-2); }
 .consentimento .acoes { display: flex; align-items: center; gap: 10px; }
 .consentimento .acoes a { font-size: 14px; }
+
+/* Primeira linha do rodapé: as páginas de tarefa e de limites, presentes em todo o site. */
+.site-footer .rodape-ferramentas a { color: var(--text-secondary); }
+.site-footer .rodape-ferramentas + nav { padding-top: 12px; border-top: 1px solid var(--border); }
+.mais-sobre { margin: 18px 0 0; font-size: 15px; color: var(--muted); }
+.mais-sobre a { color: var(--accent); font-weight: 600; text-decoration: underline; }

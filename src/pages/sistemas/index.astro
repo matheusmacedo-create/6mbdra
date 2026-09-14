@@ -1,0 +1,56 @@
+---
+import Base from '../../layouts/Base.astro'
+import { formatLimite } from '../../tool/lib/regras'
+import { faixaDeLimites, sistemas } from '../../tool/lib/sistemas'
+const lista = sistemas()
+const totalTribunais = new Set(lista.flatMap((s) => s.tribunais.map((t) => t.sigla))).size
+---
+<Base
+  title="Limite de PDF por sistema: PJe, eproc, e-SAJ, Projudi e PJe-JT"
+  description="Quanto cada sistema de peticionamento aceita por arquivo. Tabela por tribunal, com fonte oficial e data de conferência, e ferramenta gratuita para deixar o PDF no tamanho."
+  path="/sistemas/"
+>
+  <main class="page prose">
+    <h1>Limite de PDF por sistema de peticionamento</h1>
+    <p class="lead">
+      Na hora de anexar, quem está na sua frente é o sistema — não o tribunal. Estas páginas reúnem o limite por arquivo de cada sistema, tribunal por
+      tribunal, com a fonte oficial e a data em que conferimos.
+    </p>
+
+    <ul class="lista-sistemas">
+      {lista.map((s) => {
+        const f = faixaDeLimites(s)
+        const uniforme = f && f.min.limite_valor === f.max.limite_valor && f.min.limite_unidade === f.max.limite_unidade
+        return (
+          <li>
+            <a href={`/sistemas/${s.slug}/`}><strong>{s.nome}</strong></a>
+            <span class="muted"> — {s.tribunais.length} {s.tribunais.length === 1 ? 'tribunal' : 'tribunais'}</span>
+            <br />
+            <span class="muted">
+              {uniforme ? `${formatLimite(f.min)} por arquivo` : `de ${formatLimite(f!.min)} a ${formatLimite(f!.max)} por arquivo`}
+            </span>
+          </li>
+        )
+      })}
+    </ul>
+
+    <p>
+      Ao todo, {totalTribunais} tribunais aparecem nestas páginas. Sistemas usados por um único tribunal não têm página própria — eles estão no{' '}
+      <a href="/tribunais/">diretório por tribunal</a>, que lista todos.
+    </p>
+
+    <div class="callout warn">
+      Regras mudam sem aviso. Antes de protocolar, confira o limite na tela de anexar do sistema. Achou divergência?{' '}
+      <a href="/contato/">Avise a gente</a> com o link da página oficial.
+    </div>
+
+    <p><a class="cta" href="/?view=tool">Preparar meus PDFs</a></p>
+  </main>
+</Base>
+
+<style is:global>
+  .lista-sistemas { list-style: none; padding: 0; display: grid; gap: 14px; }
+  .lista-sistemas li { padding: 16px 18px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+  .lista-sistemas a { text-decoration: none; }
+  .lista-sistemas a:hover { text-decoration: underline; }
+</style>

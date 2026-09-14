@@ -49,6 +49,7 @@ const LINKS: NavLink[] = [
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     {noindex && <meta name="robots" content="noindex" />}
+    {SITE.verificacao.google && <meta name="google-site-verification" content={SITE.verificacao.google} />}
     <meta property="og:type" content="website" />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
@@ -105,6 +106,14 @@ const LINKS: NavLink[] = [
     <slot />
     <footer class="site-footer">
       <div class="inner">
+        <nav aria-label="Rodapé" class="rodape-ferramentas">
+          <a href="/comprimir-pdf/">Comprimir PDF</a>
+          <a href="/dividir-pdf/">Dividir PDF</a>
+          <a href="/juntar-pdf/">Juntar PDFs</a>
+          <a href="/sistemas/">Limites por sistema</a>
+          <a href="/tribunais/">Limites por tribunal</a>
+          <a href="/guias/">Guias</a>
+        </nav>
         <nav aria-label="Rodapé">
           <a href="/#seguranca">Segurança</a>
           <a href="/privacidade/">Privacidade</a>

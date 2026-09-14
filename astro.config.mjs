@@ -2,6 +2,10 @@ import { defineConfig } from 'astro/config'
 import react from '@astrojs/react'
 import sitemap from '@astrojs/sitemap'
 import { SITE } from './src/config/site.mjs'
+import regras from './src/data/regras.json' with { type: 'json' }
+
+/** id da regra -> data da última conferência, para o lastmod do sitemap. */
+const VERIFICADO_EM = new Map(regras.regras.filter((r) => r.verificado_em).map((r) => [r.id, r.verificado_em]))
 
 // Medição do Google (GA4 / Tag Manager): só entra na CSP quando o build recebe um identificador.
 // Sem eles o site não fala com nenhum domínio de fora — ver src/scripts/ga.ts.
@@ -13,7 +17,22 @@ const GOOGLE_IMG = USA_GOOGLE ? ` ${GOOGLE_TAG} https://*.google-analytics.com` 
 export default defineConfig({
   site: SITE.url,
   // O painel interno é noindex e fica fora do sitemap.
-  integrations: [react(), sitemap({ filter: (page) => !page.includes('/painel') })],
+  integrations: [
+    react(),
+    sitemap({
+      filter: (page) => !page.includes('/painel'),
+      /*
+       * lastmod honesto: a data em que a regra daquele tribunal foi conferida pela última vez. É o
+       * sinal que o buscador usa para decidir quando revisitar — e aqui ele corresponde a uma
+       * mudança de verdade no conteúdo, não à data do último deploy.
+       */
+      serialize: (item) => {
+        const m = /\/tribunais\/([^/]+)\/$/.exec(item.url)
+        const data = m ? VERIFICADO_EM.get(m[1]) : undefined
+        return data ? { ...item, lastmod: new Date(`${data}T00:00:00Z`).toISOString() } : item
+      },
+    }),
+  ],
   build: {
     inlineStylesheets: 'auto',
   },

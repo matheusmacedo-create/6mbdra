@@ -1,0 +1,97 @@
+---
+import Base from '../layouts/Base.astro'
+import { SITE } from '../config/site'
+import { faixaDeLimites, sistemas } from '../tool/lib/sistemas'
+import { formatLimite, tribunaisCobertos, TRIBUNAIS } from '../tool/lib/regras'
+const cobertos = tribunaisCobertos().length
+const lista = sistemas()
+
+const PERGUNTAS = [
+  { q: 'Comprimir PDF online é seguro para documento de processo?', a: 'Depende de para onde o arquivo vai. Em serviços que comprimem no servidor, o documento é enviado pela internet e fica hospedado por algum tempo. No brpdf a compressão acontece no seu navegador: o arquivo não sai do computador, não há upload e não há cópia em servidor nenhum.' },
+  { q: 'A compressão apaga o texto pesquisável ou o OCR?', a: 'Não. O que encolhe são as imagens do documento — resolução e qualidade. O texto e a camada de OCR continuam no arquivo, então a busca por palavra e a cópia de trechos seguem funcionando.' },
+  { q: 'Quanto um PDF digitalizado costuma reduzir?', a: 'Varia com o que gerou o arquivo. Digitalizações coloridas em alta resolução costumam reduzir muito, porque quase todo o peso está nas imagens. PDF gerado a partir de texto (exportado do editor) já é pequeno e muda pouco — nesse caso a ferramenta avisa que o arquivo já cabe e não mexe nele.' },
+  { q: 'Posso comprimir um PDF já assinado digitalmente?', a: 'Não sem invalidar a assinatura. Qualquer alteração no arquivo quebra a assinatura digital. Comprima antes de assinar. Se já está assinado e não cabe, divida em partes e assine cada parte, ou peça uma nova via ao emissor.' },
+  { q: 'Existe limite de quantos arquivos posso comprimir?', a: 'Não. Não há cadastro, cota diária nem marca d’água. O limite prático é a memória do seu computador, já que o processamento é local.' },
+]
+
+const dados = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'HowTo',
+      name: 'Como comprimir um PDF para o peticionamento eletrônico',
+      description: 'Reduzir o tamanho de um PDF até o limite aceito pelo sistema do tribunal, sem enviar o arquivo para a internet.',
+      totalTime: 'PT2M',
+      step: [
+        { '@type': 'HowToStep', name: 'Selecione os PDFs', text: 'Arraste os documentos para a área de upload ou clique para escolher. Vários de uma vez.' },
+        { '@type': 'HowToStep', name: 'Escolha o tribunal', text: 'Selecione o tribunal e o sistema para a ferramenta usar o limite correto, ou informe o limite em MB.' },
+        { '@type': 'HowToStep', name: 'Prepare os arquivos', text: 'A ferramenta comprime cada PDF até a meta segura e divide em partes se nem a compressão máxima couber.' },
+        { '@type': 'HowToStep', name: 'Baixe o lote', text: 'Receba os arquivos numerados na ordem, em um ZIP, com um resumo do que foi feito.' },
+      ],
+    },
+    { '@type': 'FAQPage', mainEntity: PERGUNTAS.map((p) => ({ '@type': 'Question', name: p.q, acceptedAnswer: { '@type': 'Answer', text: p.a } })) },
+    { '@type': 'BreadcrumbList', itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Início', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Comprimir PDF', item: new URL('/comprimir-pdf/', SITE.url).href },
+    ] },
+  ],
+}
+---
+<Base
+  title="Comprimir PDF para protocolo: grátis e sem enviar o arquivo"
+  description="Reduza o tamanho do PDF até o limite do PJe, eproc, e-SAJ ou Projudi. Gratuito, sem cadastro e sem upload: a compressão acontece no seu navegador."
+  path="/comprimir-pdf/"
+>
+  <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
+  <main class="page prose">
+    <h1>Comprimir PDF para o protocolo eletrônico</h1>
+    <p class="lead">
+      O sistema recusou o anexo por tamanho? Esta ferramenta reduz o PDF até o limite do seu tribunal — e o arquivo não sai do seu computador em
+      momento nenhum.
+    </p>
+    <p><a class="cta" href="/?view=tool">Comprimir meus PDFs</a></p>
+
+    <h2>O que a ferramenta faz de diferente</h2>
+    <ul>
+      <li><strong>Usa o limite certo.</strong> Em vez de você adivinhar quanto reduzir, escolhe-se o tribunal e ela mira no limite publicado por ele — hoje {cobertos} dos {TRIBUNAIS.length} tribunais.</li>
+      <li><strong>Trabalha com margem.</strong> Ela não para no limite exato: para um pouco abaixo, porque alguns portais contam megabyte de outro jeito (1 MB = 1.048.576 bytes) e recusam arquivo no valor cheio.</li>
+      <li><strong>Divide quando não dá.</strong> Se nem a compressão mais forte couber, o documento é separado em partes por páginas inteiras, numeradas e na ordem.</li>
+      <li><strong>Não envia nada.</strong> A compressão roda no navegador, com o Ghostscript compilado para WebAssembly. Sem upload, sem fila, sem cópia em servidor.</li>
+    </ul>
+
+    <h2>Como comprimir, passo a passo</h2>
+    <ol>
+      <li>Arraste os PDFs para a área de upload (ou clique para escolher vários de uma vez).</li>
+      <li>Escolha o tribunal e o sistema. Não achou o seu? Informe o limite em MB.</li>
+      <li>Clique em <strong>Preparar PDFs</strong>. A ferramenta tenta primeiro a compressão mais leve e só aumenta a força se precisar.</li>
+      <li>Baixe o lote em ZIP, com os arquivos numerados na ordem e um LEIA-ME explicando o que foi feito em cada um.</li>
+    </ol>
+
+    <h2>Limite do seu sistema</h2>
+    <ul>
+      {lista.map((s) => {
+        const f = faixaDeLimites(s)
+        const uniforme = f && f.min.limite_valor === f.max.limite_valor && f.min.limite_unidade === f.max.limite_unidade
+        return (
+          <li>
+            <a href={`/sistemas/${s.slug}/`}>{s.nome}</a> — {uniforme ? formatLimite(f.min) : `de ${formatLimite(f!.min)} a ${formatLimite(f!.max)}`} por arquivo
+          </li>
+        )
+      })}
+    </ul>
+    <p>Ou procure direto pelo <a href="/tribunais/">seu tribunal no diretório</a>.</p>
+
+    <h2>Perguntas frequentes</h2>
+    <div class="faq-list">
+      {PERGUNTAS.map((p) => (<details><summary>{p.q}</summary><p>{p.a}</p></details>))}
+    </div>
+
+    <h2>Leia também</h2>
+    <ul>
+      <li><a href="/dividir-pdf/">Dividir PDF por tamanho</a>, quando a compressão não basta</li>
+      <li><a href="/juntar-pdf/">Juntar PDFs</a>, quando o sistema limita a quantidade de anexos</li>
+      <li><a href="/guias/como-digitalizar-documentos-com-tamanho-menor-e-boa-legibilidade/">Como digitalizar gerando arquivo menor</a></li>
+      <li><a href="/guias/por-que-comprimir-antes-de-assinar-digitalmente/">Por que comprimir antes de assinar</a></li>
+    </ul>
+  </main>
+</Base>

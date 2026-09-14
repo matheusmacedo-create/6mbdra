@@ -1,0 +1,71 @@
+---
+import Base from '../layouts/Base.astro'
+import { SITE } from '../config/site'
+
+const PERGUNTAS = [
+  { q: 'A divisão corta páginas ao meio?', a: 'Não. O corte acontece sempre entre páginas: cada parte leva páginas inteiras, na ordem original. Nenhuma página é dividida, duplicada ou perdida — a soma das partes tem exatamente o número de páginas do original.' },
+  { q: 'Como as partes são nomeadas?', a: 'No padrão documento_parte_01_de_04.pdf, sem acentos e sem espaços, para o portal do tribunal não recusar o nome. O ZIP traz cada documento dividido em uma pasta própria e um LEIA-ME com a correspondência.' },
+  { q: 'Dividir é melhor que comprimir?', a: 'Comprimir primeiro é quase sempre melhor: um arquivo só é mais fácil de protocolar e de ler. A divisão entra quando nem a compressão mais forte cabe no limite, ou quando o documento já está assinado e não pode ser alterado.' },
+  { q: 'Posso dividir um PDF assinado digitalmente?', a: 'A divisão gera arquivos novos, então a assinatura do original não acompanha as partes. Se a assinatura precisa valer, assine cada parte depois de dividir, ou peça ao emissor uma via já fracionada.' },
+  { q: 'E se uma página sozinha já passar do limite?', a: 'Aí nem a divisão resolve, e a ferramenta avisa em vez de entregar um arquivo que será recusado. Nesse caso o caminho é digitalizar de novo em resolução menor ou em tons de cinza.' },
+]
+
+const dados = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'FAQPage', mainEntity: PERGUNTAS.map((p) => ({ '@type': 'Question', name: p.q, acceptedAnswer: { '@type': 'Answer', text: p.a } })) },
+    { '@type': 'BreadcrumbList', itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Início', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Dividir PDF', item: new URL('/dividir-pdf/', SITE.url).href },
+    ] },
+  ],
+}
+---
+<Base
+  title="Dividir PDF por tamanho, sem perder a ordem das páginas"
+  description="Separe um PDF grande em partes que cabem no limite do tribunal, por páginas inteiras e numeradas na ordem. Grátis, no navegador, sem enviar o arquivo."
+  path="/dividir-pdf/"
+>
+  <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
+  <main class="page prose">
+    <h1>Dividir PDF por tamanho para protocolar</h1>
+    <p class="lead">
+      Quando o documento não cabe nem comprimido, ele precisa virar partes. Aqui a divisão é pelo <strong>limite em megabytes</strong>, não por número
+      fixo de páginas — cada parte fica o maior possível sem passar do que o tribunal aceita.
+    </p>
+    <p><a class="cta" href="/?view=tool">Dividir meus PDFs</a></p>
+
+    <h2>Divisão por tamanho, não por página</h2>
+    <p>
+      A maioria das ferramentas divide "a cada N páginas". Isso não serve para protocolo: dez páginas de texto pesam pouco e dez páginas digitalizadas
+      podem estourar o limite. Aqui o cálculo é o contrário — a ferramenta mede quanto cada página pesa de verdade e monta cada parte até o limite,
+      cortando sempre entre páginas.
+    </p>
+    <ul>
+      <li><strong>Páginas inteiras, na ordem.</strong> A soma das partes tem exatamente o número de páginas do original.</li>
+      <li><strong>Nomes que o portal aceita.</strong> <code>documento_parte_01_de_04.pdf</code>, sem acento e sem espaço.</li>
+      <li><strong>Só divide se precisar.</strong> A compressão vem primeiro; a divisão entra quando nem a mais forte cabe.</li>
+      <li><strong>Avisa o que não acompanha.</strong> Marcadores, campos de formulário e links internos não sobrevivem ao corte, e a ferramenta diz isso em vez de prometer arquivo idêntico.</li>
+    </ul>
+
+    <h2>Quando dividir em vez de comprimir</h2>
+    <ul>
+      <li>O documento já está <strong>assinado digitalmente</strong> e não pode ser alterado — aí a compressão está fora de questão.</li>
+      <li>O arquivo é uma digitalização longa (centenas de páginas) e mesmo comprimido não cabe.</li>
+      <li>O sistema tem <strong>limite por página</strong>, além do limite por arquivo — a ferramenta considera os dois ao montar cada parte.</li>
+    </ul>
+
+    <h2>Perguntas frequentes</h2>
+    <div class="faq-list">
+      {PERGUNTAS.map((p) => (<details><summary>{p.q}</summary><p>{p.a}</p></details>))}
+    </div>
+
+    <h2>Leia também</h2>
+    <ul>
+      <li><a href="/comprimir-pdf/">Comprimir PDF para protocolo</a> — tente isto antes</li>
+      <li><a href="/juntar-pdf/">Juntar PDFs</a> — o caminho oposto, quando o sistema limita a quantidade de anexos</li>
+      <li><a href="/guias/como-dividir-pdf-por-tamanho-sem-perder-a-ordem/">Guia: dividir sem perder a ordem</a></li>
+      <li><a href="/sistemas/">Limite por sistema de peticionamento</a></li>
+    </ul>
+  </main>
+</Base>

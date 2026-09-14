@@ -1,0 +1,80 @@
+---
+import Base from '../layouts/Base.astro'
+import { SITE } from '../config/site'
+
+const PERGUNTAS = [
+  { q: 'Juntar PDFs invalida a assinatura digital?', a: 'Sim, e por isso a ferramenta se recusa a juntar documento assinado. A junção copia as páginas para um arquivo novo; a assinatura do original não acompanha, e o que restaria seria a imagem de uma assinatura, sem validade. Documentos assinados ficam de fora automaticamente e continuam separados.' },
+  { q: 'Em que ordem os documentos entram no arquivo final?', a: 'Na ordem da lista na tela, que você controla com as setas. Ao adicionar os arquivos, a ferramenta já sugere uma ordem lendo o nome: numeração escrita por você ("01 - petição") manda em tudo; sem ela, vale a ordem usual de uma petição — peça, procuração, atos constitutivos, documentos pessoais, provas e guias por último.' },
+  { q: 'E se o arquivo juntado ficar maior que o limite?', a: 'Ele passa pela compressão e, se precisar, pela divisão, como qualquer outro. Juntar e caber no limite não são escolhas excludentes: a ferramenta faz as duas coisas na mesma passada.' },
+  { q: 'O texto pesquisável continua no arquivo juntado?', a: 'Sim. A cópia de páginas preserva o conteúdo e a camada de texto, então a busca por palavra continua funcionando no arquivo final.' },
+  { q: 'Devo sempre juntar tudo?', a: 'Não. Vários sistemas pedem os anexos separados por tipo (petição, procuração, documentos), e juntar tudo pode causar recusa. Junte quando o sistema limitar a quantidade de anexos ou quando o documento for naturalmente um só, dividido em vários arquivos pela digitalização.' },
+]
+
+const dados = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'FAQPage', mainEntity: PERGUNTAS.map((p) => ({ '@type': 'Question', name: p.q, acceptedAnswer: { '@type': 'Answer', text: p.a } })) },
+    { '@type': 'BreadcrumbList', itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Início', item: SITE.url },
+      { '@type': 'ListItem', position: 2, name: 'Juntar PDF', item: new URL('/juntar-pdf/', SITE.url).href },
+    ] },
+  ],
+}
+---
+<Base
+  title="Juntar PDFs em um só, na ordem do protocolo"
+  description="Una procuração, documentos e anexos num único PDF, na ordem certa, sem enviar arquivo para a internet. Documento assinado digitalmente fica de fora, para não perder validade."
+  path="/juntar-pdf/"
+>
+  <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
+  <main class="page prose">
+    <h1>Juntar PDFs em um arquivo só</h1>
+    <p class="lead">
+      Quando o sistema limita a <strong>quantidade</strong> de anexos, e não só o tamanho, vários documentos precisam virar um. Aqui eles viram — na
+      ordem certa, e sem levar junto um problema que costuma passar despercebido.
+    </p>
+    <p><a class="cta" href="/?view=tool">Juntar meus PDFs</a></p>
+
+    <div class="callout warn">
+      <strong>Documento assinado digitalmente nunca é juntado.</strong> Juntar copia as páginas para um arquivo novo, e a assinatura do original não
+      sobrevive a isso: sobra a imagem de uma assinatura, sem validade jurídica. A ferramenta detecta esses arquivos e os mantém separados, avisando
+      antes de você clicar.
+    </div>
+
+    <h2>A ordem certa, sugerida pelo nome</h2>
+    <p>
+      Ordem importa em petição. Ao receber os arquivos, a ferramenta propõe uma sequência lendo o <strong>nome</strong> de cada um:
+    </p>
+    <ol>
+      <li><strong>Numeração que você escreveu manda em tudo.</strong> <code>01 - petição</code>, <code>2) RG</code>, <code>3_procuração</code>. Quem numerou, decidiu.</li>
+      <li><strong>Sem numeração, vale a ordem usual de uma petição:</strong> peça (inicial, contestação, recurso) → procuração → substabelecimento → contrato social ou estatuto → documentos pessoais → comprovante de residência → contrato → laudo → comprovantes → certidões → guias e custas por último.</li>
+      <li><strong>Empate:</strong> ordem natural do nome, com <code>doc2</code> antes de <code>doc10</code>.</li>
+    </ol>
+    <p>
+      É sugestão, não decisão: a lista mostra a numeração e tem setas para você ajustar. A ordem da lista é exatamente a ordem do arquivo final.
+    </p>
+    <p class="hint">
+      Por que pelo nome e não pelo conteúdo: ler o conteúdo exigiria uma camada de texto que digitalização não tem — justamente o tipo de arquivo mais
+      difícil de ordenar. O nome, ao contrário, é o que o escritório já usa para se organizar, e a leitura é instantânea e local.
+    </p>
+
+    <h2>Juntar e caber no limite, na mesma passada</h2>
+    <p>
+      O arquivo juntado entra na compressão e na divisão como qualquer outro. Cinco documentos de 3 MB viram um de 15 MB — e, se o tribunal aceita 10,
+      ele é comprimido até caber, ou dividido em partes se nem assim couber.
+    </p>
+
+    <h2>Perguntas frequentes</h2>
+    <div class="faq-list">
+      {PERGUNTAS.map((p) => (<details><summary>{p.q}</summary><p>{p.a}</p></details>))}
+    </div>
+
+    <h2>Leia também</h2>
+    <ul>
+      <li><a href="/comprimir-pdf/">Comprimir PDF para protocolo</a></li>
+      <li><a href="/dividir-pdf/">Dividir PDF por tamanho</a></li>
+      <li><a href="/guias/checklist-antes-de-protocolar-anexos-em-pdf/">Checklist antes de protocolar</a></li>
+      <li><a href="/sistemas/">Limite por sistema de peticionamento</a></li>
+    </ul>
+  </main>
+</Base>

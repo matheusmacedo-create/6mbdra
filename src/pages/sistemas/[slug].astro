@@ -1,0 +1,137 @@
+---
+import Base from '../../layouts/Base.astro'
+import { formatLimite, idPagina, limiteBytes, metaBytes, mostrarBytesDoLimite, regrasDoTribunal, rotuloContexto, slugSistema, RAMO_ROTULO } from '../../tool/lib/regras'
+import { faixaDeLimites, sistemas, type Sistema } from '../../tool/lib/sistemas'
+import { formatBytes, formatDate } from '../../tool/lib/format'
+import { SITE } from '../../config/site'
+
+export function getStaticPaths() {
+  return sistemas().map((s) => ({ params: { slug: s.slug }, props: { sistema: s } }))
+}
+const { sistema } = Astro.props as { sistema: Sistema }
+const faixa = faixaDeLimites(sistema)
+const uniforme = faixa && faixa.min.limite_valor === faixa.max.limite_valor && faixa.min.limite_unidade === faixa.max.limite_unidade
+const nTribunais = sistema.tribunais.length
+
+const titulo = uniforme
+  ? `Limite de PDF no ${sistema.nome}: ${formatLimite(faixa.min)} por arquivo`
+  : `Limite de PDF no ${sistema.nome}: de ${formatLimite(faixa!.min)} a ${formatLimite(faixa!.max)}`
+
+const descricao = uniforme
+  ? `O ${sistema.nome} aceita até ${formatLimite(faixa.min)} por arquivo nos ${nTribunais} tribunais que o usam. Tabela por tribunal com fonte oficial, data de conferência e ferramenta gratuita para deixar o PDF no tamanho.`
+  : `O limite por arquivo no ${sistema.nome} muda de tribunal para tribunal: vai de ${formatLimite(faixa!.min)} a ${formatLimite(faixa!.max)}. Veja o do seu tribunal, com fonte oficial e data de conferência.`
+
+// Agrupa por ramo, que é como o advogado pensa (estadual, federal, trabalho…).
+const porRamo = [...new Set(sistema.tribunais.map((t) => t.ramo))].map((ramo) => ({
+  ramo,
+  tribunais: sistema.tribunais.filter((t) => t.ramo === ramo).sort((a, b) => a.sigla.localeCompare(b.sigla, 'pt-BR')),
+}))
+
+/** Só as regras daquele tribunal que pertencem a este sistema (um tribunal pode usar mais de um). */
+const linhasDoTribunal = (sigla: string) => regrasDoTribunal(sigla).filter((x) => slugSistema(x.regra) === sistema.slug)
+
+const PERGUNTAS = [
+  {
+    q: `Qual o tamanho máximo de arquivo no ${sistema.nome}?`,
+    a: uniforme
+      ? `${formatLimite(faixa.min)} por arquivo, nos ${nTribunais} tribunais que usam o ${sistema.nome} e têm regra publicada. Confira sempre na tela de anexar do seu tribunal antes de protocolar.`
+      : `Depende do tribunal: entre os ${nTribunais} que usam o ${sistema.nome} e têm regra publicada, o limite vai de ${formatLimite(faixa!.min)} a ${formatLimite(faixa!.max)} por arquivo. A tabela desta página mostra o de cada um.`,
+  },
+  {
+    q: `O que fazer quando o ${sistema.nome} recusa o PDF por tamanho?`,
+    a: 'Comprima o arquivo até abaixo do limite ou divida em partes por páginas inteiras. O brpdf faz as duas coisas no próprio navegador, de graça e sem enviar o documento para nenhum servidor.',
+  },
+  {
+    q: 'Comprimir o PDF apaga o texto pesquisável?',
+    a: 'Não. A compressão reduz as imagens do documento; o texto e a camada de OCR continuam no arquivo, então a busca por palavra segue funcionando.',
+  },
+  {
+    q: 'Posso comprimir um documento já assinado digitalmente?',
+    a: 'Não sem perder a assinatura. Comprima antes de assinar. Se o arquivo já está assinado e não cabe, divida-o em partes e assine cada parte, ou peça uma nova via ao emissor.',
+  },
+]
+
+const dadosEstruturados = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Início', item: SITE.url },
+        { '@type': 'ListItem', position: 2, name: 'Sistemas', item: new URL('/sistemas/', SITE.url).href },
+        { '@type': 'ListItem', position: 3, name: sistema.nome, item: new URL(`/sistemas/${sistema.slug}/`, SITE.url).href },
+      ],
+    },
+    { '@type': 'FAQPage', mainEntity: PERGUNTAS.map((p) => ({ '@type': 'Question', name: p.q, acceptedAnswer: { '@type': 'Answer', text: p.a } })) },
+  ],
+}
+---
+<Base title={titulo} description={descricao} path={`/sistemas/${sistema.slug}/`}>
+  <Fragment slot="head">
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(dadosEstruturados)} />
+  </Fragment>
+  <main class="page prose wide">
+    <p><a href="/sistemas/">← Todos os sistemas</a></p>
+    <h1>{titulo}</h1>
+    <p class="lead">
+      {sistema.oQueE}
+      {sistema.tambemChamado.length > 0 && <> Também aparece como {sistema.tambemChamado.join(', ')}.</>}
+    </p>
+
+    <div class="callout">
+      <strong>Resumo:</strong>{' '}
+      {uniforme
+        ? `todos os ${nTribunais} tribunais com regra publicada aceitam até ${formatLimite(faixa.min)} por arquivo.`
+        : `o limite vai de ${formatLimite(faixa!.min)} (${faixa!.min.tribunal_sigla}) a ${formatLimite(faixa!.max)} (${faixa!.max.tribunal_sigla}).`}
+      {' '}A ferramenta prepara os arquivos pela <strong>meta segura</strong>, um pouco abaixo do limite, porque alguns portais contam megabyte de outro
+      jeito e recusam arquivos no valor exato.
+    </div>
+
+    <p><a class="cta" href="/?view=tool">Preparar meus PDFs agora</a></p>
+
+    <h2>Limite por tribunal no {sistema.nome}</h2>
+    {porRamo.map(({ ramo, tribunais }) => (
+      <section>
+        <h3>{RAMO_ROTULO[ramo]}</h3>
+        <div class="rules-table">
+          <table>
+            <thead>
+              <tr><th>Tribunal</th><th>Contexto</th><th>Limite declarado</th><th>Meta segura</th><th>Conferido em</th><th></th></tr>
+            </thead>
+            <tbody>
+              {tribunais.map((t) =>
+                linhasDoTribunal(t.sigla).map((x) => (
+                  <tr>
+                    <td><strong>{t.sigla}</strong><br /><small>{t.nome}</small></td>
+                    <td>{rotuloContexto(x.regra, { omitirAmbos: true }) || 'geral'}{x.herdada ? <><br /><small>regra nacional ({x.regra.tribunal_sigla})</small></> : ''}</td>
+                    <td>{formatLimite(x.regra)}{mostrarBytesDoLimite(x.regra) ? <span class="tag">{formatBytes(limiteBytes(x.regra))}</span> : ''}</td>
+                    <td>{formatBytes(metaBytes(x.regra))}</td>
+                    <td>{formatDate(x.regra.verificado_em)}</td>
+                    <td><a href={`/tribunais/${idPagina(x)}/`}>Detalhes</a></td>
+                  </tr>
+                )),
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    ))}
+
+    <h2>Perguntas frequentes</h2>
+    <div class="faq-list">
+      {PERGUNTAS.map((p) => (
+        <details>
+          <summary>{p.q}</summary>
+          <p>{p.a}</p>
+        </details>
+      ))}
+    </div>
+
+    <h2>Outros sistemas</h2>
+    <ul>
+      {sistemas().filter((s) => s.slug !== sistema.slug).map((s) => (
+        <li><a href={`/sistemas/${s.slug}/`}>{s.nome}</a> — {s.tribunais.length} {s.tribunais.length === 1 ? 'tribunal' : 'tribunais'}</li>
+      ))}
+    </ul>
+  </main>
+</Base>
