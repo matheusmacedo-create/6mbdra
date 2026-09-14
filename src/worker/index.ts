@@ -199,9 +199,23 @@ async function painel(req: Request, env: Env): Promise<Response> {
   })
 }
 
+/**
+ * Um endereço canônico só: www.brpdf.com manda para brpdf.com, com 301, preservando caminho e
+ * query. Fica aqui no Worker em vez de uma Redirect Rule da Cloudflare porque assim o
+ * comportamento é versionado, testável e não depende de configuração no painel.
+ */
+function semWww(url: URL): Response | null {
+  if (!url.hostname.startsWith('www.')) return null
+  const destino = new URL(url)
+  destino.hostname = url.hostname.slice(4)
+  return Response.redirect(destino.toString(), 301)
+}
+
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     const url = new URL(req.url)
+    const redirecionamento = semWww(url)
+    if (redirecionamento) return redirecionamento
     if (url.pathname === '/api/e' && req.method === 'POST') return registrar(req, env)
     if (url.pathname === '/api/painel' && req.method === 'GET') return painel(req, env)
     if (url.pathname.startsWith('/api/')) return json({ erro: 'não encontrado' }, 404)
