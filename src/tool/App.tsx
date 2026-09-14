@@ -32,6 +32,13 @@ function initialView(): View {
   }
 }
 
+/**
+ * Quem chega de uma página de tribunal (/tribunais/x/ → ?regra=…) já escolheu o destino ali.
+ * A primeira tela não pede tribunal, mas precisa confirmar o que foi herdado da URL — senão a
+ * promessa feita na página do tribunal some sem explicação.
+ */
+let regraVeioDaUrl = false
+
 function loadSettings(): Settings {
   let s = DEFAULT_SETTINGS
   try {
@@ -49,6 +56,7 @@ function loadSettings(): Settings {
       const t = params.get('tribunal')
       const tribunal = t && t !== r.tribunal_sigla && r.abrange?.includes(t) && tribunalPorSigla(t) ? t : null
       s = { ...s, ruleId: r.id, tribunal }
+      regraVeioDaUrl = true
       track('regra_selecionada', { tribunal: tribunal ?? r.tribunal_sigla, sistema: r.sistema, origem: 'pagina' })
     }
   } catch {
@@ -114,6 +122,17 @@ export default function App() {
     }
     window.scrollTo({ top: 0 })
   }, [])
+  /** Quantos arquivos existem agora — lido pelo CTA do cabeçalho, que roda fora do React. */
+  const jobsCountRef = useRef(0)
+  /** Sem arquivos, "Preparar PDFs" não troca de tela: leva o foco para a área de upload. */
+  const focarUpload = useCallback(() => {
+    requestAnimationFrame(() => {
+      const zona = document.querySelector<HTMLElement>('.dropzone.zone-hero')
+      if (!zona) return
+      zona.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      zona.focus({ preventScroll: true })
+    })
+  }, [])
   // Links "Preparar PDFs" do cabeçalho e dos cards da página inicial abrem a ferramenta sem recarregar.
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -123,7 +142,12 @@ export default function App() {
       if (abrir) {
         e.preventDefault()
         // O atributo diz qual link foi clicado (cabeçalho, card de ferramenta…); sem valor, é só "link".
-        openTool(abrir.dataset.openTool || 'link')
+        const origem = abrir.dataset.openTool || 'link'
+        // Só o CTA do cabeçalho muda de comportamento: sem arquivo nenhum, ele desce até o upload
+        // em vez de trocar de tela (não haveria nada de novo para mostrar). Os demais links abrem a
+        // bancada como sempre, inclusive vindos de outras páginas.
+        if (origem === 'cabecalho' && jobsCountRef.current === 0) focarUpload()
+        else openTool(origem)
       } else {
         // Links de seção do cabeçalho: voltam à página inicial sem recarregar (o lote continua na memória).
         const home = target?.closest?.('a[data-go-home]') as HTMLAnchorElement | null
@@ -139,8 +163,9 @@ export default function App() {
     }
     document.addEventListener('click', handler)
     return () => document.removeEventListener('click', handler)
-  }, [openTool, goHome])
+  }, [openTool, goHome, focarUpload])
   const { jobs, batchCount, addFiles, remove, clear, start, cancel, retry, allow } = useJobQueue(process, setEngine)
+  jobsCountRef.current = jobs.length
 
   useEffect(() => {
     try {
@@ -290,12 +315,17 @@ export default function App() {
   const toPrepare = counts.ready + counts.stale
   const batchDone = Math.max(0, Math.min(batchCount, batchCount - counts.busy))
 
-  const engineStatus = (
-    <div className="engine-status" data-testid="engine-status" data-state={engine.state}>
+  /*
+   * Estado do motor. Na primeira tela ele fica escondido — status técnico não ajuda quem só quer
+   * mandar o PDF —, com uma exceção: se o compactador não carregou, isso muda o que a pessoa pode
+   * esperar e precisa aparecer. Não é região aria-live: quem anuncia é o liveRegion, um só.
+   */
+  const engineStatus = (discreto = false) => (
+    <div className={`engine-status${discreto && engine.state !== 'error' ? ' sr-only' : ''}`} data-testid="engine-status" data-state={engine.state}>
       <span className={`dot${engine.state === 'ready' ? ' ready' : engine.state === 'error' ? ' err' : ''}`} aria-hidden="true" />
       {engine.state === 'loading' && (
         <span>
-          <strong>Carregando o compactador…</strong> só na primeira visita, cerca de 11 MB. Você já pode escolher o tribunal e adicionar os arquivos.
+          <strong>Carregando o compactador…</strong> só na primeira visita, cerca de 11 MB.
         </span>
       )}
       {engine.state === 'ready' && (
@@ -317,35 +347,63 @@ export default function App() {
       {announce}
     </div>
   )
+  const check = (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="m20 6-11 11-5-5" />
+    </svg>
+  )
+  /** Linha de confiança: texto simples embaixo do upload, sem virar cards. */
+  const trustLine = (
+    <ul className="trust-line">
+      <li>{check}Processamento local</li>
+      <li>{check}Texto preservado</li>
+      <li>{check}Sem cadastro</li>
+    </ul>
+  )
+  /** Confirmação do destino herdado da URL — só texto, nenhum ajuste, e só quando veio de link. */
+  const regraAtual = settings.ruleId ? regraPorId(settings.ruleId) : undefined
+  const destinoHerdado =
+    regraVeioDaUrl && regraAtual ? (
+      <p className="destino-herdado">
+        Destino já escolhido: <strong>{settings.tribunal ?? regraAtual.tribunal_sigla} · {rotuloSistema(regraAtual)}</strong> — limite{' '}
+        {formatLimite(regraAtual)}. Dá para trocar depois de escolher os arquivos.
+      </p>
+    ) : null
+
+  /** Tela 1, igual na página inicial e em /?view=tool: só a área de upload. */
+  const areaDeUpload = (
+    <>
+      <DropZone onFiles={onFiles} variant="hero" title="Selecionar arquivos PDF" />
+      {destinoHerdado}
+      {notice && <div className="note warn spaced">{notice}</div>}
+      {jobs.length > 0 && (
+        <p className="hint resume">
+          Você tem {jobs.length} arquivo{jobs.length === 1 ? '' : 's'} no lote.{' '}
+          <a href="/?view=tool" data-open-tool="retomar">
+            Voltar ao lote
+          </a>
+        </p>
+      )}
+      {trustLine}
+      <Stepper phase={phase} compact />
+      {engineStatus(true)}
+    </>
+  )
 
   if (view === 'home') {
     return (
       <div className="tool landing" data-phase={phase}>
         {liveRegion}
-        <div className="hero-card">
-          <h2>Prepare seu lote agora</h2>
-          <RuleSelector settings={settings} onChange={setSettings} onValidity={setLimitValid} compact label="Tribunal e sistema" />
-          <DropZone onFiles={onFiles} variant="hero" title="Arraste seus PDFs aqui" />
-          {notice && <div className="note warn">{notice}</div>}
-          {jobs.length > 0 && (
-            <p className="hint resume">
-              Você tem {jobs.length} arquivo{jobs.length === 1 ? '' : 's'} no lote.{' '}
-              <a href="/?view=tool" data-open-tool>
-                Voltar ao lote
-              </a>
-            </p>
-          )}
-          <div className="local-badge">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <rect x="4" y="10" width="16" height="11" rx="2" />
-              <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-            </svg>
-            Processamento local
-          </div>
-          {engineStatus}
-        </div>
+        {areaDeUpload}
       </div>
     )
+  }
+
+  const TITULO: Record<Phase, string> = {
+    config: 'Selecione os PDFs para protocolo',
+    review: 'Agora escolha o destino do protocolo',
+    processing: 'Preparando seus arquivos',
+    result: 'Tudo pronto para baixar',
   }
 
   return (
@@ -362,45 +420,17 @@ export default function App() {
         >
           ← Voltar às ferramentas
         </a>
-        <h1>Preparar PDFs para protocolo</h1>
-        <span className="local-badge">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <rect x="4" y="10" width="16" height="11" rx="2" />
-            <path d="M8 10V7a4 4 0 0 1 8 0v3" />
-          </svg>
-          Seus arquivos permanecem neste dispositivo
-        </span>
+        <h1>{TITULO[phase]}</h1>
       </div>
-      <Stepper phase={phase} />
 
-      <div className="tool-grid">
-        <aside className="aside">
-          <section className="card" aria-labelledby="h-config">
-            <h2 id="h-config">Destino do protocolo</h2>
-            <RuleSelector settings={settings} onChange={setSettings} onValidity={setLimitValid} />
-          </section>
-          <section className="card" aria-labelledby="h-opts">
-            <h2 id="h-opts">Como preparar</h2>
-            <Options settings={settings} onChange={setSettings} />
-            {engineStatus}
-          </section>
-        </aside>
-
-        <section className="card main" aria-labelledby="h-batch">
-          {jobs.length === 0 ? (
-            <>
-              <h2 id="h-batch">Adicione os documentos</h2>
-              <DropZone onFiles={onFiles} variant="hero" title="Arraste seus PDFs para começar" />
-              {notice && (
-                <div className="note warn spaced">
-                  {notice}
-                </div>
-              )}
-            </>
-          ) : (
-            <>
+      {jobs.length === 0 ? (
+        <div className="tool-vazia">{areaDeUpload}</div>
+      ) : (
+        <>
+          <Stepper phase={phase} />
+          <section className="card main" aria-labelledby="h-batch">
               <div className="jobs-header">
-                <h2 id="h-batch">{phase === 'result' ? 'Resultado' : phase === 'processing' ? 'Preparando…' : 'Revise o lote'}</h2>
+                <h2 id="h-batch">{phase === 'result' ? 'Resultado' : phase === 'processing' ? 'Preparando…' : 'Arquivos selecionados'}</h2>
                 <span className="jobs-summary" data-testid="summary">
                   {jobs.length} arquivo{jobs.length === 1 ? '' : 's'}
                   {counts.ready > 0 ? ` · ${counts.ready} para otimizar` : ''}
@@ -413,21 +443,6 @@ export default function App() {
                 </span>
                 <span className="spacer" />
                 <div className="jobs-actions">
-                {phase === 'review' && counts.analyzing > 0 && (
-                  <button className="btn" disabled data-testid="start">
-                    Analisando…
-                  </button>
-                )}
-                {phase === 'review' && counts.analyzing === 0 && toPrepare > 0 && (
-                  <button className="btn" onClick={() => start()} disabled={!limitValid} title={limitValid ? undefined : 'Corrija o limite informado'} data-testid="start">
-                    {counts.ready > 0 ? `Preparar ${toPrepare} arquivo${toPrepare === 1 ? '' : 's'}` : `Reprocessar ${toPrepare} arquivo${toPrepare === 1 ? '' : 's'}`}
-                  </button>
-                )}
-                {phase === 'review' && counts.analyzing === 0 && toPrepare === 0 && (
-                  <span className="hint" data-testid="nothing-to-prepare">
-                    {counts.blocked > 0 ? 'Nada a preparar: veja os avisos abaixo.' : 'Todos os arquivos já cabem na meta. Nada a preparar.'}
-                  </span>
-                )}
                 {phase === 'processing' && counts.busy > 0 && (
                   <button className="btn danger" onClick={cancel} data-testid="cancel">
                     Cancelar processamento
@@ -473,12 +488,6 @@ export default function App() {
                   Este sistema exige PDF/A na petição inicial. Os arquivos preparados aqui saem em PDF comum: converta para PDF/A depois de compactar e antes de assinar.
                 </div>
               )}
-              {phase === 'review' && toPrepare > 0 && (
-                <p className="hint">
-                  Ao clicar em <strong>Preparar</strong>, os arquivos marcados "será otimizado" são comprimidos (e divididos, se preciso)
-                  {counts.stale > 0 ? ' e os marcados "fora da meta atual" são reprocessados' : ''}. Os demais ficam como estão.
-                </p>
-              )}
               {phase === 'result' && (
                 <p className="hint">
                   Confira cada PDF antes de protocolar. O ZIP vem com os arquivos numerados na ordem do lote (01_, 02_…), sem acentos nem espaços,
@@ -490,10 +499,58 @@ export default function App() {
 
               <BatchList jobs={jobs} process={process} onRemove={remove} onRetry={retry} onAllow={allow} />
               <DropZone onFiles={onFiles} variant="compact" />
-            </>
+          </section>
+
+          {/*
+            * Etapa 2: o destino só aparece depois de existir arquivo. Durante o processamento ele sai
+            * de cena (não há o que ajustar); no resultado volta, para trocar de tribunal e reprocessar.
+            */}
+          {phase !== 'processing' && (
+            <section className="card destino" aria-labelledby="h-destino">
+              <h2 id="h-destino">Destino do protocolo</h2>
+              <RuleSelector settings={settings} onChange={setSettings} onValidity={setLimitValid} compact label="Tribunal e sistema" />
+
+              <details className="avancadas">
+                <summary>Opções avançadas</summary>
+                <div className="avancadas-corpo">
+                  <Options settings={settings} onChange={setSettings} />
+                  {engineStatus()}
+                </div>
+              </details>
+
+              {phase === 'review' && (
+                <div className="destino-cta">
+                  {counts.analyzing > 0 ? (
+                    <button className="btn block" disabled data-testid="start">
+                      Analisando…
+                    </button>
+                  ) : toPrepare > 0 ? (
+                    <button
+                      className="btn block"
+                      onClick={() => start()}
+                      disabled={!limitValid}
+                      title={limitValid ? undefined : 'Corrija o limite informado'}
+                      data-testid="start"
+                    >
+                      Preparar PDFs
+                    </button>
+                  ) : (
+                    <span className="hint" data-testid="nothing-to-prepare">
+                      {counts.blocked > 0 ? 'Nada a preparar: veja os avisos acima.' : 'Todos os arquivos já cabem na meta. Nada a preparar.'}
+                    </span>
+                  )}
+                  {counts.analyzing === 0 && toPrepare > 0 && (
+                    <p className="hint">
+                      {toPrepare} arquivo{toPrepare === 1 ? '' : 's'} {toPrepare === 1 ? 'entra' : 'entram'} no lote
+                      {counts.stale > 0 ? ' (inclusive os que foram preparados para outra meta)' : ''}. Os que já cabem ficam como estão.
+                    </p>
+                  )}
+                </div>
+              )}
+            </section>
           )}
-        </section>
-      </div>
+        </>
+      )}
     </div>
   )
 }

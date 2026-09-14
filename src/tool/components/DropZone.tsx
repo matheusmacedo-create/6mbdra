@@ -46,7 +46,7 @@ async function collectFiles(items: DataTransferItemList | null, fallback: FileLi
 
 function UploadIcon() {
   return (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M12 17V3" />
       <path d="m6 9 6-6 6 6" />
       <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
@@ -72,10 +72,10 @@ export function DropZone({ onFiles, disabled, variant = 'hero', title }: Props) 
 
   return (
     <div
-      className={`dropzone zone-${variant}${active ? ' active' : ''}`}
+      className={`dropzone zone-${variant}${active ? ' is-dragging' : ''}`}
       role="button"
       tabIndex={0}
-      aria-label="Escolher arquivos PDF"
+      aria-label={compact ? 'Adicionar mais arquivos PDF' : 'Selecionar arquivos PDF'}
       onClick={() => inputRef.current?.click()}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -91,18 +91,24 @@ export function DropZone({ onFiles, disabled, variant = 'hero', title }: Props) 
       onDrop={onDrop}
     >
       {!compact && (
-        <div className="icon-box">
-          <UploadIcon />
-        </div>
+        <>
+          <div className="icon-box">
+            <UploadIcon />
+          </div>
+          {/* Pintado como botão, mas é um span: a área inteira já é o controle focável. */}
+          <span className="upload-button">{title ?? 'Selecionar arquivos PDF'}</span>
+        </>
       )}
-      <div className="big">{compact ? 'Adicionar mais PDFs' : (title ?? 'Arraste seus PDFs aqui')}</div>
-      <div className="small">{compact ? 'Arraste ou clique para escolher' : 'ou clique para selecionar vários arquivos ou uma pasta'}</div>
+      <div className="big">{compact ? 'Adicionar mais documentos' : 'ou arraste seus PDFs aqui'}</div>
+      <div className="small">{compact ? 'Arraste ou clique para escolher' : 'Vários documentos de uma vez.'}</div>
       <input
         ref={inputRef}
         type="file"
         accept="application/pdf,.pdf"
         multiple
         className="sr-only"
+        tabIndex={-1}
+        aria-label="Arquivos PDF para preparar"
         data-testid="file-input"
         onChange={(e) => {
           const files = e.target.files ? Array.from(e.target.files) : []

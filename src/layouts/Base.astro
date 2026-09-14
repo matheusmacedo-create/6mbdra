@@ -37,7 +37,6 @@ const LINKS: NavLink[] = [
   { href: '/?view=tool', label: 'Compactar PDF', tool: 'menu' },
   { href: '/tribunais/', label: 'Limites por tribunal', match: '/tribunais/' },
   { href: '/#ferramentas', label: 'Ferramentas', home: true },
-  { href: '/#seguranca', label: 'Segurança', home: true },
 ]
 ---
 <!doctype html>
@@ -45,7 +44,7 @@ const LINKS: NavLink[] = [
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#002776" />
+    <meta name="theme-color" content="#073381" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
@@ -107,6 +106,7 @@ const LINKS: NavLink[] = [
     <footer class="site-footer">
       <div class="inner">
         <nav aria-label="Rodapé">
+          <a href="/#seguranca">Segurança</a>
           <a href="/privacidade/">Privacidade</a>
           <a href="/termos/">Termos de uso</a>
           <a href="/metodologia/">Metodologia</a>

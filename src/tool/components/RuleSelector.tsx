@@ -50,6 +50,84 @@ export function RuleSelector({ settings, onChange, onValidity, compact = false, 
     if (isValidMb(n)) onChange({ ...settings, ruleId: null, tribunal: null, customMb: n })
   }
 
+  /*
+   * Ficha oficial da regra: fonte, data de verificação, limites acessórios e avisos. No modo
+   * compacto ela fica recolhida em "Ver a regra completa"; nada foi removido, só adiado.
+   */
+  const fichaCompleta = regra ? (
+    <>
+      <div className="rule-name">
+        {siglaEscolhida} · {rotuloSistema(regra)} <span className="sub">— {tribunalEscolhido?.nome ?? regra.tribunal_nome}</span>
+        {rotuloContexto(regra) ? <span className="sub"> · {rotuloContexto(regra)}</span> : null}
+        {herdada ? <span className="sub"> · regra nacional ({regra.tribunal_sigla})</span> : null}
+      </div>
+      <dl>
+        <div>
+          <dt>Limite declarado</dt>
+          <dd>
+            {formatLimite(regra)}
+            {mostrarBytesDoLimite(regra) ? ` (${formatBytes(limiteBytes(regra))})` : ''}
+          </dd>
+        </div>
+        <div>
+          <dt>Meta segura</dt>
+          <dd>
+            {formatBytes(metaBytes(regra))} · {percentualMeta(regra)}%
+          </dd>
+        </div>
+        {regra.limite_por_pagina_kb && (
+          <div>
+            <dt>Por página</dt>
+            <dd>até {regra.limite_por_pagina_kb} KB</dd>
+          </div>
+        )}
+        {regra.limite_total_peticao_mb && (
+          <div>
+            <dt>Por petição</dt>
+            <dd>até {regra.limite_total_peticao_mb} MB</dd>
+          </div>
+        )}
+        {regra.limite_condicional && (
+          <div>
+            <dt>Com {regra.limite_condicional.min_paginas}+ páginas</dt>
+            <dd>
+              {regra.limite_condicional.limite_valor} {regra.limite_condicional.limite_unidade}
+            </dd>
+          </div>
+        )}
+        {regra.exige_pdfa && (
+          <div>
+            <dt>Formato</dt>
+            <dd>PDF/A na inicial</dd>
+          </div>
+        )}
+        <div>
+          <dt>Verificado em</dt>
+          <dd>{formatDate(regra.verificado_em)}</dd>
+        </div>
+      </dl>
+      {regra.situacao === 'em_revisao' && (
+        <div className="note warn spaced">
+          <span className="badge warn inline">em revisão</span> {regra.motivo_revisao}
+        </div>
+      )}
+      {regra.limite_por_pagina_kb ? <p className="hint spaced">A meta de cada arquivo considera o número de páginas.</p> : null}
+      {regra.exige_pdfa ? <p className="hint spaced">Converta para PDF/A depois de compactar e antes de assinar.</p> : null}
+      {regra.observacoes && (
+        <p className="hint spaced">
+          {regra.observacoes}
+        </p>
+      )}
+      <p className="source">
+        Fonte:{' '}
+        <a href={regra.fonte_url} target="_blank" rel="noreferrer noopener">
+          {regra.fonte_titulo}
+        </a>
+        . Se o sistema recusar, ajuste o limite e <a href="/contato/">avise a gente</a>.
+      </p>
+    </>
+  ) : null
+
   return (
     <div className="rule-selector">
       <div className="field">
@@ -126,88 +204,27 @@ export function RuleSelector({ settings, onChange, onValidity, compact = false, 
 
       <div className="rule-info" data-testid="rule-info">
         {compact ? (
-          <dl>
-            <div>
-              <dt>Limite do sistema</dt>
-              <dd>{formatBytes(resolved.limitBytes)}</dd>
-            </div>
-            <div>
-              <dt>Meta segura</dt>
-              <dd>{formatBytes(resolved.targetBytes)}</dd>
-            </div>
-          </dl>
-        ) : regra ? (
           <>
-            <div className="rule-name">
-              {siglaEscolhida} · {rotuloSistema(regra)} <span className="sub">— {tribunalEscolhido?.nome ?? regra.tribunal_nome}</span>
-              {rotuloContexto(regra) ? <span className="sub"> · {rotuloContexto(regra)}</span> : null}
-              {herdada ? <span className="sub"> · regra nacional ({regra.tribunal_sigla})</span> : null}
-            </div>
             <dl>
               <div>
-                <dt>Limite declarado</dt>
-                <dd>
-                  {formatLimite(regra)}
-                  {mostrarBytesDoLimite(regra) ? ` (${formatBytes(limiteBytes(regra))})` : ''}
-                </dd>
+                <dt>Limite do sistema</dt>
+                <dd>{formatBytes(resolved.limitBytes)}</dd>
               </div>
               <div>
                 <dt>Meta segura</dt>
-                <dd>
-                  {formatBytes(metaBytes(regra))} · {percentualMeta(regra)}%
-                </dd>
-              </div>
-              {regra.limite_por_pagina_kb && (
-                <div>
-                  <dt>Por página</dt>
-                  <dd>até {regra.limite_por_pagina_kb} KB</dd>
-                </div>
-              )}
-              {regra.limite_total_peticao_mb && (
-                <div>
-                  <dt>Por petição</dt>
-                  <dd>até {regra.limite_total_peticao_mb} MB</dd>
-                </div>
-              )}
-              {regra.limite_condicional && (
-                <div>
-                  <dt>Com {regra.limite_condicional.min_paginas}+ páginas</dt>
-                  <dd>
-                    {regra.limite_condicional.limite_valor} {regra.limite_condicional.limite_unidade}
-                  </dd>
-                </div>
-              )}
-              {regra.exige_pdfa && (
-                <div>
-                  <dt>Formato</dt>
-                  <dd>PDF/A na inicial</dd>
-                </div>
-              )}
-              <div>
-                <dt>Verificado em</dt>
-                <dd>{formatDate(regra.verificado_em)}</dd>
+                <dd>{formatBytes(resolved.targetBytes)}</dd>
               </div>
             </dl>
-            {regra.situacao === 'em_revisao' && (
-              <div className="note warn spaced">
-                <span className="badge warn inline">em revisão</span> {regra.motivo_revisao}
-              </div>
+            <p className="hint explain">Preparamos o arquivo com uma pequena margem para reduzir o risco de recusa no protocolo.</p>
+            {regra && (
+              <details className="ficha">
+                <summary>Ver a regra completa</summary>
+                <div className="ficha-corpo">{fichaCompleta}</div>
+              </details>
             )}
-            {regra.limite_por_pagina_kb ? <p className="hint spaced">A meta de cada arquivo considera o número de páginas.</p> : null}
-            {regra.exige_pdfa ? <p className="hint spaced">Converta para PDF/A depois de compactar e antes de assinar.</p> : null}
-            {regra.observacoes && (
-              <p className="hint spaced">
-                {regra.observacoes}
-              </p>
-            )}
-            <p className="source">
-              Fonte:{' '}
-              <a href={regra.fonte_url} target="_blank" rel="noreferrer noopener">
-                {regra.fonte_titulo}
-              </a>
-              . Se o sistema recusar, ajuste o limite e <a href="/contato/">avise a gente</a>.
-            </p>
           </>
+        ) : regra ? (
+          fichaCompleta
         ) : (
           <dl>
             <div>
@@ -223,12 +240,6 @@ export function RuleSelector({ settings, onChange, onValidity, compact = false, 
           </dl>
         )}
       </div>
-      {!compact && (
-        <p className="hint explain">
-          <strong>Limite</strong> é o tamanho que o sistema aceita. A <strong>meta segura</strong> é um pouco menor, porque alguns portais contam os
-          megabytes de outro jeito e recusam arquivos no limite exato. Preparamos seus PDFs pela meta.
-        </p>
-      )}
     </div>
   )
 }

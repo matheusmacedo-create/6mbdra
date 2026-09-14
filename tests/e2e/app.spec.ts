@@ -11,19 +11,23 @@ test.beforeAll(async () => {
   fx = await ensureFixtures()
 })
 
-async function openApp(page: Page, limitMb?: number) {
+async function openApp(page: Page) {
   await page.goto('/?view=tool')
   await expect(page.getByTestId('engine-status')).toHaveAttribute('data-state', 'ready', { timeout: 120_000 })
+  // Divulgação progressiva: antes de existir arquivo, a tela não mostra tribunal, limite nem opções.
+  await expect(page.locator('#regra')).toHaveCount(0)
+  await expect(page.locator('.toggles')).toHaveCount(0)
+}
+
+/** O destino do protocolo só aparece depois dos arquivos: adiciona, espera a análise e então ajusta. */
+async function addAndPrepare(page: Page, files: string[], limitMb?: number) {
+  await page.getByTestId('file-input').setInputFiles(files)
+  // Espera a análise prévia terminar (nenhum job "analyzing")
+  await expect.poll(async () => page.locator('[data-testid="job"][data-kind="analyzing"]').count(), { timeout: 60_000 }).toBe(0)
   if (limitMb !== undefined) {
     await page.locator('#regra').selectOption('custom')
     await page.getByTestId('custom-limit').fill(String(limitMb).replace('.', ','))
   }
-}
-
-async function addAndPrepare(page: Page, files: string[]) {
-  await page.getByTestId('file-input').setInputFiles(files)
-  // Espera a análise prévia terminar (nenhum job "analyzing")
-  await expect.poll(async () => page.locator('[data-testid="job"][data-kind="analyzing"]').count(), { timeout: 60_000 }).toBe(0)
 }
 
 async function waitFinished(page: Page, n: number) {
@@ -43,11 +47,12 @@ async function pageCount(path: string): Promise<number> {
 
 test('fluxo completo: revisar, preparar e baixar um scan grande dentro da meta', async ({ page }) => {
   expect(statSync(fx.scanBig).size).toBeGreaterThan(6 * MB)
-  await openApp(page, 6)
-  await addAndPrepare(page, [fx.scanBig])
+  await openApp(page)
+  await addAndPrepare(page, [fx.scanBig], 6)
   const job = page.getByTestId('job').first()
   await expect(job).toHaveAttribute('data-kind', 'ready')
   await expect(page.getByTestId('summary')).toContainText('1 para otimizar')
+  await expect(page.getByTestId('start'), 'o CTA da etapa 2').toHaveText('Preparar PDFs')
   await page.getByTestId('start').click()
   await waitFinished(page, 1)
   await expect(job).toHaveAttribute('data-kind', 'done')
@@ -64,8 +69,8 @@ test('fluxo completo: revisar, preparar e baixar um scan grande dentro da meta',
 })
 
 test('arquivos já dentro da meta são mantidos e entram no zip como originais', async ({ page }) => {
-  await openApp(page, 6)
-  await addAndPrepare(page, [fx.text, fx.scanBig])
+  await openApp(page)
+  await addAndPrepare(page, [fx.text, fx.scanBig], 6)
   await expect(page.locator('[data-testid="job"][data-kind="unchanged"]')).toHaveCount(1)
   await page.getByTestId('start').click()
   await waitFinished(page, 2)
@@ -81,8 +86,8 @@ test('arquivos já dentro da meta são mantidos e entram no zip como originais',
 })
 
 test('arquivo corrompido é apontado na análise, sem bloquear os demais', async ({ page }) => {
-  await openApp(page, 6)
-  await addAndPrepare(page, [fx.corrupt, fx.scanBig])
+  await openApp(page)
+  await addAndPrepare(page, [fx.corrupt, fx.scanBig], 6)
   await expect(page.locator('[data-testid="job"][data-kind="invalid"]')).toHaveCount(1)
   await expect(page.locator('[data-testid="job"][data-kind="invalid"]')).toContainText(/não foi possível ler/i)
   await page.getByTestId('start').click()
@@ -93,8 +98,8 @@ test('arquivo corrompido é apontado na análise, sem bloquear os demais', async
 })
 
 test('PDF assinado fica de fora por padrão e pode ser liberado', async ({ page }) => {
-  await openApp(page, 6)
-  await addAndPrepare(page, [fx.signedBig])
+  await openApp(page)
+  await addAndPrepare(page, [fx.signedBig], 6)
   const job = page.getByTestId('job').first()
   await expect(job).toHaveAttribute('data-kind', 'signed')
   await expect(page.getByTestId('start')).toHaveCount(0)
@@ -108,8 +113,8 @@ test('PDF assinado fica de fora por padrão e pode ser liberado', async ({ page 
 })
 
 test('divide em partes quando nem a compressão máxima cabe', async ({ page }) => {
-  await openApp(page, 0.5)
-  await addAndPrepare(page, [fx.scanHuge])
+  await openApp(page)
+  await addAndPrepare(page, [fx.scanHuge], 0.5)
   await page.getByTestId('start').click()
   await waitFinished(page, 1)
   const job = page.getByTestId('job').first()
@@ -129,8 +134,8 @@ test('divide em partes quando nem a compressão máxima cabe', async ({ page }) 
 })
 
 test('cancelar interrompe o lote e devolve os arquivos ao estado revisado', async ({ page }) => {
-  await openApp(page, 6)
-  await addAndPrepare(page, [fx.scanHuge, fx.scanBig])
+  await openApp(page)
+  await addAndPrepare(page, [fx.scanHuge, fx.scanBig], 6)
   await page.getByTestId('start').click()
   await expect(page.getByTestId('cancel')).toBeVisible()
   await page.getByTestId('cancel').click()
@@ -139,15 +144,45 @@ test('cancelar interrompe o lote e devolve os arquivos ao estado revisado', asyn
   await expect(page.getByTestId('start')).toBeVisible()
 })
 
+/** Campos que a medição de uso pode mandar (espelha TEXTOS/NUMEROS em src/worker/index.ts). */
+const CAMPOS_DE_MEDICAO = new Set([
+  'caminho', 'origem', 'tribunal', 'sistema', 'situacao', 'categoria', 'faixa', 'tipo',
+  'quantidade', 'nivel', 'partes', 'segundos', 'paginas', 'meta_mb',
+])
+
+interface Medicao {
+  url: string
+  corpo: string
+}
+
 test('nenhuma requisição de rede transporta os documentos (RF06)', async ({ page }) => {
-  const requests: { url: string; method: string; hasBody: boolean; headers: Record<string, string> }[] = []
+  const requests: { url: string; method: string; body: string | null; headers: Record<string, string> }[] = []
   const sockets: string[] = []
-  page.on('request', (r) => requests.push({ url: r.url(), method: r.method(), hasBody: r.postData() !== null && r.postData() !== undefined, headers: r.headers() }))
+  page.on('request', (r) => requests.push({ url: r.url(), method: r.method(), body: r.postData() ?? null, headers: r.headers() }))
   page.on('websocket', (ws) => sockets.push(ws.url()))
-  await openApp(page, 6)
-  await addAndPrepare(page, [fx.scanBig])
+  /*
+   * A medição de uso viaja por sendBeacon, e o corpo de um beacon não chega ao Playwright pelo
+   * evento de rede. Então guardamos o que o próprio navegador manda: é exatamente o que sai daqui.
+   */
+  await page.addInitScript(() => {
+    const janela = window as unknown as { __medicoes: Medicao[] }
+    janela.__medicoes = []
+    const original = navigator.sendBeacon?.bind(navigator)
+    navigator.sendBeacon = (url: string | URL, data?: BodyInit | null) => {
+      const guardar = (corpo: string) => janela.__medicoes.push({ url: String(url), corpo })
+      if (data instanceof Blob) void data.text().then(guardar)
+      else guardar(String(data))
+      return original ? original(url, data) : true
+    }
+  })
+  await openApp(page)
+  await addAndPrepare(page, [fx.scanBig], 6)
   await page.getByTestId('start').click()
   await waitFinished(page, 1)
+  // Dá tempo de a medição de uso sair (ela viaja em lote, alguns segundos depois dos eventos).
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
+  await page.waitForTimeout(5_000)
+
   const origin = new URL(page.url()).origin
   const fileBytes = readFileSync(fx.scanBig)
   const size = String(fileBytes.length)
@@ -155,16 +190,107 @@ test('nenhuma requisição de rede transporta os documentos (RF06)', async ({ pa
   const allowed = /^\/(\?[a-z0-9=&%_-]*)?$|^\/_astro\/[\w.-]+\.(js|css|wasm|woff2)$|^\/favicon\.svg$/
   expect(sockets, 'nenhum WebSocket').toHaveLength(0)
   for (const r of requests) {
-    expect(r.method, `método em ${r.url}`).toBe('GET')
-    expect(r.hasBody, `corpo em ${r.url}`).toBe(false)
+    const rota = new URL(r.url).pathname
     expect(r.url.startsWith(origin), `origem externa: ${r.url}`).toBe(true)
-    expect(new URL(r.url).pathname + new URL(r.url).search, `URL fora da lista permitida: ${r.url}`).toMatch(allowed)
-    const all = r.url + JSON.stringify(r.headers)
-    expect(all).not.toMatch(/scan_big/)
-    expect(all).not.toContain(sha)
-    expect(all).not.toContain(sha.slice(0, 16))
-    expect(all).not.toContain(size)
+    if (rota === '/api/e') {
+      // Único POST do site: a medição de uso. O conteúdo é conferido logo abaixo.
+      expect(r.method, 'medição usa POST').toBe('POST')
+    } else {
+      expect(r.method, `método em ${r.url}`).toBe('GET')
+      expect(r.body, `corpo em ${r.url}`).toBeNull()
+      expect(rota + new URL(r.url).search, `URL fora da lista permitida: ${r.url}`).toMatch(allowed)
+    }
+    // Vale para toda requisição, medição incluída: nada do documento sai daqui.
+    const tudo = r.url + JSON.stringify(r.headers) + (r.body ?? '')
+    expect(tudo).not.toMatch(/scan_big/)
+    expect(tudo).not.toContain(sha)
+    expect(tudo).not.toContain(sha.slice(0, 16))
+    expect(tudo).not.toContain(size)
   }
+  // E a medição precisa mesmo ter saído, senão o teste acima não provou nada.
+  expect(requests.filter((r) => new URL(r.url).pathname === '/api/e').length, 'a medição de uso não foi enviada').toBeGreaterThan(0)
+
+  // Agora o conteúdo da medição: só contagens e categorias da lista permitida, nada do documento.
+  const medicoes = await page.evaluate(() => (window as unknown as { __medicoes: Medicao[] }).__medicoes)
+  expect(medicoes.length, 'nenhum beacon de medição capturado').toBeGreaterThan(0)
+  for (const m of medicoes) {
+    expect(new URL(m.url, origin).pathname).toBe('/api/e')
+    const corpo = JSON.parse(m.corpo) as { eventos?: { nome?: string; props?: Record<string, unknown> }[] }
+    expect(Array.isArray(corpo.eventos), `corpo da medição: ${m.corpo.slice(0, 200)}`).toBe(true)
+    for (const e of corpo.eventos ?? []) {
+      expect(typeof e.nome).toBe('string')
+      for (const [chave, valor] of Object.entries(e.props ?? {})) {
+        expect([...CAMPOS_DE_MEDICAO], `campo inesperado na medição: ${chave}`).toContain(chave)
+        expect(String(valor).length, `valor longo demais em ${chave}`).toBeLessThanOrEqual(40)
+      }
+    }
+    expect(m.corpo).not.toMatch(/scan_big/)
+    expect(m.corpo).not.toContain(sha.slice(0, 16))
+    expect(m.corpo).not.toContain(size)
+  }
+})
+
+test('a área de upload inteira é o controle: clique, teclado e arrastar', async ({ page }) => {
+  await page.goto('/')
+  const area = page.locator('.dropzone.zone-hero')
+  await expect(area).toBeVisible()
+  await expect(area).toHaveAttribute('role', 'button')
+  await expect(area).toHaveAttribute('aria-label', 'Selecionar arquivos PDF')
+  const caixa = (await area.boundingBox())!
+  expect(caixa.height, 'altura mínima da área').toBeGreaterThanOrEqual(260)
+
+  // 1. Clique num canto da área (longe do botão) abre o seletor de arquivos.
+  const cantoSuperior = page.waitForEvent('filechooser')
+  await area.click({ position: { x: 12, y: 12 } })
+  expect((await cantoSuperior).isMultiple(), 'aceita vários arquivos').toBe(true)
+
+  // 2. O botão de dentro faz a mesma coisa, sem abrir duas vezes.
+  const peloBotao = page.waitForEvent('filechooser')
+  await page.locator('.upload-button').click()
+  await peloBotao
+
+  // 3. Teclado: a área recebe foco e responde a Enter e a Espaço.
+  await area.focus()
+  await expect(area).toBeFocused()
+  const porEnter = page.waitForEvent('filechooser')
+  await area.press('Enter')
+  await porEnter
+  const porEspaco = page.waitForEvent('filechooser')
+  await area.press(' ')
+  await porEspaco
+})
+
+test('arrastar e soltar entrega os PDFs e "Limpar lista" volta para a etapa 1', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByTestId('engine-status')).toHaveAttribute('data-state', 'ready', { timeout: 120_000 })
+  const bytes = [...readFileSync(fx.text)]
+  // Soltar de verdade na área: monta um DataTransfer com dois PDFs e dispara o evento "drop".
+  await page.evaluate(async (dados) => {
+    const dt = new DataTransfer()
+    for (const nome of ['a.pdf', 'b.pdf']) dt.items.add(new File([new Uint8Array(dados)], nome, { type: 'application/pdf' }))
+    const area = document.querySelector('.dropzone.zone-hero')!
+    area.dispatchEvent(new DragEvent('dragover', { bubbles: true, dataTransfer: dt }))
+    area.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer: dt }))
+  }, bytes)
+  await expect(page.getByTestId('job')).toHaveCount(2)
+  await expect(page.locator('.tool-page')).toBeVisible()
+  await expect.poll(async () => page.locator('[data-testid="job"][data-kind="analyzing"]').count(), { timeout: 60_000 }).toBe(0)
+  // A etapa 2 apareceu com o destino do protocolo e o CTA.
+  await expect(page.locator('.destino')).toBeVisible()
+  await expect(page.locator('#regra')).toBeVisible()
+  // Estes dois PDFs já cabem no limite, então a etapa 2 diz isso em vez de oferecer o preparo.
+  await expect(page.getByTestId('nothing-to-prepare')).toContainText(/já cabem/)
+  await expect(page.locator('.avancadas')).toBeVisible()
+  await expect(page.locator('.avancadas .toggles')).toBeHidden()
+  await page.locator('.avancadas summary').click()
+  await expect(page.locator('.avancadas .toggles')).toBeVisible()
+
+  // Voltar para a etapa inicial: sem arquivos, some tudo que é ajuste.
+  await page.getByTestId('clear').click()
+  await expect(page.getByTestId('job')).toHaveCount(0)
+  await expect(page.locator('#regra')).toHaveCount(0)
+  await expect(page.locator('.dropzone.zone-hero')).toBeVisible()
+  await expect(page.getByTestId('step-hint')).toHaveText('1 de 4 — Selecionar PDFs')
 })
 
 test('páginas públicas respondem e apontam para a ferramenta', async ({ page }) => {
@@ -178,21 +304,28 @@ test('páginas públicas respondem e apontam para a ferramenta', async ({ page }
   expect(await links.count()).toBeGreaterThanOrEqual(8)
 })
 
-test('no celular a ferramenta não rola na horizontal e o seletor cabe na tela', async ({ page }) => {
+test('no celular a ferramenta não rola na horizontal, nas duas etapas', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/?view=tool')
   await expect(page.getByTestId('engine-status')).toHaveAttribute('data-state', 'ready', { timeout: 120_000 })
-  await page.locator('#regra').selectOption({ index: 1 })
+  const rolaNaHorizontal = () => page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)
+  // Etapa 1: só a área de upload, e ela precisa caber na tela.
+  expect(await rolaNaHorizontal(), 'etapa 1 rola na horizontal').toBe(false)
+  const upload = await page.locator('.dropzone.zone-hero').boundingBox()
+  expect(upload!.width).toBeLessThanOrEqual(390)
+  expect(upload!.height, 'área de upload no celular').toBeGreaterThanOrEqual(190)
+  // Etapa 2: aí sim aparecem tribunal e opções.
   await page.getByTestId('file-input').setInputFiles([fx.text])
   await expect.poll(async () => page.locator('[data-testid="job"][data-kind="analyzing"]').count(), { timeout: 60_000 }).toBe(0)
+  await page.locator('#regra').selectOption({ index: 1 })
   const widths = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, inner: window.innerWidth, select: document.querySelector('#regra')!.getBoundingClientRect().width }))
   expect(widths.scroll, 'largura rolável').toBeLessThanOrEqual(widths.inner)
   expect(widths.select).toBeLessThanOrEqual(widths.inner)
 })
 
 test('limite manual inválido bloqueia o botão Preparar e explica o erro', async ({ page }) => {
-  await openApp(page, 6)
-  await addAndPrepare(page, [fx.scanBig])
+  await openApp(page)
+  await addAndPrepare(page, [fx.scanBig], 6)
   await expect(page.getByTestId('start')).toBeEnabled()
   await page.getByTestId('custom-limit').fill('600')
   await expect(page.getByTestId('custom-limit')).toHaveAttribute('aria-invalid', 'true')
@@ -204,8 +337,8 @@ test('limite manual inválido bloqueia o botão Preparar e explica o erro', asyn
 })
 
 test('PDF só com restrições de edição fica de fora por padrão; liberado, sai legível e sem criptografia', async ({ page }) => {
-  await openApp(page, 6)
-  await addAndPrepare(page, [fx.restricted])
+  await openApp(page)
+  await addAndPrepare(page, [fx.restricted], 6)
   const job = page.getByTestId('job').first()
   await expect(job).toHaveAttribute('data-kind', 'restricted')
   await expect(job).toContainText(/restrições de edição/)
@@ -226,8 +359,8 @@ test('PDF só com restrições de edição fica de fora por padrão; liberado, s
 })
 
 test('PDF que exige senha de abertura é recusado na análise, sem pedir senha', async ({ page }) => {
-  await openApp(page, 6)
-  await addAndPrepare(page, [fx.userPassword, fx.scanBig])
+  await openApp(page)
+  await addAndPrepare(page, [fx.userPassword, fx.scanBig], 6)
   const locked = page.locator('[data-testid="job"][data-kind="protected"]')
   await expect(locked).toHaveCount(1)
   await expect(locked).toContainText(/exige senha/i)
@@ -241,7 +374,11 @@ test('PDF que exige senha de abertura é recusado na análise, sem pedir senha',
 test('a página inicial abre a ferramenta ao receber arquivos e volta com "Ferramentas"', async ({ page }) => {
   await page.goto('/')
   await expect(page.locator('.tool-page')).toHaveCount(0)
-  await expect(page.locator('#regra')).toBeVisible()
+  // A primeira tela não pede tribunal, limite nem opções: só o upload.
+  await expect(page.locator('#regra')).toHaveCount(0)
+  await expect(page.locator('[data-testid="custom-limit"]')).toHaveCount(0)
+  await expect(page.locator('.toggles')).toHaveCount(0)
+  await expect(page.getByTestId('step-hint')).toHaveText('1 de 4 — Selecionar PDFs')
   await expect(page.locator('#ferramentas')).toBeVisible()
   await expect(page.getByTestId('engine-status')).toHaveAttribute('data-state', 'ready', { timeout: 120_000 })
   await page.getByTestId('file-input').setInputFiles([fx.text])
@@ -257,14 +394,20 @@ test('a página inicial abre a ferramenta ao receber arquivos e volta com "Ferra
   await expect(page.getByTestId('job')).toHaveCount(1)
 })
 
-test('cabeçalho: menu, âncoras e a ferramenta abrem sem recarregar a página', async ({ page }) => {
+test('cabeçalho: âncora, CTA e ferramenta se comportam sem recarregar a página', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByTestId('engine-status')).toHaveAttribute('data-state', 'ready', { timeout: 120_000 })
-  // Âncoras de seção rolam para a própria seção (e não sempre para "Ferramentas").
-  await page.getByRole('link', { name: 'Segurança' }).first().click()
-  await expect(page.locator('#seguranca')).toBeInViewport()
+  // O menu principal ficou com três itens; "Segurança" mudou para o rodapé.
+  await expect(page.locator('.site-nav a')).toHaveCount(3)
+  await expect(page.locator('.site-footer').getByRole('link', { name: 'Segurança' })).toBeVisible()
+  // Âncora de seção rola para a própria seção.
   await page.getByRole('link', { name: 'Ferramentas' }).first().click()
   await expect(page.locator('#ferramentas')).toBeInViewport()
+  // Sem arquivos, "Preparar PDFs" não troca de tela: leva o foco para a área de upload.
+  await page.getByRole('link', { name: 'Preparar PDFs' }).first().click()
+  await expect(page.locator('.dropzone.zone-hero')).toBeFocused()
+  await expect(page.locator('.dropzone.zone-hero')).toBeInViewport()
+  await expect(page.locator('.tool-page')).toHaveCount(0)
   // "Compactar PDF" abre a bancada sem recarregar.
   await page.getByRole('link', { name: 'Compactar PDF' }).first().click()
   await expect(page.locator('.tool-page')).toBeVisible()
@@ -279,6 +422,7 @@ test('no celular o menu abre em hambúrguer acessível', async ({ page }) => {
   await menu.locator('summary').click()
   await expect(menu.locator('.panel')).toBeVisible()
   await expect(menu.getByRole('link', { name: 'Limites por tribunal' })).toBeVisible()
+  await expect(menu.getByRole('link', { name: 'Segurança' })).toHaveCount(0)
   await menu.locator('summary').press('Enter')
   await expect(menu.locator('.panel')).toBeHidden()
 })

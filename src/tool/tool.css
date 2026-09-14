@@ -1,50 +1,103 @@
 /*
- * Ferramenta (ilha React). Duas vistas:
- *  - landing: o cartão "Prepare seu lote agora" dentro do herói da página inicial;
- *  - tool: a bancada em duas colunas (destino + como preparar | lote).
+ * Ferramenta (ilha React). Divulgação progressiva em duas telas:
+ *  - landing: só a área de upload (nenhum ajuste antes de existir arquivo);
+ *  - tool: a bancada — lote, destino do protocolo, opções avançadas e download.
  */
 
-/* ---------- Área de soltar arquivos ---------- */
-.dropzone { cursor: pointer; text-align: center; transition: border-color 0.15s, background 0.15s; outline: none; }
-.dropzone.zone-hero { border: 2px dashed var(--border-strong); border-radius: var(--radius); background: var(--surface-3); padding: 30px 20px; }
-.dropzone.zone-hero:hover, .dropzone.zone-hero.active, .dropzone.zone-hero:focus-visible { border-color: var(--accent); background: var(--accent-soft); }
-.dropzone .icon-box { display: inline-grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; background: var(--accent); color: #fff; margin-bottom: 14px; }
-
-.dropzone .big { font-size: 19px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
-.dropzone .small { color: var(--muted); font-size: 15px; }
-.dropzone.zone-compact { margin-top: 16px; border: 2px dashed var(--border-strong); border-radius: var(--radius-sm); padding: 16px; background: var(--surface-3); }
-.dropzone.zone-compact:hover, .dropzone.zone-compact.active, .dropzone.zone-compact:focus-visible { border-color: var(--accent); background: var(--accent-soft); }
-.dropzone.zone-compact .big { font-size: 15px; margin-bottom: 2px; }
+/* ---------- Área de upload ---------- */
+/*
+ * A área inteira é o controle: role="button" + tabIndex no elemento externo, e o "botão" de dentro
+ * é um <span> pintado como botão. Assim não há controle focável dentro de outro controle focável e
+ * Enter/Espaço funcionam em cima da área toda, como pede a especificação.
+ */
+.dropzone { cursor: pointer; text-align: center; outline: none; }
+.dropzone.zone-hero {
+  width: 100%; max-width: 760px; min-height: 260px; margin: 32px auto 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  padding: 32px 24px; border: 2px dashed var(--upload-border); border-radius: 18px; background: var(--surface);
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+.dropzone.zone-hero:hover, .dropzone.zone-hero.is-dragging {
+  border-color: var(--accent); background: #f8fbff; box-shadow: 0 18px 45px rgba(7, 51, 129, 0.1); transform: translateY(-2px);
+}
+.dropzone.zone-hero:focus-visible { border-color: var(--accent); outline: 2px solid var(--accent); outline-offset: 3px; }
+.dropzone .icon-box {
+  display: inline-grid; place-items: center; width: 56px; height: 56px; border-radius: 16px;
+  background: var(--accent-soft); color: var(--accent); margin-bottom: 18px;
+}
+.dropzone .upload-button {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 290px; min-height: 56px; padding: 14px 24px; margin-bottom: 16px;
+  border-radius: 10px; color: #fff; background: var(--accent); font-size: 1rem; font-weight: 700; line-height: 1.2;
+}
+.dropzone.zone-hero:hover .upload-button { background: var(--accent-hover); }
+.dropzone .big { font-size: 16px; font-weight: 600; color: var(--text-secondary); }
+.dropzone .small { color: var(--muted); font-size: 14.5px; }
+.dropzone.zone-compact {
+  margin-top: 16px; border: 2px dashed var(--upload-border); border-radius: var(--radius-sm); padding: 16px; background: var(--surface-3);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.dropzone.zone-compact:hover, .dropzone.zone-compact.is-dragging, .dropzone.zone-compact:focus-visible { border-color: var(--accent); background: var(--accent-soft); }
+.dropzone.zone-compact .big { font-size: 15px; margin-bottom: 2px; font-weight: 700; color: var(--text); }
 .dropzone.zone-compact .small { font-size: 14px; }
 
-/* ---------- Cartão do herói ---------- */
-.landing { min-width: 0; }
-.hero-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; display: grid; gap: 16px; box-shadow: var(--shadow-lg); }
-.hero-card > h2 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.3px; color: var(--text); }
-.hero-card .rule-selector { gap: 10px; }
-.hero-card .resume { margin: 0; }
-.local-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: var(--success-background); color: var(--success); font-size: 14px; font-weight: 600; justify-self: start; }
+@media (max-width: 560px) {
+  .dropzone.zone-hero { min-height: 190px; margin-top: 24px; padding: 24px 16px; border-radius: 16px; }
+  .dropzone .icon-box { width: 48px; height: 48px; margin-bottom: 14px; }
+  .dropzone .upload-button { min-width: 0; width: 100%; margin-bottom: 12px; }
+}
 
-/* ---------- Bancada ---------- */
-.tool-page { max-width: 1200px; margin: 0 auto; padding: 28px 20px 72px; }
-.tool-head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
-.tool-head h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.6px; }
-.tool-grid { display: grid; gap: 18px; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); align-items: start; }
-.aside { display: grid; gap: 18px; align-content: start; }
+/* ---------- Tela 1: só o upload ---------- */
+.landing { width: 100%; min-width: 0; }
+.step-hint { margin: 26px 0 0; font-size: 14px; font-weight: 600; color: var(--muted); letter-spacing: 0.01em; }
+.landing .note { max-width: 760px; margin-inline: auto; text-align: left; }
+.landing .resume { max-width: 760px; margin: 14px auto 0; }
+
+/* ---------- Bancada (uma coluna: lote em cima, destino do protocolo embaixo) ---------- */
+.tool-page { max-width: 880px; margin: 0 auto; padding: 28px 20px 72px; display: grid; gap: 18px; }
+.tool-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.tool-head h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.7px; flex: 1 1 auto; }
+/* Sem arquivos a bancada é só a área de upload, centralizada como na primeira tela. */
+.tool-vazia { text-align: center; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; min-width: 0; box-shadow: var(--shadow); }
 .card > h2 { margin: 0 0 16px; font-size: 16px; font-weight: 700; letter-spacing: -0.1px; }
 .card.main > h2 { font-size: 18px; }
+
+/* Etapa 2: destino do protocolo. O CTA é o elemento principal do cartão. */
+.destino { display: grid; gap: 16px; }
+.destino > h2 { margin: 0; }
+.destino .rule-selector { gap: 12px; }
+.destino-cta { display: grid; gap: 8px; }
+.destino-cta .btn { font-size: 17px; min-height: 52px; }
+.destino-cta .hint { margin: 0; text-align: center; }
+
+/* Opções avançadas e ficha da regra: recolhidas, mas a um clique. */
+.avancadas, .ficha { border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-3); }
+.avancadas > summary, .ficha > summary {
+  list-style: none; cursor: pointer; padding: 12px 14px; font-size: 14.5px; font-weight: 600; color: var(--text-secondary);
+  display: flex; align-items: center; gap: 8px;
+}
+.avancadas > summary::-webkit-details-marker, .ficha > summary::-webkit-details-marker { display: none; }
+.avancadas > summary::before, .ficha > summary::before {
+  content: ""; width: 8px; height: 8px; flex: 0 0 auto;
+  border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform 160ms ease;
+}
+.avancadas[open] > summary::before, .ficha[open] > summary::before { transform: rotate(45deg); }
+.avancadas > summary:hover, .ficha > summary:hover { color: var(--ink); }
+.avancadas-corpo, .ficha-corpo { padding: 4px 14px 16px; display: grid; gap: 16px; }
+.ficha { margin-top: 12px; }
+.ficha-corpo { font-size: 14px; }
+.ficha-corpo dl { margin-top: 0; }
+
 @media (max-width: 900px) {
-  /* Mobile: configurações antes do upload (a aside já vem primeiro no HTML). */
   .tool-page { padding: 20px 16px 56px; }
-  .tool-grid { grid-template-columns: minmax(0, 1fr); }
-  .tool-head h1 { font-size: 22px; }
+  .tool-head h1 { font-size: 22px; width: 100%; }
 }
 
 /* ---------- Etapas ---------- */
-.stepper { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0 0 20px; }
+.stepper { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 0; }
 .stepper li { display: flex; align-items: center; gap: 9px; padding: 9px 15px; border-radius: 999px; background: var(--surface); color: var(--muted); border: 1px solid var(--border); font-size: 14.5px; font-weight: 600; }
-.stepper li.active { background: var(--ink); color: var(--brand-ink); border-color: var(--ink); }
+.stepper li.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 .stepper li.done { background: var(--success-background); color: var(--success); border-color: var(--success-line); }
 .stepper .step-num { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--surface-2); color: var(--muted); font-size: 11.5px; font-weight: 700; flex-shrink: 0; }
 .stepper li.active .step-num { background: rgba(255, 255, 255, 0.22); color: #fff; }
@@ -66,6 +119,8 @@ input[aria-invalid="true"] { border-color: var(--err); outline: 2px solid var(--
 .hint.err { color: var(--err); font-weight: 600; }
 .hint a { text-decoration: underline; }
 .hint.explain { margin: 12px 0 0; padding: 12px 14px; border-radius: var(--radius-sm); background: var(--info-bg); border: 1px solid var(--info-line); color: var(--text-secondary); }
+/* Dentro do cartão de destino a explicação é texto solto: card dentro de card polui. */
+.destino .hint.explain { margin: 10px 0 0; padding: 0; background: none; border: 0; }
 .hint.explain strong { color: var(--ink); }
 
 /* ---------- Regra escolhida ---------- */
@@ -74,7 +129,6 @@ input[aria-invalid="true"] { border-color: var(--err); outline: 2px solid var(--
 .rule-info .rule-name { font-weight: 600; line-height: 1.45; }
 .rule-info .rule-name .sub { color: var(--muted); font-weight: 400; }
 .rule-info dl { margin: 12px 0 0; display: grid; gap: 9px; padding: 14px; border-radius: var(--radius-sm); background: var(--surface-3); border: 1px solid var(--border); }
-.hero-card .rule-info dl { margin: 0; }
 .rule-info dl > div { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
 .rule-info dt { color: var(--muted); }
 .rule-info dd { margin: 0; font-weight: 700; text-align: right; color: var(--text); }
@@ -138,3 +192,13 @@ input[aria-invalid="true"] { border-color: var(--err); outline: 2px solid var(--
 .overall { display: grid; gap: 6px; }
 
 .note.spaced, .hint.spaced { margin-top: 12px; }
+
+/* Confirmação do tribunal herdado de uma página de tribunal (só aparece quando veio por link). */
+.destino-herdado {
+  max-width: 760px; margin: 16px auto 0; padding: 10px 14px; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent); font-size: 14.5px; line-height: 1.45;
+}
+@media (max-width: 560px) { .destino-herdado { border-radius: var(--radius-sm); } }
+
+/* Na primeira tela o aviso de falha do motor aparece centralizado, abaixo do upload. */
+.landing .engine-status, .tool-vazia .engine-status { max-width: 760px; margin: 16px auto 0; text-align: left; }
