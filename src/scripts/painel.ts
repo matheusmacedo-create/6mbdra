@@ -161,15 +161,21 @@ function serie(dias: Dia[]): DocumentFragment {
   return caixa
 }
 
+interface Etapa {
+  chave: string
+  titulo: string
+  /** Etapa que dá para pular (quem digita um limite manual não escolhe tribunal): não conta perda. */
+  opcional?: boolean
+}
 /** Etapas do funil, na ordem em que acontecem. */
-const ETAPAS: Array<[string, string]> = [
-  ['acesso', 'Abriu o site'],
-  ['abriu_ferramenta', 'Abriu a ferramenta'],
-  ['regra_selecionada', 'Escolheu o tribunal'],
-  ['arquivo_adicionado', 'Trouxe arquivos'],
-  ['lote_iniciado', 'Mandou preparar'],
-  ['arquivo_resultado', 'Teve arquivo pronto'],
-  ['download', 'Baixou'],
+const ETAPAS: Etapa[] = [
+  { chave: 'acesso', titulo: 'Abriu o site' },
+  { chave: 'abriu_ferramenta', titulo: 'Abriu a ferramenta' },
+  { chave: 'regra_selecionada', titulo: 'Escolheu o tribunal', opcional: true },
+  { chave: 'arquivo_adicionado', titulo: 'Trouxe arquivos' },
+  { chave: 'lote_iniciado', titulo: 'Mandou preparar' },
+  { chave: 'arquivo_resultado', titulo: 'Teve arquivo pronto' },
+  { chave: 'download', titulo: 'Baixou' },
 ]
 
 /** Funil por visitante: quantas pessoas chegaram a cada etapa e quantas sobraram da anterior. */
@@ -181,22 +187,28 @@ function funil(linhas: Linha[]): DocumentFragment {
     caixa.append(elemento('p', 'vazio', 'Ainda não há acessos para montar o funil.'))
     return caixa
   }
+  // A perda é sempre medida contra a última etapa obrigatória: pular uma etapa opcional não é desistir.
   let anterior = topo
-  for (const [chave, titulo] of ETAPAS) {
+  for (const { chave, titulo, opcional } of ETAPAS) {
     const v = por.get(chave) ?? 0
-    const etapa = elemento('div', 'etapa')
+    const etapa = elemento('div', 'etapa' + (opcional ? ' opcional' : ''))
     const cabeca = elemento('div', 'cabeca')
-    cabeca.append(elemento('span', 'nome', titulo), elemento('span', 'valor', `${num(v)} (${porcentagem(v, topo)})`))
+    cabeca.append(
+      elemento('span', 'nome', opcional ? `${titulo} (opcional)` : titulo),
+      elemento('span', 'valor', `${num(v)} (${porcentagem(v, topo)})`),
+    )
     const trilho = elemento('div', 'trilho')
     const barra = elemento('span', 'preenchida')
     barra.style.width = `${Math.round((v / topo) * 100)}%`
     trilho.append(barra)
     etapa.append(cabeca, trilho)
-    if (chave !== 'acesso') {
+    if (opcional) {
+      etapa.append(elemento('span', 'perda', 'quem digita o limite na mão não passa por aqui'))
+    } else if (chave !== 'acesso') {
       const perda = anterior - v
       etapa.append(elemento('span', 'perda', perda > 0 ? `${num(perda)} não passaram desta etapa` : 'ninguém se perdeu aqui'))
+      anterior = v
     }
-    anterior = v
     caixa.append(etapa)
   }
   return caixa

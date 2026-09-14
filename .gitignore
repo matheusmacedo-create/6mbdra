@@ -9,3 +9,6 @@ test-results/
 scratch/
 .astro/
 .wrangler/
+# Segredos do `wrangler dev` (PAINEL_TOKEN, SAL_VISITANTE). Nunca versionar.
+.dev.vars
+.dev.vars.*
