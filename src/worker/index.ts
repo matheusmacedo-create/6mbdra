@@ -142,7 +142,7 @@ async function painel(req: Request, env: Env): Promise<Response> {
   const desde = diaSaoPaulo(new Date(Date.now() - (dias - 1) * 86_400_000))
 
   const q = (sql: string) => env.METRICAS.prepare(sql).bind(desde)
-  const [porDia, resumo, funil, entradas, tamanhos, motor, situacoes, erros, tribunais, paginas, origens, dispositivos, ultimos, rastPorDia, rastPorTipo] = await env.METRICAS.batch([
+  const [porDia, resumo, totais, funil, entradas, tamanhos, motor, situacoes, erros, tribunais, paginas, origens, dispositivos, ultimos, rastPorDia, rastPorTipo] = await env.METRICAS.batch([
     q(`SELECT dia,
               SUM(nome = 'acesso') AS acessos,
               COUNT(DISTINCT visitante) AS visitantes,
@@ -160,6 +160,35 @@ async function painel(req: Request, env: Env): Promise<Response> {
               COUNT(*) FILTER (WHERE nome = 'download') AS downloads,
               COALESCE(SUM(quantidade) FILTER (WHERE nome = 'lote_iniciado'), 0) AS arquivos_enfileirados
        FROM eventos WHERE dia >= ?1`),
+    /*
+     * Totais desde o primeiro dia, ignorando o filtro de período — é a pergunta "quanto já rodou
+     * até hoje", que o recorte de 30 dias nunca responde.
+     *
+     * Duas honestidades embutidas nos nomes:
+     *
+     * 1. "visitas" e não "usuários". O hash de visitante inclui o dia (ver hashVisitante), então
+     *    a mesma pessoa voltando em três dias vira três valores distintos. Somar isso dá
+     *    visitante-dia, não gente. Como não guardamos cookie nem identificador que atravesse o
+     *    dia, pessoa única é um número que este banco não tem — e inventá-lo seria mentir.
+     * 2. "páginas lidas" vem de arquivo_analisado, a leitura prévia no navegador: conta páginas de
+     *    documento que passaram pela ferramenta, não páginas do site.
+     *
+     * Custo: varre a tabela inteira a cada carga do painel. Aceitável no volume atual; se um dia
+     * doer, o caminho é uma tabela de totais escrita por dia fechado, não um recorte aqui.
+     */
+    env.METRICAS.prepare(
+      `SELECT MIN(dia) AS primeiro_dia,
+              COUNT(DISTINCT dia) AS dias_com_registro,
+              COUNT(*) FILTER (WHERE nome = 'acesso') AS acessos,
+              COUNT(DISTINCT visitante) AS visitas,
+              COUNT(*) FILTER (WHERE nome = 'lote_iniciado') AS lotes,
+              COUNT(*) FILTER (WHERE nome = 'arquivo_resultado') AS arquivos,
+              COUNT(*) FILTER (WHERE nome = 'arquivo_resultado' AND situacao <> 'acima_do_limite') AS arquivos_ok,
+              COUNT(*) FILTER (WHERE nome = 'download') AS downloads,
+              COUNT(*) FILTER (WHERE nome = 'erro') AS erros,
+              COALESCE(SUM(paginas) FILTER (WHERE nome = 'arquivo_analisado'), 0) AS paginas
+       FROM eventos`,
+    ),
     // Funil por visitante: em quantas pessoas cada etapa sobreviveu (não quantas vezes aconteceu).
     q(`SELECT nome, COUNT(DISTINCT visitante) AS visitantes, COUNT(*) AS n
        FROM eventos
@@ -187,6 +216,7 @@ async function painel(req: Request, env: Env): Promise<Response> {
     desde,
     dias,
     resumo: resumo.results?.[0] ?? {},
+    totais: totais.results?.[0] ?? {},
     funil: funil.results ?? [],
     entradas: entradas.results ?? [],
     tamanhos: tamanhos.results ?? [],

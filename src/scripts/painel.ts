@@ -19,6 +19,20 @@ interface Resumo {
   arquivos_enfileirados?: number
 }
 
+/** Totais desde o primeiro registro. Não muda com o seletor de período. */
+interface Totais {
+  primeiro_dia?: string | null
+  dias_com_registro?: number
+  acessos?: number
+  visitas?: number
+  lotes?: number
+  arquivos?: number
+  arquivos_ok?: number
+  downloads?: number
+  erros?: number
+  paginas?: number
+}
+
 interface Dia {
   dia: string
   acessos: number
@@ -36,6 +50,7 @@ interface Dados {
   desde: string
   dias: number
   resumo: Resumo
+  totais: Totais
   porDia: Dia[]
   funil: Linha[]
   rastPorDia: Linha[]
@@ -77,6 +92,7 @@ const ROTULOS: Record<string, string> = {
   falhou: 'Não carregou',
   sem_suporte: 'Navegador sem suporte',
   otimizado: 'Compactado dentro do limite',
+  mantido: 'Já cabia, devolvido intacto',
   dividido: 'Dividido em partes',
   acima_do_limite: 'Não coube no limite',
   arquivo_resultado: 'Arquivo preparado',
@@ -234,8 +250,42 @@ function porcentagem(parte: number, total: number): string {
   return `${Math.round((parte / total) * 100)}%`
 }
 
+/** Data por extenso curta, para "desde 14 de setembro de 2026". */
+const porExtenso = new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', day: 'numeric', month: 'long', year: 'numeric' })
+
+function dataLonga(iso: string): string {
+  const [a, m, dia] = iso.split('-').map(Number)
+  return porExtenso.format(new Date(Date.UTC(a, m - 1, dia, 12)))
+}
+
+/**
+ * Totais de sempre.
+ *
+ * Os rótulos aqui são escolhidos com cuidado. "Visitas" e não "usuários": o identificador de
+ * visitante é um hash que muda todo dia (é assim que o site não segue ninguém), então a mesma
+ * pessoa voltando na semana seguinte conta de novo. O número honesto que temos é visitante-dia, e
+ * é esse que o cartão diz — com a ressalva escrita embaixo, não escondida.
+ */
+function desenharTotais(t: Totais) {
+  const caixa = $('#totais')
+  const arquivos = t.arquivos ?? 0
+  const paginas = t.paginas ?? 0
+  caixa.replaceChildren(
+    kpi('Arquivos processados', num(arquivos), `${num(t.arquivos_ok)} ficaram dentro do limite`),
+    kpi('Páginas de PDF lidas', num(paginas), arquivos ? `${num(Math.round(paginas / Math.max(1, arquivos)))} páginas por arquivo, em média` : 'nenhum documento ainda'),
+    kpi('Visitas', num(t.visitas), 'quem volta outro dia conta de novo — não seguimos ninguém entre dias'),
+    kpi('Acessos a páginas', num(t.acessos), `${num(t.downloads)} downloads · ${num(t.lotes)} lotes`),
+  )
+
+  const dias = t.dias_com_registro ?? 0
+  $('#totais-periodo').textContent = t.primeiro_dia
+    ? `Tudo que o site já registrou, desde ${dataLonga(t.primeiro_dia)} — ${dias} ${dias === 1 ? 'dia' : 'dias'} com movimento. Este bloco não muda quando você troca o período abaixo.`
+    : 'Ainda não há nada registrado. Os números aparecem assim que a primeira pessoa usar a ferramenta.'
+}
+
 function desenhar(d: Dados) {
   const r = d.resumo ?? {}
+  desenharTotais(d.totais ?? {})
   const kpis = $('#kpis')
   kpis.replaceChildren(
     kpi('Acessos', num(r.acessos), `${num(r.visitantes)} visitantes distintos`),

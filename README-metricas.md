@@ -13,10 +13,36 @@ Duas camadas independentes. A primeira sempre funciona; a segunda só existe se 
   `POST /api/e` (`src/scripts/metricas.ts`); o Worker valida e grava
   (`src/worker/index.ts`).
 
-O que o painel mostra: acessos e visitantes por dia, funil do acesso ao download,
-o estado em que os PDFs chegam, tamanho dos originais, resultado do processamento,
-motivos de erro, tribunais escolhidos, páginas, origens, dispositivo e os últimos
-eventos.
+O painel tem dois blocos, e a diferença entre eles importa:
+
+**Desde o começo** (no topo, não muda com o seletor de período). Os totais de
+tudo que o site já registrou: arquivos processados, páginas de PDF lidas, visitas
+e acessos, com a data do primeiro registro.
+
+**No período escolhido** (7, 30 ou 90 dias). Acessos e visitantes por dia, funil
+do acesso ao download, o estado em que os PDFs chegam, tamanho dos originais,
+resultado do processamento, motivos de erro, tribunais escolhidos, páginas,
+origens, dispositivo e os últimos eventos.
+
+### Por que o painel diz "visitas" e não "usuários"
+
+Porque é o número que este banco tem. O identificador de visitante inclui o dia
+(veja `hashVisitante`), então a mesma pessoa voltando na semana seguinte gera um
+valor diferente e conta de novo. Somando o histórico inteiro, o que sai é
+visitante-dia.
+
+Pessoa única exigiria um identificador que atravessasse os dias — cookie ou
+equivalente —, que é exatamente o que decidimos não ter. Então o cartão diz
+"Visitas", com a ressalva escrita embaixo dele. Se você precisar de pessoas
+únicas algum dia, o caminho honesto é o GA4 (camada 2), não um rótulo novo em
+cima do mesmo número.
+
+Duas leituras a mais, para não errar o gráfico:
+
+- **"Páginas de PDF lidas"** são páginas de documento que passaram pela
+  ferramenta, não páginas do site.
+- **"Arquivos processados"** conta todo arquivo que saiu do motor, incluindo os
+  que já cabiam no limite e foram devolvidos intactos (`mantido`).
 
 ### Privacidade
 

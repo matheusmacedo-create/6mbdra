@@ -363,6 +363,9 @@ export function useJobQueue(process: ProcessSettings, onEngineStatus?: (s: Engin
         }
         if (result.status === 'unchanged') {
           patch({ status: 'done', stage: 'Mantido', progress: 1, finishedAt, outputs: [], warnings: [], contentUntouched: true })
+          // Também é um arquivo que a ferramenta resolveu: o original já cabia e foi devolvido intacto.
+          // Sem este registro o total de arquivos preparados ficava menor que o real.
+          track('arquivo_resultado', { situacao: 'mantido', faixa: sizeBucket(next.originalSize), partes: 1, segundos: Math.round((finishedAt - startedAt) / 1000) })
         } else if (result.status === 'over') {
           patch({ status: 'error', stage: 'Acima do limite', progress: 1, finishedAt, outputs: result.outputs, level: result.level, warnings: result.warnings, error: result.warnings[result.warnings.length - 1], contentUntouched: result.contentUntouched })
           track('arquivo_resultado', { situacao: 'acima_do_limite', faixa: sizeBucket(next.originalSize) })
