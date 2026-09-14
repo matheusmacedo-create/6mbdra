@@ -38,12 +38,22 @@ describe('www vai para o endereço canônico', () => {
 describe('o Worker usa essa mesma regra', () => {
   it('redireciona antes de qualquer outra rota', () => {
     const fonte = readFileSync(join(process.cwd(), 'src', 'worker', 'index.ts'), 'utf8')
-    const corpo = /async fetch\(req: Request, env: Env\): Promise<Response> \{([\s\S]*?)\n  \},/.exec(fonte)?.[1] ?? ''
+    const corpo = /async fetch\(req: Request, env: Env,? ?[^)]*\): Promise<Response> \{([\s\S]*?)\n  \},/.exec(fonte)?.[1] ?? ''
+    expect(corpo, 'não achei o corpo do fetch do Worker').not.toBe('')
     const posRedirect = corpo.indexOf('semWww(url)')
     const posApi = corpo.indexOf("'/api/e'")
     const posAssets = corpo.indexOf('env.ASSETS.fetch')
     expect(posRedirect, 'o Worker precisa chamar semWww()').toBeGreaterThanOrEqual(0)
     expect(posRedirect, 'o redirecionamento vem antes das rotas de API').toBeLessThan(posApi)
     expect(posRedirect, 'o redirecionamento vem antes dos arquivos estáticos').toBeLessThan(posAssets)
+  })
+
+  it('conta rastreador fora do caminho da resposta', () => {
+    const fonte = readFileSync(join(process.cwd(), 'src', 'worker', 'index.ts'), 'utf8')
+    const corpo = /async fetch\(req: Request, env: Env,? ?[^)]*\): Promise<Response> \{([\s\S]*?)\n  \},/.exec(fonte)?.[1] ?? ''
+    // waitUntil: a página não espera o banco. Sem isso, D1 lento vira site lento.
+    expect(corpo, 'a contagem precisa rodar em ctx.waitUntil').toMatch(/ctx\.waitUntil\(contarRastreador/)
+    // E depois do redirecionamento, para não contar duas vezes a mesma visita (www e raiz).
+    expect(corpo.indexOf('semWww(url)')).toBeLessThan(corpo.indexOf('contarRastreador'))
   })
 })

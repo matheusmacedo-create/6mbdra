@@ -142,7 +142,7 @@ async function painel(req: Request, env: Env): Promise<Response> {
   const desde = diaSaoPaulo(new Date(Date.now() - (dias - 1) * 86_400_000))
 
   const q = (sql: string) => env.METRICAS.prepare(sql).bind(desde)
-  const [porDia, resumo, funil, entradas, tamanhos, motor, situacoes, erros, tribunais, paginas, origens, dispositivos, ultimos] = await env.METRICAS.batch([
+  const [porDia, resumo, funil, entradas, tamanhos, motor, situacoes, erros, tribunais, paginas, origens, dispositivos, ultimos, rastPorDia, rastPorTipo] = await env.METRICAS.batch([
     q(`SELECT dia,
               SUM(nome = 'acesso') AS acessos,
               COUNT(DISTINCT visitante) AS visitantes,
@@ -178,6 +178,9 @@ async function painel(req: Request, env: Env): Promise<Response> {
     q(`SELECT dispositivo, COUNT(DISTINCT visitante) AS visitantes FROM eventos WHERE dia >= ?1 GROUP BY dispositivo`),
     q(`SELECT ts, nome, situacao, categoria, faixa, tribunal, sistema, segundos, partes, quantidade, dispositivo, pais
        FROM eventos WHERE dia >= ?1 AND nome IN ('arquivo_resultado','erro','lote_concluido') ORDER BY ts DESC LIMIT 60`),
+    // Rastreamento: a evidência de que o buscador está passando, antes de o Search Console reportar.
+    q(`SELECT dia, SUM(n) AS n, COUNT(DISTINCT tipo) AS tipos FROM rastreadores WHERE dia >= ?1 GROUP BY dia ORDER BY dia`),
+    q(`SELECT bot, tipo, SUM(n) AS n FROM rastreadores WHERE dia >= ?1 GROUP BY bot, tipo ORDER BY n DESC LIMIT 40`),
   ])
 
   return json({
@@ -196,7 +199,57 @@ async function painel(req: Request, env: Env): Promise<Response> {
     origens: origens.results ?? [],
     dispositivos: dispositivos.results ?? [],
     ultimos: ultimos.results ?? [],
+    rastPorDia: rastPorDia.results ?? [],
+    rastPorTipo: rastPorTipo.results ?? [],
   })
+}
+
+/**
+ * Rastreadores que vale contar. Só os que trazem tráfego de busca — não é lista de bloqueio, é
+ * lista de quem interessa acompanhar.
+ */
+const BOTS: { padrao: RegExp; nome: string }[] = [
+  { padrao: /Googlebot-Image/i, nome: 'googlebot-imagem' },
+  { padrao: /Googlebot|Google-InspectionTool|Storebot-Google/i, nome: 'googlebot' },
+  { padrao: /bingbot|adidxbot/i, nome: 'bingbot' },
+  { padrao: /DuckDuckBot/i, nome: 'duckduckbot' },
+  { padrao: /YandexBot/i, nome: 'yandexbot' },
+  { padrao: /Applebot/i, nome: 'applebot' },
+]
+
+/** Tipo da página, para o contador não crescer uma linha por URL rastreada. */
+function tipoDePagina(caminho: string): string {
+  if (caminho === '/') return 'home'
+  if (caminho.startsWith('/tribunais/')) return caminho === '/tribunais/' ? 'diretorio' : 'tribunal'
+  if (caminho.startsWith('/sistemas/')) return 'sistema'
+  if (caminho.startsWith('/guias/')) return 'guia'
+  if (/^\/(comprimir|dividir|juntar)-pdf\/$/.test(caminho)) return 'tarefa'
+  if (/^\/(metodologia|privacidade|termos|contato)\/$/.test(caminho)) return 'institucional'
+  return 'outro'
+}
+
+/**
+ * Conta uma passada de rastreador. É contador agregado (uma linha por dia/bot/tipo), e roda fora
+ * do caminho da resposta: se o banco estiver fora do ar, a página é servida do mesmo jeito.
+ */
+async function contarRastreador(req: Request, env: Env, url: URL): Promise<void> {
+  if (!env.METRICAS) return
+  const ua = req.headers.get('user-agent') ?? ''
+  const bot = BOTS.find((b) => b.padrao.test(ua))
+  if (!bot) return
+  // Só página; asset rastreado não diz nada sobre indexação.
+  if (/\.[a-z0-9]{2,5}$/i.test(url.pathname) && !url.pathname.endsWith('.txt') && !url.pathname.endsWith('.xml')) return
+  const dia = diaSaoPaulo(new Date())
+  try {
+    await env.METRICAS.prepare(
+      `INSERT INTO rastreadores (dia, bot, tipo, n) VALUES (?1, ?2, ?3, 1)
+       ON CONFLICT(dia, bot, tipo) DO UPDATE SET n = n + 1`,
+    )
+      .bind(dia, bot.nome, tipoDePagina(url.pathname))
+      .run()
+  } catch {
+    // Contar rastreador nunca pode atrapalhar quem está lendo o site.
+  }
 }
 
 /**
@@ -214,10 +267,12 @@ function semWww(url: URL): Response | null {
 }
 
 export default {
-  async fetch(req: Request, env: Env): Promise<Response> {
+  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url)
     const redirecionamento = semWww(url)
     if (redirecionamento) return redirecionamento
+    // Fora do caminho da resposta: a página não espera o banco.
+    if (req.method === 'GET') ctx.waitUntil(contarRastreador(req, env, url))
     if (url.pathname === '/api/e' && req.method === 'POST') return registrar(req, env)
     if (url.pathname === '/api/painel' && req.method === 'GET') return painel(req, env)
     if (url.pathname.startsWith('/api/')) return json({ erro: 'não encontrado' }, 404)

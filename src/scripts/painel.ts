@@ -38,6 +38,8 @@ interface Dados {
   resumo: Resumo
   porDia: Dia[]
   funil: Linha[]
+  rastPorDia: Linha[]
+  rastPorTipo: Linha[]
   entradas: Linha[]
   tamanhos: Linha[]
   motor: Linha[]
@@ -52,6 +54,19 @@ interface Dados {
 
 /** Nomes técnicos que aparecem no banco, traduzidos para quem lê o painel. */
 const ROTULOS: Record<string, string> = {
+  home: 'Página inicial',
+  tribunal: 'Página de tribunal',
+  diretorio: 'Diretório de tribunais',
+  sistema: 'Página de sistema',
+  guia: 'Guia',
+  tarefa: 'Página de tarefa',
+  institucional: 'Institucional',
+  googlebot: 'Google',
+  'googlebot-imagem': 'Google (imagens)',
+  bingbot: 'Bing',
+  duckduckbot: 'DuckDuckGo',
+  yandexbot: 'Yandex',
+  applebot: 'Apple',
   ok: 'Legível, sem travas',
   senha: 'Exige senha para abrir',
   assinado: 'Assinado digitalmente',
@@ -233,6 +248,14 @@ function desenhar(d: Dados) {
 
   $('#serie').replaceChildren(serie(d.porDia ?? []))
   $('#funil').replaceChildren(funil(d.funil ?? []))
+  $('#rastreadores').replaceChildren(
+    tabela(['Rastreador', 'Tipo de página', 'Passadas'], ['bot', 'tipo', 'n'], d.rastPorTipo ?? [], 'Nenhum rastreador passou por aqui ainda.'),
+  )
+  const totalRast = (d.rastPorDia ?? []).reduce((soma, l) => soma + (Number(l.n) || 0), 0)
+  const diasComRast = (d.rastPorDia ?? []).length
+  $('#rastreio-resumo').textContent = totalRast
+    ? `${num(totalRast)} páginas rastreadas no período, em ${diasComRast} ${diasComRast === 1 ? 'dia' : 'dias'}.`
+    : 'Ainda não houve passada de rastreador registrada. É o normal nos primeiros dias depois de publicar.'
   $('#entradas').replaceChildren(
     tabela(['Como o PDF chegou', 'Arquivos', 'Páginas (média)'], ['situacao', 'n', 'paginas'], d.entradas ?? [], 'Ninguém trouxe arquivos ainda.'),
   )

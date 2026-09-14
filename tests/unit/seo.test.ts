@@ -15,7 +15,7 @@ describe('páginas de sistema', () => {
   it('cobre os sistemas usados por mais de um tribunal', () => {
     const porSlug = new Map<string, Set<string>>()
     for (const r of REGRAS.regras) {
-      if (r.situacao === 'revogada') continue
+      if (r.situacao === 'substituida') continue
       const s = slugSistema(r)
       const set = porSlug.get(s) ?? new Set<string>()
       for (const sigla of [r.tribunal_sigla, ...(r.abrange ?? [])]) set.add(sigla)
