@@ -2,6 +2,8 @@
 import Base from '../../layouts/Base.astro'
 import { contextoCurto, formatLimite, idPagina, limiteBytes, metaBytes, mostrarBytesDoLimite, paginasDeRegras, percentualMeta, regrasDoTribunal, rotuloContexto, rotuloSistema, sistemaCurto, slugSistema, tituloRegraDoTribunal, type RegraDoTribunal } from '../../tool/lib/regras'
 import { sistemaPorSlug } from '../../tool/lib/sistemas'
+import { guiasDoTribunal } from '../../tool/lib/guias'
+import { getCollection } from 'astro:content'
 import { formatBytes, formatDate } from '../../tool/lib/format'
 import { SITE } from '../../config/site'
 
@@ -17,6 +19,23 @@ const outras = regrasDoTribunal(sigla).filter((x) => idPagina(x) !== idPagina(pa
 const linkFerramenta = herdada ? `/?regra=${regra.id}&tribunal=${encodeURIComponent(sigla)}` : `/?regra=${regra.id}`
 /** Existe página do sistema? (sistemas de um tribunal só não têm) */
 const paginaDoSistema = sistemaPorSlug(slugSistema(regra))
+
+/*
+ * Guias que interessam a QUEM PROTOCOLA NESTE tribunal. A seleção vem dos dados desta regra, então
+ * tribunal com limite apertado, com exigência de PDF/A ou com limite por página recebe lista
+ * diferente. Antes disto, nenhuma das 101 páginas de tribunal apontava para guia nenhum — 73% do
+ * site sem passar nada para o conteúdo.
+ */
+const guiasDaqui = guiasDoTribunal(
+  {
+    id: regra.id,
+    limiteMb: limiteBytes(regra) / 1_000_000,
+    exigePdfa: regra.exige_pdfa,
+    limitePorPaginaKb: regra.limite_por_pagina_kb,
+    limiteTotalPeticaoMb: regra.limite_total_peticao_mb,
+  },
+  await getCollection('guias'),
+)
 
 /*
  * Perguntas frequentes desta regra. Todas as respostas saem dos dados do próprio tribunal, então
@@ -137,6 +156,20 @@ const dadosEstruturados = {
     <div class="faq-list">
       {PERGUNTAS.map((p) => (<details><summary>{p.q}</summary><p>{p.a}</p></details>))}
     </div>
+
+    {guiasDaqui.length > 0 && (
+      <>
+        <h2>Como preparar o PDF para o {sigla}</h2>
+        <ul class="guias-do-tribunal">
+          {guiasDaqui.map(({ guia, motivo }) => (
+            <li>
+              <a href={`/guias/${guia.id}/`}>{guia.data.title}</a>
+              <p>{motivo}</p>
+            </li>
+          ))}
+        </ul>
+      </>
+    )}
 
     {outras.length > 0 && (
       <>

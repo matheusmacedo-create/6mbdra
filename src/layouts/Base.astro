@@ -124,6 +124,18 @@ const LINKS: NavLink[] = [
           <a href="/tribunais/">Limites por tribunal</a>
           <a href="/guias/">Guias</a>
         </nav>
+        {/*
+          Três guias no rodapé, e não os 22. Link de rodapé repetido em todas as páginas é
+          boilerplate: o buscador desconta, e uma lista que cresce todo dia (há rotina criando
+          guias) deixaria o rodapé ilegível. O peso de verdade vem dos blocos contextuais nas
+          páginas de tribunal e no fim de cada guia, onde o link tem motivo escrito ao lado.
+          Aqui ficam só as três portas de entrada de maior intenção de busca.
+        */}
+        <nav aria-label="Guias mais procurados" class="rodape-guias">
+          <a href="/guias/o-sistema-recusou-meu-pdf-causas-e-solucoes/">O sistema recusou meu PDF</a>
+          <a href="/guias/limite-por-arquivo-pagina-e-peticao/">Limite por arquivo, página e petição</a>
+          <a href="/guias/checklist-antes-de-protocolar-anexos-em-pdf/">Checklist antes de protocolar</a>
+        </nav>
         <nav aria-label="Rodapé">
           <a href="/#seguranca">Segurança</a>
           <a href="/privacidade/">Privacidade</a>

@@ -42,6 +42,58 @@ pergunta que antes ficava sem resposta:
 Sistemas usados por **um** tribunal só (e-STF, CPE, JPe-Themis, SPE/SRRE) **não** ganham página:
 seria duplicata da página daquele tribunal. Há teste que quebra se alguém criar uma.
 
+## Malha de links internos
+
+Medição feita sobre o site construído, com 22 guias no ar: **seis guias tinham um
+único link de entrada** (o do índice) e **nenhuma das 101 páginas de tribunal
+apontava para guia nenhum**. Ou seja, 73% das páginas do site não passavam nada
+para o conteúdo — e a rotina diária estava produzindo mais guias para o mesmo
+buraco.
+
+Três ligações, em `src/tool/lib/guias.ts`:
+
+**Página de tribunal → guias** (`guiasDoTribunal`). A escolha sai dos dados
+daquele tribunal: exige PDF/A, tem limite por página, tem limite por petição, o
+teto é apertado ou folgado. Cada link vem com o motivo escrito ao lado — é o que
+separa um bloco útil de uma lista de links.
+
+Os guias que valem em qualquer tribunal (checklist, recusa, OCR, nomes de
+arquivo) são escolhidos por **rotação estável pelo id do tribunal**. Sem isso,
+77 páginas mostrariam o mesmo bloco, que é o boilerplate que o buscador desconta.
+A rotação é determinística: o mesmo tribunal dá sempre o mesmo resultado, então
+o bloco não muda sozinho entre deploys.
+
+**Guia → guias** (`relacionados`). Por etiquetas em comum, normalizadas (as tags
+foram escritas por sessões diferentes e vêm com "PDF"/"pdf", "PJe"/"pje",
+"peticionamento"/"peticionamento eletrônico"). Escala sozinho: guia novo entra na
+malha no mesmo build, sem ninguém editar lista nenhuma — o que importa porque há
+uma rotina criando guias todo dia.
+
+**Índice por tema** (`porTema`). Lista plana de 22 itens não diz o que o site
+cobre. Agrupado, vira mapa. Guia que não casa com tema nenhum cai em "Outros",
+nunca some.
+
+### Por que o rodapé tem 3 guias, e não 22
+
+Link de rodapé é igual em todas as páginas — é a definição de boilerplate, e o
+buscador desconta. Uma lista que cresce todo dia também deixaria o rodapé
+ilegível para quem usa o site. No rodapé ficam só as três portas de entrada de
+maior intenção de busca; o peso real vem dos blocos contextuais, onde cada link
+tem motivo escrito e as páginas mostram conjuntos diferentes.
+
+### O resultado, medido
+
+| | antes | depois |
+|---|---:|---:|
+| Guias alcançáveis só pelo índice | 6 | **0** |
+| Páginas de tribunal que linkam guias | 0 de 101 | **100 de 100** |
+| Combinações distintas de bloco | — | **26** |
+
+`tests/unit/ligacao.test.ts` trava as propriedades, não os números: nenhum guia
+órfão, toda página de tribunal aponta para guias, os blocos variam, e todo slug
+citado no código existe de verdade (renomear um guia sem ajustar quebra o teste
+em vez de derrubar o link em 100 páginas silenciosamente).
+
 ## Mapa de palavras-chave
 
 Uma intenção por página. Duas páginas mirando o mesmo termo competem entre si (canibalização) e

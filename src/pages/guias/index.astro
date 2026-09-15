@@ -1,20 +1,69 @@
 ---
 import Base from '../../layouts/Base.astro'
 import { getCollection } from 'astro:content'
-const guias = (await getCollection('guias')).sort((a, b) => a.data.title.localeCompare(b.data.title, 'pt-BR'))
+import { porTema } from '../../tool/lib/guias'
+import { SITE } from '../../config/site'
+
+const guias = await getCollection('guias')
+const temas = porTema(guias)
+
+/*
+ * Lista plana de 22 itens — e crescendo todo dia, porque há uma rotina criando guias — não diz a
+ * ninguém o que o site cobre. Agrupado por tema, a página vira um mapa: o leitor acha o problema
+ * dele, e o buscador vê um assunto tratado com profundidade em vez de páginas soltas.
+ */
+const dados = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'CollectionPage',
+      name: 'Guias de preparação de PDFs para o protocolo eletrônico',
+      description: 'Como compactar, dividir e digitalizar documentos para o peticionamento eletrônico.',
+      inLanguage: 'pt-BR',
+      isAccessibleForFree: true,
+      mainEntityOfPage: new URL('/guias/', SITE.url).href,
+      hasPart: guias.map((g) => ({
+        '@type': 'Article',
+        headline: g.data.title,
+        description: g.data.description,
+        url: new URL(`/guias/${g.id}/`, SITE.url).href,
+      })),
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Início', item: SITE.url },
+        { '@type': 'ListItem', position: 2, name: 'Guias', item: new URL('/guias/', SITE.url).href },
+      ],
+    },
+  ],
+}
 ---
-<Base title="Guias de preparação de PDFs para o protocolo eletrônico" description="Como compactar, dividir e digitalizar documentos para o peticionamento eletrônico, em linguagem simples." path="/guias/">
+<Base
+  title="Guias de preparação de PDFs para o protocolo eletrônico"
+  description="Como compactar, dividir e digitalizar documentos para o peticionamento eletrônico, em linguagem simples."
+  path="/guias/"
+>
+  <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
   <main class="page prose">
     <h1>Guias</h1>
-    <p class="lead">Explicações práticas, sem jargão, para quem precisa protocolar sem dor de cabeça.</p>
+    <p class="lead">
+      Explicações práticas, sem jargão, para quem precisa protocolar sem dor de cabeça. {guias.length} guias, agrupados pelo problema que resolvem.
+    </p>
     {guias.length === 0 && <p>Em breve.</p>}
-    <ul class="grid-cards">
-      {guias.map((g) => (
-        <li>
-          <a href={`/guias/${g.id}/`}>{g.data.title}</a>
-          <p>{g.data.description}</p>
-        </li>
-      ))}
-    </ul>
+    {temas.map((t) => (
+      <section class="tema-guias">
+        <h2>{t.titulo}</h2>
+        <p class="tema-descricao">{t.descricao}</p>
+        <ul class="grid-cards">
+          {t.guias.map((g) => (
+            <li>
+              <a href={`/guias/${g.id}/`}>{g.data.title}</a>
+              <p>{g.data.description}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
   </main>
 </Base>

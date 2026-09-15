@@ -3,12 +3,14 @@ import Base from '../../layouts/Base.astro'
 import { getCollection, render } from 'astro:content'
 import { formatDate } from '../../tool/lib/format'
 import { SITE } from '../../config/site'
+import { relacionados } from '../../tool/lib/guias'
 
 export async function getStaticPaths() {
   const guias = await getCollection('guias')
-  return guias.map((g) => ({ params: { slug: g.id }, props: { guia: g } }))
+  return guias.map((g) => ({ params: { slug: g.id }, props: { guia: g, todos: guias } }))
 }
-const { guia } = Astro.props
+const { guia, todos } = Astro.props
+const proximos = relacionados(guia, todos)
 const { Content } = await render(guia)
 const updated = guia.data.updated.toISOString().slice(0, 10)
 
@@ -49,6 +51,19 @@ const dados = {
     <p class="lead">{guia.data.description}</p>
     <p><small>Atualizado em {formatDate(updated)}. {guia.data.tags.map((t) => <span class="tag">{t}</span>)}</small></p>
     <Content />
+    {proximos.length > 0 && (
+      <nav class="relacionados" aria-label="Guias relacionados">
+        <h2>Continue por aqui</h2>
+        <ul>
+          {proximos.map((g) => (
+            <li>
+              <a href={`/guias/${g.id}/`}>{g.data.title}</a>
+              <p>{g.data.description}</p>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    )}
     <div class="callout">
       Precisa preparar PDFs agora? Use a <a href="/">ferramenta gratuita</a>: ela compacta e divide os arquivos no seu navegador, sem enviar nada.
     </div>

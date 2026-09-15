@@ -304,7 +304,29 @@ tr.sem-regra td { color: var(--muted); }
 
 /* Primeira linha do rodapé: as páginas de tarefa e de limites, presentes em todo o site. */
 .site-footer .rodape-ferramentas a { color: var(--text-secondary); }
-.site-footer .rodape-ferramentas + nav { padding-top: 12px; border-top: 1px solid var(--border); }
+/*
+ * A regra separadora é por posição, e não `.rodape-ferramentas + nav`: aquele seletor casava só o
+ * vizinho imediato, então inserir a linha de guias no meio movia a divisória de lugar e deixava a
+ * última linha sem ela. `~ nav` pega todas as seguintes.
+ */
+.site-footer .rodape-ferramentas ~ nav { padding-top: 12px; border-top: 1px solid var(--border); }
+.site-footer .rodape-guias a { color: var(--text-secondary); font-size: 14.5px; }
+
+/* Bloco de guias no fim de um guia e na página de tribunal: o motivo do link vale mais que o link. */
+.relacionados { margin: 32px 0 8px; }
+.relacionados h2 { margin-bottom: 4px; }
+.relacionados ul, .guias-do-tribunal { list-style: none; padding: 0; display: grid; gap: 12px; }
+.relacionados li, .guias-do-tribunal li {
+  padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+}
+.relacionados li a, .guias-do-tribunal li a { font-weight: 700; color: var(--text); }
+.relacionados li a:hover, .guias-do-tribunal li a:hover { color: var(--ink-2); }
+.relacionados li p, .guias-do-tribunal li p { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
+
+/* Índice de guias agrupado por tema. */
+.tema-guias { margin: 28px 0; }
+.tema-guias h2 { margin-bottom: 2px; }
+.tema-descricao { margin: 0 0 14px; color: var(--muted); }
 .mais-sobre { margin: 18px 0 0; font-size: 15px; color: var(--muted); }
 .mais-sobre a { color: var(--accent); font-weight: 600; text-decoration: underline; }
 
