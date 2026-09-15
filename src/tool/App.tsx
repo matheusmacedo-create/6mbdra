@@ -6,7 +6,7 @@ import { Options } from './components/Options'
 import { RuleSelector } from './components/RuleSelector'
 import { BatchList } from './components/BatchList'
 import { Stepper, type Phase } from './components/Stepper'
-import { formatBytes } from './lib/format'
+import { formatBytes, mbToBytes } from './lib/format'
 import { deviceCapacityWarning, resolveSettings } from './lib/limits'
 import { formatLimite, regraPorId, rotuloSistema, tribunalPorSigla } from './lib/regras'
 import { downloadZipEntries } from './lib/download'
@@ -23,10 +23,10 @@ const LEGACY_STORAGE_KEY = '6mb:settings:v2'
 
 type View = 'home' | 'tool'
 
-/** A URL pede a ferramenta? (?view=tool, ou link de página de tribunal com ?regra=) */
+/** A URL pede a ferramenta? (?view=tool, ou link de página de tribunal/tamanho com ?regra= ou ?limiteMb=) */
 function initialView(): View {
   try {
-    return /[?&](view=tool|regra=)/.test(window.location.search) ? 'tool' : 'home'
+    return /[?&](view=tool|regra=|limiteMb=)/.test(window.location.search) ? 'tool' : 'home'
   } catch {
     return 'home'
   }
@@ -38,6 +38,8 @@ function initialView(): View {
  * promessa feita na página do tribunal some sem explicação.
  */
 let regraVeioDaUrl = false
+/** O mesmo, para quem chega de uma página de tamanho-alvo (/comprimir-pdf-para-1mb/ → ?limiteMb=1). */
+let limiteVeioDaUrl = false
 
 function loadSettings(): Settings {
   let s = DEFAULT_SETTINGS
@@ -58,6 +60,14 @@ function loadSettings(): Settings {
       s = { ...s, ruleId: r.id, tribunal }
       regraVeioDaUrl = true
       track('regra_selecionada', { tribunal: tribunal ?? r.tribunal_sigla, sistema: r.sistema, origem: 'pagina' })
+    } else {
+      // ?limiteMb=<decimal> vindo das páginas de tamanho-alvo (/comprimir-pdf-para-1mb/, etc.)
+      const lm = Number((params.get('limiteMb') ?? '').replace(',', '.'))
+      if (Number.isFinite(lm) && lm > 0 && lm <= 1000) {
+        s = { ...s, ruleId: null, customMb: lm }
+        limiteVeioDaUrl = true
+        track('regra_selecionada', { origem: 'pagina_tamanho', limiteMb: lm })
+      }
     }
   } catch {
     // sem window (SSR) ou URL inválida
@@ -388,6 +398,11 @@ export default function App() {
       <p className="destino-herdado">
         Destino já escolhido: <strong>{settings.tribunal ?? regraAtual.tribunal_sigla} · {rotuloSistema(regraAtual)}</strong> — limite{' '}
         {formatLimite(regraAtual)}. Dá para trocar depois de escolher os arquivos.
+      </p>
+    ) : limiteVeioDaUrl ? (
+      <p className="destino-herdado">
+        Destino já escolhido: <strong>limite de {formatBytes(mbToBytes(settings.customMb))} por arquivo</strong>. Dá para trocar depois de escolher os
+        arquivos.
       </p>
     ) : null
 

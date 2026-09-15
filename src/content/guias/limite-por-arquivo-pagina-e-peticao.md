@@ -58,4 +58,5 @@ Em todos os casos a preparação mira um pouco abaixo do valor declarado. O moti
 
 - [O sistema recusou meu PDF](/guias/o-sistema-recusou-meu-pdf-causas-e-solucoes/) — a lista completa de causas
 - [Dividir PDF por tamanho](/dividir-pdf/) — quando a compressão não basta
+- [Comprimir PDF para 300 KB](/comprimir-pdf-para-300kb/) — o limite por página do e-SAJ em São Paulo, um exemplo real do segundo tipo
 - [Metodologia](/metodologia/) — como cada regra entra na base e com que frequência é conferida
