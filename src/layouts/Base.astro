@@ -1,5 +1,6 @@
 ---
 import { SITE } from '../config/site'
+import LOGO from '../../public/brpdf-logo.svg?raw'
 import '@fontsource/inter/latin-400.css'
 import '@fontsource/inter/latin-500.css'
 import '@fontsource/inter/latin-600.css'
@@ -44,7 +45,7 @@ const LINKS: NavLink[] = [
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#073381" />
+    <meta name="theme-color" content="#2e2e2e" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
@@ -73,11 +74,13 @@ const LINKS: NavLink[] = [
     <header class="site-header">
       <div class="inner">
         <a class="brand" href="/" aria-label={`${SITE.name} — página inicial`}>
-          <span class="logo" aria-hidden="true">br</span>
-          <span class="brand-text">
-            <span class="brand-name">{SITE.name}</span>
-            <span class="brand-sub">PDF Jurídico</span>
-          </span>
+          {/*
+            Logotipo embutido no HTML, e não <img src>: evita uma requisição em todas as páginas,
+            fica nítido em qualquer tela e não pisca antes de carregar. aria-hidden porque o nome
+            já está no aria-label do link — um leitor de tela anunciaria "brpdf" duas vezes.
+          */}
+          <span class="brand-logo" aria-hidden="true" set:html={LOGO} />
+          <span class="brand-sub">PDF Jurídico</span>
         </a>
         <nav class="site-nav" aria-label="Principal">
           {LINKS.map((l) => (

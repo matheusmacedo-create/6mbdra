@@ -1,1 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#002776"/><text x="32" y="42" font-family="Inter,Segoe UI,system-ui,sans-serif" font-size="27" font-weight="800" fill="#ffffff" text-anchor="middle" letter-spacing="-1">br</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!--
+    Favicon derivado da marca nova, e não um recorte dela. A marca completa (documentos + lupa) foi
+    testada em 16px e vira borrão: traço fino e contorno vazado somem nesse tamanho. O que sobrevive
+    é uma letra sólida com contraste alto — por isso o "br" na paleta nova, e não a lupa.
+  -->
+  <rect width="64" height="64" rx="14" fill="#2e2e2e"/>
+  <text x="32" y="43" font-family="Inter,Segoe UI,system-ui,sans-serif" font-size="30" font-weight="800" fill="#e6a822" text-anchor="middle" letter-spacing="-1.5">br</text>
+</svg>
