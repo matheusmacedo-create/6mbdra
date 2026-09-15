@@ -213,3 +213,27 @@ export function porTema(todos: GuiaRef[]): { titulo: string; descricao: string; 
   if (sobra.length) grupos.push({ titulo: 'Outros guias', descricao: 'Assuntos que não se encaixam nos grupos acima.', guias: sobra })
   return grupos.filter((g) => g.guias.length > 0)
 }
+
+/**
+ * Página de tamanho-alvo que corresponde a este tribunal.
+ *
+ * As sete páginas `/comprimir-pdf-para-<X>/` nasceram com UM link de entrada cada — o mesmo estado
+ * de quase-órfão que este arquivo existe para corrigir nos guias. A ponte natural é o tribunal cujo
+ * limite é exatamente aquele número: quem procura "comprimir pdf para 5 MB" e quem protocola num
+ * tribunal de 5 MB estão atrás da mesma coisa.
+ *
+ * Só casamento EXATO vale. Sugerir "comprimir para 2 MB" a quem tem teto de 3 MB seria mandar a
+ * pessoa apertar o arquivo mais do que precisa — perda de qualidade sem motivo. Por isso um
+ * tribunal de 3 MB não recebe link nenhum aqui, e tudo bem.
+ */
+export function alvoDoTribunal<T extends { slug: string; mb: number; rotulo: string; ctaRegraId?: string }>(
+  regraId: string,
+  limiteMb: number,
+  alvos: T[],
+): T | null {
+  // O alvo que aponta para esta regra ganha: é o caso das metas em KB, que são limite por página e
+  // não bateriam com o limite por arquivo comparando número com número.
+  const porRegra = alvos.find((a) => a.ctaRegraId === regraId)
+  if (porRegra) return porRegra
+  return alvos.find((a) => Math.abs(a.mb - limiteMb) < 0.001) ?? null
+}

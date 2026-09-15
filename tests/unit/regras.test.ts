@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process'
 import { REGRAS, TRIBUNAIS, idPagina, limiteBytes, metaBytes, opcoesPorRamo, paginasDeRegras, regrasDoTribunal, regrasVigentes, rotuloRegra, rotuloContexto, tituloRegra, tribunaisCobertos, type Regra } from '../../src/tool/lib/regras'
 import { resolveSettings, targetForLimit } from '../../src/tool/lib/limits'
 import { DEFAULT_SETTINGS, deriveKind, isProcessable, targetFor, isStale, type Job, type ProcessSettings } from '../../src/tool/lib/types'
-import { track } from '../../src/tool/lib/analytics'
+import { track, type EventProps } from '../../src/tool/lib/analytics'
 
 describe('regras', () => {
   it('validator script accepts the committed base', () => {
@@ -55,7 +55,10 @@ describe('regras', () => {
     const got: Array<[string, Record<string, unknown>]> = []
     ;(globalThis as unknown as { window: unknown }).window = { __analytics: (e: string, props: Record<string, unknown>) => got.push([e, props]) }
     try {
-      track('lote_iniciado', { quantidade: 3, meta_mb: 5.7, nome: 'x.pdf', filename: 'y', hash: 'abc', partes: 2 })
+      // O cast é o ponto do teste: o tipo CampoDeMedicao já barra 'nome'/'filename'/'hash' na
+      // compilação, mas o tipo some em tempo de execução. Isto prova que a peneira do track()
+      // continua segurando essas chaves mesmo quando algo as passa por fora do TypeScript.
+      track('lote_iniciado', { quantidade: 3, meta_mb: 5.7, nome: 'x.pdf', filename: 'y', hash: 'abc', partes: 2 } as EventProps)
       expect(got[0][1]).toEqual({ quantidade: 3, meta_mb: 5.7, partes: 2 })
     } finally {
       delete (globalThis as unknown as { window?: unknown }).window

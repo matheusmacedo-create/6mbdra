@@ -40,7 +40,36 @@ export type EventName =
   | 'zip_gerado'
   | 'download'
 
-export type EventProps = Record<string, string | number | boolean>
+/*
+ * Campos de medição, e só estes.
+ *
+ * O Worker grava exatamente esta lista (TEXTOS e NUMEROS em src/worker/index.ts); qualquer outra
+ * chave é descartada na entrada, em silêncio. Enquanto isto era um Record<string, …>, mandar um
+ * campo novo compilava, subia, e o valor simplesmente não chegava ao banco — foi o que aconteceu
+ * com um `limiteMb` que nunca virou linha nenhuma.
+ *
+ * Com o tipo fechado, esse erro passa a ser de compilação. Campo novo aqui exige campo novo no
+ * Worker (e coluna na migration), que é a ordem certa: o banco primeiro, o emissor depois.
+ */
+export type CampoDeMedicao =
+  // texto
+  | 'caminho'
+  | 'origem'
+  | 'tribunal'
+  | 'sistema'
+  | 'situacao'
+  | 'categoria'
+  | 'faixa'
+  | 'tipo'
+  // número
+  | 'quantidade'
+  | 'nivel'
+  | 'partes'
+  | 'segundos'
+  | 'paginas'
+  | 'meta_mb'
+
+export type EventProps = Partial<Record<CampoDeMedicao, string | number | boolean>>
 
 declare global {
   interface Window {
@@ -61,7 +90,9 @@ export function track(event: EventName, props: EventProps = {}) {
   for (const [k, v] of Object.entries(props)) {
     if (FORBIDDEN_KEYS.test(k)) continue
     if (typeof v === 'string' && v.length > 40) continue
-    safe[k] = v
+    // O tipo já restringe as chaves na compilação; este laço é a defesa em tempo de execução, que
+    // continua valendo para o que chegar de fora do TypeScript. Daí a asserção aqui.
+    safe[k as CampoDeMedicao] = v
   }
   try {
     if (typeof window === 'undefined') return

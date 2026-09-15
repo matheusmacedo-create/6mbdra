@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join, relative } from 'node:path'
-import { guiasDoTribunal, porTema, relacionados, SLUGS_CITADOS, type GuiaRef } from '../../src/tool/lib/guias'
+import { alvoDoTribunal, guiasDoTribunal, porTema, relacionados, SLUGS_CITADOS, type GuiaRef } from '../../src/tool/lib/guias'
 import regrasJson from '../../src/data/regras.json'
 
 /**
@@ -75,6 +75,29 @@ describe('guias da página de tribunal', () => {
     const poucos = [guiaFake('o-sistema-recusou-meu-pdf-causas-e-solucoes', [])]
     const r = guiasDoTribunal({ id: 'x', limiteMb: 10 }, poucos)
     expect(r.map((x) => x.guia.id)).toEqual(['o-sistema-recusou-meu-pdf-causas-e-solucoes'])
+  })
+})
+
+describe('página de tamanho-alvo ligada ao tribunal', () => {
+  const alvos = [
+    { slug: '100kb', mb: 0.1, rotulo: '100 KB', ctaRegraId: 'tjal-esaj' },
+    { slug: '5mb', mb: 5, rotulo: '5 MB' },
+    { slug: '10mb', mb: 10, rotulo: '10 MB' },
+  ]
+
+  it('casa pelo limite exato', () => {
+    expect(alvoDoTribunal('qualquer', 5, alvos)?.slug).toBe('5mb')
+  })
+
+  it('não empurra meta mais apertada que o limite real', () => {
+    // Tribunal de 3 MB não deve ver "comprimir para 2 MB": seria perder qualidade à toa.
+    expect(alvoDoTribunal('qualquer', 3, alvos)).toBeNull()
+    expect(alvoDoTribunal('qualquer', 7, alvos)).toBeNull()
+  })
+
+  it('a regra citada pelo alvo vence a comparação numérica', () => {
+    // 100 KB é limite POR PÁGINA no TJAL — não bateria comparando com o limite por arquivo.
+    expect(alvoDoTribunal('tjal-esaj', 5, alvos)?.slug).toBe('100kb')
   })
 })
 
@@ -153,6 +176,15 @@ describe('malha de links no site construído', () => {
     // Um link só significa "alcançável apenas pelo índice" — foi o estado de 6 guias antes disto.
     const orfaos = guias.filter((g) => (entrada.get(g) ?? 0) < 2)
     expect(orfaos, 'guia alcançável só pelo índice').toEqual([])
+  })
+
+  it('nenhuma página de tamanho-alvo é órfã', () => {
+    // Elas nasceram com um link cada (só o de /comprimir-pdf/) — o mesmo estado de quase-órfão dos
+    // guias antes desta malha. O link do tribunal de limite igual é o que as tira dali.
+    const alvos = [...paginas.keys()].filter((r) => r.startsWith('/comprimir-pdf-para-'))
+    expect(alvos.length, 'nenhuma página de tamanho-alvo encontrada').toBeGreaterThan(4)
+    const orfas = alvos.filter((r) => (entrada.get(r) ?? 0) < 2)
+    expect(orfas, 'página de tamanho-alvo alcançável só por /comprimir-pdf/').toEqual([])
   })
 
   it('toda página de tribunal aponta para guias', () => {

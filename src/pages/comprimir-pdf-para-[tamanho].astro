@@ -13,6 +13,13 @@ const { alvo } = Astro.props as { alvo: Alvo }
 const path = `/comprimir-pdf-para-${alvo.slug}/`
 const ctaHref = alvo.ctaRegraId ? `/?regra=${alvo.ctaRegraId}` : `/?limiteMb=${alvo.mb}`
 const regrasCitadas = alvo.citarIds.map((id) => regraPorId(id)).filter((r): r is NonNullable<typeof r> => Boolean(r))
+/*
+ * As outras metas, do menor para o maior. Serve a quem lê — quem chega em "1 MB" muitas vezes
+ * descobre que precisa de 500 KB, ou que pode usar 2 MB — e resolve um problema de estrutura: sem
+ * isto, /comprimir-pdf-para-500kb/ ficava com um único link de entrada, porque não existe tribunal
+ * com esse limite para fazer a ponte.
+ */
+const outrosAlvos = ALVOS.filter((a) => a.slug !== alvo.slug).sort((a, b) => a.mb - b.mb)
 const { titulo, descricao } = alvo
 
 const PERGUNTAS = [
@@ -81,6 +88,13 @@ const dados = {
     <div class="faq-list">
       {PERGUNTAS.map((p) => (<details><summary>{p.q}</summary><p>{p.a}</p></details>))}
     </div>
+
+    <h2>Outras metas de tamanho</h2>
+    <ul class="outros-alvos">
+      {outrosAlvos.map((a) => (
+        <li><a href={`/comprimir-pdf-para-${a.slug}/`}>Comprimir PDF para {a.rotulo}</a>{a.porPagina ? ' — limite por página' : ''}</li>
+      ))}
+    </ul>
 
     <h2>Leia também</h2>
     <ul>

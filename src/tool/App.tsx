@@ -66,7 +66,8 @@ function loadSettings(): Settings {
       if (Number.isFinite(lm) && lm > 0 && lm <= 1000) {
         s = { ...s, ruleId: null, customMb: lm }
         limiteVeioDaUrl = true
-        track('regra_selecionada', { origem: 'pagina_tamanho', limiteMb: lm })
+        // meta_mb, e não limiteMb: é o campo que o Worker grava — o mesmo usado por 'lote_iniciado'.
+        track('regra_selecionada', { origem: 'pagina_tamanho', meta_mb: lm })
       }
     }
   } catch {

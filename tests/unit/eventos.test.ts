@@ -12,7 +12,9 @@ const ler = (...partes: string[]) => readFileSync(join(process.cwd(), ...partes)
 
 function nomesDoNavegador(): string[] {
   const fonte = ler('src', 'tool', 'lib', 'analytics.ts')
-  const bloco = /export type EventName =([\s\S]*?)\n\nexport type EventProps/.exec(fonte)
+  // Termina na primeira linha em branco, e não num tipo vizinho pelo nome: inserir outro tipo
+  // entre os dois fazia esta extração engolir a união seguinte inteira.
+  const bloco = /export type EventName =([\s\S]*?)\n\n/.exec(fonte)
   expect(bloco, 'não achei o tipo EventName em analytics.ts').not.toBeNull()
   return [...bloco![1].matchAll(/\|\s*'([a-z_]+)'/g)].map((m) => m[1])
 }
@@ -55,6 +57,20 @@ describe('campos aceitos pelo worker', () => {
     for (const campo of [...numeros, ...textos]) {
       expect(schema, `a coluna ${campo} não existe em eventos`).toMatch(new RegExp(`^\\s*${campo}\\s+(TEXT|INTEGER|REAL)`, 'm'))
     }
+  })
+
+  it('CampoDeMedicao no navegador lista exatamente o que o worker grava', () => {
+    /*
+     * Enquanto EventProps era Record<string, …>, mandar um campo que o Worker não conhece
+     * compilava, subia e sumia na ingestão sem erro nenhum — foi o que aconteceu com um `limiteMb`
+     * que nunca virou linha. Agora o tipo é fechado, e este teste garante que ele não descole da
+     * lista do servidor: campo novo exige os dois lados (e a coluna na migration, testada acima).
+     */
+    const analytics = ler('src', 'tool', 'lib', 'analytics.ts')
+    const bloco = /export type CampoDeMedicao =([\s\S]*?)\n\n/.exec(analytics)
+    expect(bloco, 'não achei o tipo CampoDeMedicao em analytics.ts').not.toBeNull()
+    const noNavegador = [...bloco![1].matchAll(/\|\s*'([a-z_]+)'/g)].map((m) => m[1])
+    expect([...noNavegador].sort()).toEqual([...numeros, ...textos].sort())
   })
 
   it('não aceita nenhum campo que possa carregar dado de documento', () => {
