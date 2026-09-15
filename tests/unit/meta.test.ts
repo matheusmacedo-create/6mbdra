@@ -66,6 +66,34 @@ function duplicados(campo: (p: Pagina) => string): string[] {
   return [...mapa.entries()].filter(([, rotas]) => rotas.length > 1).map(([v, rotas]) => `${v || '(vazio)'} :: ${rotas.join(', ')}`)
 }
 
+/*
+ * Este arquivo, links.test.ts e qualquer outro que leia dist/ auditam o site CONSTRUÍDO, não o
+ * código-fonte. Isso é uma dependência de verdade, e ela precisa estar escrita em algum lugar que
+ * a máquina leia — não na cabeça de quem escreveu o teste.
+ *
+ * O jeito errado (e o que aconteceu): deixar implícito. Na máquina de quem desenvolve dist/ sempre
+ * existe de um build anterior, então tudo passa. O CI clona do zero, dist/ não existe, e sete
+ * testes quebram de uma vez com ENOENT. O teste ficou vermelho no CI e verde no laptop por vários
+ * commits seguidos, que é a pior combinação possível: o sinal existe e ninguém confia nele.
+ *
+ * Agora `npm test` roda o build antes do vitest — do mesmo jeito que playwright.config.ts já
+ * fazia para o e2e, que por isso nunca teve esse problema. O teste abaixo trava isso.
+ */
+describe('as auditorias sobre dist/ têm o build como dependência', () => {
+  it('npm test constrói antes de rodar o vitest', () => {
+    const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8'))
+    expect(pkg.scripts.test, 'npm test precisa construir: as auditorias abaixo leem dist/').toContain('npm run build')
+  })
+
+  it('quem lê dist/ passa por esse script', () => {
+    const testes = readdirSync(join(process.cwd(), 'tests', 'unit'))
+      .filter((f) => f.endsWith('.ts'))
+      .filter((f) => /join\(\s*DIST\b|const DIST\b/.test(readFileSync(join(process.cwd(), 'tests', 'unit', f), 'utf8')))
+    // Se alguém criar mais uma auditoria sobre o site construído, ela entra aqui sozinha.
+    expect(testes.length, 'nenhuma auditoria sobre dist/ encontrada — o alvo do teste acima mudou de lugar?').toBeGreaterThan(0)
+  })
+})
+
 describe('metadados de todas as páginas', () => {
   it('dist/ existe (rode npm run build antes)', () => {
     expect(existsSync(DIST), 'dist/ não existe — esta auditoria roda sobre o site construído').toBe(true)
