@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro'
+import SeloSigilo from '../../layouts/SeloSigilo.astro'
 import { contextoCurto, formatLimite, idPagina, limiteBytes, metaBytes, mostrarBytesDoLimite, paginasDeRegras, percentualMeta, regrasDoTribunal, rotuloContexto, rotuloSistema, sistemaCurto, slugSistema, tituloRegraDoTribunal, type RegraDoTribunal } from '../../tool/lib/regras'
 import { sistemaPorSlug } from '../../tool/lib/sistemas'
 import { alvoDoTribunal, guiasDoTribunal } from '../../tool/lib/guias'
@@ -150,6 +151,7 @@ const dadosEstruturados = {
       enviado para a internet.
     </p>
     <p><a class="cta" href={linkFerramenta}>Preparar PDFs para o {rotuloSistema(regra)} do {sigla}</a></p>
+    <SeloSigilo />
 
     <div class="callout warn">
       Este site não é oficial nem vinculado ao {sigla}. O limite pode ter mudado depois da nossa conferência: em caso de dúvida, vale o que o

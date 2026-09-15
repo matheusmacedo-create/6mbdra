@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro'
+import SeloSigilo from '../../layouts/SeloSigilo.astro'
 import { formatLimite } from '../../tool/lib/regras'
 import { faixaDeLimites, sistemas } from '../../tool/lib/sistemas'
 const lista = sistemas()
@@ -45,6 +46,7 @@ const totalTribunais = new Set(lista.flatMap((s) => s.tribunais.map((t) => t.sig
     </div>
 
     <p><a class="cta" href="/?view=tool">Preparar meus PDFs</a></p>
+    <SeloSigilo />
   </main>
 </Base>
 

@@ -198,6 +198,27 @@ describe('malha de links no site construído', () => {
     expect(seg.filter((r) => (entrada.get(r) ?? 0) < 2), 'página de segurança com menos de 2 links').toEqual([])
   })
 
+  it('toda página com botão da ferramenta traz a linha de sigilo', () => {
+    /*
+     * A garantia de que o arquivo não sai precisa aparecer ONDE a dúvida nasce: a um clique de a
+     * pessoa colocar o documento de um cliente numa ferramenta que não conhece. Antes disto, a
+     * seção de segurança tinha 4 links de entrada e nenhuma das 100 páginas de tribunal apontava
+     * para ela — o argumento mais forte do projeto ficava invisível para quem chega pela busca.
+     */
+    /*
+     * "Botão da ferramenta" é o que ABRE a ferramenta, e não qualquer elemento com a classe .cta —
+     * /contato/ usa a mesma classe num mailto:, onde a linha de sigilo não faz sentido nenhum.
+     * A primeira versão deste teste era ampla demais e reprovava aquela página; foi ela também que
+     * apontou as seis páginas de sistema que eu tinha esquecido.
+     */
+    const comBotao = [...paginas.keys()].filter((r) =>
+      /class="cta" href="[^"]*(?:view=tool|\?regra=|limiteMb=)/.test(paginas.get(r)!),
+    )
+    expect(comBotao.length, 'nenhuma página com botão da ferramenta').toBeGreaterThan(100)
+    const sem = comBotao.filter((r) => !paginas.get(r)!.includes('selo-sigilo'))
+    expect(sem, 'página com botão da ferramenta e sem a linha de sigilo').toEqual([])
+  })
+
   it('toda página de tribunal aponta para guias', () => {
     const sem = tribunais.filter((r) => !/href="\/guias\/[a-z]/.test(semRodape(paginas.get(r)!)))
     expect(sem, 'página de tribunal sem nenhum link para guia').toEqual([])

@@ -443,3 +443,11 @@ tr.sem-regra td { color: var(--muted); }
   .metodos > li { padding: 18px 16px; }
   .etapas > li { gap: 12px; }
 }
+
+/*
+ * Selo de sigilo sob o botão da ferramenta. Discreto de propósito: quem já confia passa direto,
+ * quem está em dúvida encontra a resposta no momento exato em que ela importa.
+ */
+.selo-sigilo { display: flex; gap: 8px; align-items: flex-start; margin: -4px 0 20px; font-size: 14.5px; color: var(--muted); }
+.selo-sigilo svg { flex: 0 0 auto; margin-top: 3px; color: var(--success); }
+.selo-sigilo a { color: var(--accent); font-weight: 600; }

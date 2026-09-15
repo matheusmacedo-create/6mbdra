@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro'
+import SeloSigilo from '../../layouts/SeloSigilo.astro'
 import { formatLimite, idPagina, limiteBytes, metaBytes, mostrarBytesDoLimite, regrasDoTribunal, rotuloContexto, slugSistema, RAMO_ROTULO } from '../../tool/lib/regras'
 import { faixaDeLimites, sistemas, type Sistema } from '../../tool/lib/sistemas'
 import { formatBytes, formatDate } from '../../tool/lib/format'
@@ -88,6 +89,7 @@ const dadosEstruturados = {
     </div>
 
     <p><a class="cta" href="/?view=tool">Preparar meus PDFs agora</a></p>
+    <SeloSigilo />
 
     <h2>Limite por tribunal no {sistema.nome}</h2>
     {porRamo.map(({ ramo, tribunais }) => (
