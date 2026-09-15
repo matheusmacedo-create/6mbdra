@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro'
 import { SITE } from '../config/site'
 import { faixaDeLimites, sistemas } from '../tool/lib/sistemas'
 import { formatLimite, tribunaisCobertos, TRIBUNAIS } from '../tool/lib/regras'
+import { ALVOS } from '../data/tamanhosAlvo'
 const cobertos = tribunaisCobertos().length
 const lista = sistemas()
 
@@ -80,6 +81,14 @@ const dados = {
       })}
     </ul>
     <p>Ou procure direto pelo <a href="/tribunais/">seu tribunal no diretório</a>.</p>
+
+    <h2>Já sabe o tamanho que precisa?</h2>
+    <p>Pule direto para o alvo e comprima com um clique:</p>
+    <ul class="grid-cards">
+      {ALVOS.map((a) => (
+        <li><a href={`/comprimir-pdf-para-${a.slug}/`}>Comprimir para {a.rotulo}</a></li>
+      ))}
+    </ul>
 
     <h2>Perguntas frequentes</h2>
     <div class="faq-list">

@@ -1,0 +1,146 @@
+#,Cluster,Palavra-chave,Volume/mês (est.),Buscas/dia (est.),Intenção,Concorrência,Confiança,Prioridade brpdf (1-5),Página sugerida
+1,A. Head PDF genérico,comprimir pdf,246000,8200,Transacional,Alta,Alta,2,/comprimir-pdf/
+2,A. Head PDF genérico,compactar pdf,40500,1350,Transacional,Alta,Alta,3,/comprimir-pdf/
+3,A. Head PDF genérico,comprimir pdf online,33100,1103,Transacional,Alta,Alta,2,/comprimir-pdf/
+4,A. Head PDF genérico,reduzir tamanho de pdf,27100,903,Transacional,Alta,Alta,2,/comprimir-pdf/
+5,A. Head PDF genérico,diminuir tamanho de pdf,14800,493,Transacional,Alta,Média,3,/comprimir-pdf/
+6,A. Head PDF genérico,comprimir pdf grátis,12100,403,Transacional,Alta,Média,3,/comprimir-pdf/
+7,A. Head PDF genérico,comprimir arquivo pdf,9900,330,Transacional,Alta,Média,3,/comprimir-pdf/
+8,A. Head PDF genérico,reduzir pdf online,8100,270,Transacional,Alta,Média,3,/comprimir-pdf/
+9,A. Head PDF genérico,compactar arquivo pdf,5400,180,Transacional,Alta,Média,3,/comprimir-pdf/
+10,A. Head PDF genérico,deixar pdf mais leve,2400,80,Transacional,Média,Média,4,/comprimir-pdf/
+11,A. Head PDF genérico,juntar pdf,110000,3667,Transacional,Alta,Alta,2,/juntar-pdf/
+12,A. Head PDF genérico,unir pdf,22200,740,Transacional,Alta,Alta,2,/juntar-pdf/
+13,A. Head PDF genérico,juntar pdf online,18100,603,Transacional,Alta,Média,2,/juntar-pdf/
+14,A. Head PDF genérico,mesclar pdf,8100,270,Transacional,Alta,Média,3,/juntar-pdf/
+15,A. Head PDF genérico,dividir pdf,40500,1350,Transacional,Alta,Alta,3,/dividir-pdf/
+16,A. Head PDF genérico,separar pdf,14800,493,Transacional,Alta,Média,3,/dividir-pdf/
+17,A. Head PDF genérico,dividir pdf online,9900,330,Transacional,Alta,Média,3,/dividir-pdf/
+18,A. Head PDF genérico,separar páginas de pdf,6600,220,Transacional,Média,Média,4,/dividir-pdf/
+19,A. Head PDF genérico,extrair páginas de pdf,3600,120,Transacional,Média,Média,4,/dividir-pdf/
+20,A. Head PDF genérico,excluir página de pdf,12100,403,Transacional,Média,Média,4,Nova: organizar páginas
+21,A. Head PDF genérico,organizar páginas pdf,1900,63,Transacional,Média,Média,4,Nova: organizar páginas
+22,A. Head PDF genérico,girar pdf,8100,270,Transacional,Média,Média,3,Nova: organizar páginas
+23,A. Head PDF genérico,numerar páginas pdf,2900,97,Transacional,Média,Baixa,4,Nova: numerar páginas
+24,A. Head PDF genérico,editar pdf,135000,4500,Transacional,Alta,Alta,1,Fora do escopo atual
+25,A. Head PDF genérico,converter pdf,60500,2017,Transacional,Alta,Média,2,Fora do escopo atual
+26,A. Head PDF genérico,pdf para word,450000,15000,Transacional,Alta,Alta,1,Fora do escopo atual
+27,A. Head PDF genérico,word para pdf,90000,3000,Transacional,Alta,Alta,1,Fora do escopo atual
+28,A. Head PDF genérico,pdf para jpg,74000,2467,Transacional,Alta,Alta,1,Fora do escopo atual
+29,A. Head PDF genérico,jpg para pdf,60500,2017,Transacional,Alta,Alta,2,Nova: imagem em PDF
+30,A. Head PDF genérico,assinar pdf,40500,1350,Transacional,Alta,Alta,2,/guias/ assinatura
+31,A. Head PDF genérico,remover senha de pdf,12100,403,Transacional,Alta,Média,2,Fora do escopo atual
+32,A. Head PDF genérico,proteger pdf com senha,6600,220,Transacional,Alta,Média,2,Fora do escopo atual
+33,B. Tamanho-alvo,comprimir pdf sem perder qualidade,5400,180,Transacional,Média,Média,5,/comprimir-pdf/
+34,B. Tamanho-alvo,comprimir pdf para 1mb,3600,120,Transacional,Média,Média,5,LP: alvo 1 MB
+35,B. Tamanho-alvo,comprimir pdf para 2mb,2400,80,Transacional,Média,Média,5,LP: alvo 2 MB
+36,B. Tamanho-alvo,comprimir pdf para 500kb,1900,63,Transacional,Média,Média,5,LP: alvo 500 KB
+37,B. Tamanho-alvo,comprimir pdf para 300kb,880,29,Transacional,Baixa,Média,5,LP: alvo 300 KB
+38,B. Tamanho-alvo,comprimir pdf para 100kb,720,24,Transacional,Baixa,Média,4,LP: alvo 100 KB
+39,B. Tamanho-alvo,comprimir pdf para 5mb,720,24,Transacional,Baixa,Média,5,LP: alvo 5 MB
+40,B. Tamanho-alvo,comprimir pdf para 10mb,480,16,Transacional,Baixa,Média,5,LP: alvo 10 MB
+41,B. Tamanho-alvo,reduzir pdf para 1 mega,590,20,Transacional,Baixa,Baixa,5,LP: alvo 1 MB
+42,B. Tamanho-alvo,comprimir pdf escaneado,480,16,Transacional,Baixa,Média,5,/guias/ compactar
+43,B. Tamanho-alvo,reduzir tamanho de pdf digitalizado,590,20,Transacional,Baixa,Média,5,/guias/ compactar
+44,B. Tamanho-alvo,pdf muito grande como reduzir,390,13,Informacional,Baixa,Baixa,5,/guias/ compactar
+45,B. Tamanho-alvo,comprimir pdf para anexar em email,320,11,Transacional,Baixa,Baixa,4,/guias/ compactar
+46,B. Tamanho-alvo,comprimir pdf sem perder o texto pesquisável,110,4,Informacional,Baixa,Baixa,5,/metodologia/
+47,B. Tamanho-alvo,comprimir pdf no navegador sem enviar arquivo,90,3,Transacional,Baixa,Baixa,5,/privacidade/
+48,C. Peticionamento e sistemas,pje,201000,6700,Navegacional,Alta,Alta,1,Não perseguir
+49,C. Peticionamento e sistemas,e-saj,165000,5500,Navegacional,Alta,Alta,1,Não perseguir
+50,C. Peticionamento e sistemas,eproc,74000,2467,Navegacional,Alta,Alta,1,Não perseguir
+51,C. Peticionamento e sistemas,projudi,60500,2017,Navegacional,Alta,Alta,1,Não perseguir
+52,C. Peticionamento e sistemas,peticionamento eletrônico,8100,270,Informacional,Média,Média,4,/sistemas/
+53,C. Peticionamento e sistemas,como protocolar petição eletrônica,880,29,Informacional,Média,Média,5,/guias/
+54,C. Peticionamento e sistemas,como protocolar no pje passo a passo,1600,53,Informacional,Média,Média,5,/guias/
+55,C. Peticionamento e sistemas,como anexar documentos no pje,1300,43,Informacional,Média,Média,5,/guias/
+56,C. Peticionamento e sistemas,pje tamanho máximo de arquivo,590,20,Informacional,Baixa,Média,5,/tribunais/
+57,C. Peticionamento e sistemas,limite de tamanho de arquivo no pje,320,11,Informacional,Baixa,Média,5,/tribunais/
+58,C. Peticionamento e sistemas,como reduzir pdf para o pje,260,9,Transacional,Baixa,Média,5,/comprimir-pdf/
+59,C. Peticionamento e sistemas,pje limite 3mb,110,4,Informacional,Baixa,Baixa,5,/tribunais/
+60,C. Peticionamento e sistemas,pje tipo de arquivo aceito,210,7,Informacional,Baixa,Baixa,5,/sistemas/
+61,C. Peticionamento e sistemas,pje aceita pdf/a,110,4,Informacional,Baixa,Baixa,5,/guias/ pdf-a
+62,C. Peticionamento e sistemas,pje não aceita meu pdf,90,3,Informacional,Baixa,Baixa,5,/guias/ erros
+63,C. Peticionamento e sistemas,esaj tamanho máximo de arquivo,210,7,Informacional,Baixa,Média,5,/tribunais/
+64,C. Peticionamento e sistemas,peticionamento eletrônico esaj passo a passo,480,16,Informacional,Média,Média,5,/guias/
+65,C. Peticionamento e sistemas,esaj erro ao anexar documento,140,5,Informacional,Baixa,Baixa,5,/guias/ erros
+66,C. Peticionamento e sistemas,eproc tamanho máximo de arquivo,170,6,Informacional,Baixa,Média,5,/tribunais/
+67,C. Peticionamento e sistemas,eproc limite de anexo,90,3,Informacional,Baixa,Baixa,5,/tribunais/
+68,C. Peticionamento e sistemas,projudi tamanho máximo de arquivo,140,5,Informacional,Baixa,Média,5,/tribunais/
+69,C. Peticionamento e sistemas,projudi limite de arquivo,70,2,Informacional,Baixa,Baixa,5,/tribunais/
+70,C. Peticionamento e sistemas,dividir petição em partes para protocolar,90,3,Transacional,Baixa,Baixa,5,/dividir-pdf/
+71,C. Peticionamento e sistemas,como juntar documentos em uma petição,320,11,Transacional,Baixa,Média,5,/juntar-pdf/
+72,C. Peticionamento e sistemas,como anexar procuração no pje,260,9,Informacional,Baixa,Média,5,/guias/
+73,C. Peticionamento e sistemas,nome de arquivo para protocolo no pje,70,2,Informacional,Baixa,Baixa,5,/guias/ checklist
+74,C. Peticionamento e sistemas,tamanho máximo de anexo tribunal,110,4,Informacional,Baixa,Baixa,5,/tribunais/
+75,C. Peticionamento e sistemas,quantas páginas por arquivo no pje,70,2,Informacional,Baixa,Baixa,5,/tribunais/
+76,D. Tribunal-específico,pje trt tamanho máximo de arquivo,210,7,Informacional,Baixa,Média,5,/tribunais/trt
+77,D. Tribunal-específico,pje tjmg limite de arquivo,90,3,Informacional,Baixa,Baixa,5,/tribunais/tjmg
+78,D. Tribunal-específico,tjsp esaj limite de tamanho de arquivo,110,4,Informacional,Baixa,Baixa,5,/tribunais/tjsp
+79,D. Tribunal-específico,tjrj limite de arquivo pje,70,2,Informacional,Baixa,Baixa,5,/tribunais/tjrj
+80,D. Tribunal-específico,pje trf tamanho máximo de arquivo,70,2,Informacional,Baixa,Baixa,5,/tribunais/trf
+81,D. Tribunal-específico,pje tst tamanho de arquivo,50,2,Informacional,Baixa,Baixa,4,/tribunais/tst
+82,D. Tribunal-específico,stj peticionamento tamanho máximo,40,1,Informacional,Baixa,Baixa,4,/tribunais/stj
+83,D. Tribunal-específico,tjpr projudi limite de arquivo,40,1,Informacional,Baixa,Baixa,4,/tribunais/tjpr
+84,D. Tribunal-específico,tjba pje limite de arquivo,30,1,Informacional,Baixa,Baixa,4,/tribunais/tjba
+85,D. Tribunal-específico,tjgo projudi tamanho de arquivo,30,1,Informacional,Baixa,Baixa,4,/tribunais/tjgo
+86,D. Tribunal-específico,tjsc eproc limite de anexo,30,1,Informacional,Baixa,Baixa,4,/tribunais/tjsc
+87,D. Tribunal-específico,tjrs eproc tamanho máximo,30,1,Informacional,Baixa,Baixa,4,/tribunais/tjrs
+88,D. Tribunal-específico,jec limite de arquivo peticionamento,20,1,Informacional,Baixa,Baixa,3,/tribunais/
+89,E. Erros de sistema,arquivo excede o tamanho máximo permitido,320,11,Informacional,Baixa,Baixa,5,/guias/ erros
+90,E. Erros de sistema,pje erro ao enviar arquivo,480,16,Informacional,Baixa,Média,5,/guias/ erros
+91,E. Erros de sistema,pje não anexa documento,210,7,Informacional,Baixa,Baixa,5,/guias/ erros
+92,E. Erros de sistema,pje erro no upload do documento,170,6,Informacional,Baixa,Baixa,5,/guias/ erros
+93,E. Erros de sistema,documento não pode ser anexado tribunal,70,2,Informacional,Baixa,Baixa,4,/guias/ erros
+94,E. Erros de sistema,petição não protocolou por tamanho de arquivo,30,1,Informacional,Baixa,Baixa,4,/guias/ erros
+95,F. Assinatura e certificado,assinar documento gov.br,33100,1103,Transacional,Alta,Média,3,/guias/ assinatura
+96,F. Assinatura e certificado,assinador digital,22200,740,Transacional,Alta,Média,3,/guias/ assinatura
+97,F. Assinatura e certificado,assinatura digital gratuita,12100,403,Transacional,Alta,Média,3,/guias/ assinatura
+98,F. Assinatura e certificado,assinar pdf com certificado digital,8100,270,Transacional,Média,Média,4,/guias/ assinatura
+99,F. Assinatura e certificado,pje office,8100,270,Navegacional,Média,Média,3,/guias/ assinatura
+100,F. Assinatura e certificado,certificado digital a1 ou a3,4400,147,Informacional,Média,Média,3,/guias/ assinatura
+101,F. Assinatura e certificado,certificado digital para advogado,2900,97,Comercial,Alta,Média,3,/guias/ assinatura
+102,F. Assinatura e certificado,validar assinatura digital de pdf,1600,53,Transacional,Média,Média,4,/guias/ assinatura
+103,F. Assinatura e certificado,icp-brasil assinatura digital,1300,43,Informacional,Média,Média,4,/guias/ assinatura
+104,F. Assinatura e certificado,diferença entre assinatura eletrônica e digital,880,29,Informacional,Média,Alta,5,/guias/ assinatura (publicado)
+105,F. Assinatura e certificado,como assinar petição digitalmente,590,20,Informacional,Baixa,Média,5,/guias/ assinatura
+106,F. Assinatura e certificado,assinar pdf já assinado por outra pessoa,170,6,Informacional,Baixa,Baixa,4,/guias/ assinatura
+107,F. Assinatura e certificado,comprimir pdf perde a assinatura digital,70,2,Informacional,Baixa,Baixa,5,/metodologia/
+108,G. PDF/A e formato,pdf/a,5400,180,Informacional,Média,Média,4,/guias/ pdf-a
+109,G. PDF/A e formato,converter pdf para pdf/a,2400,80,Transacional,Média,Média,5,/guias/ pdf-a
+110,G. PDF/A e formato,o que é pdf/a,1600,53,Informacional,Média,Média,4,/guias/ pdf-a
+111,G. PDF/A e formato,salvar como pdf/a no word,720,24,Informacional,Baixa,Média,4,/guias/ pdf-a
+112,G. PDF/A e formato,pdf/a-1b como gerar,480,16,Informacional,Baixa,Baixa,4,/guias/ pdf-a
+113,G. PDF/A e formato,resolução recomendada para digitalizar processo,90,3,Informacional,Baixa,Baixa,5,/guias/ digitalizar
+114,H. OCR e digitalização,escanear documento com celular em pdf,14800,493,Transacional,Alta,Média,3,/guias/ digitalizar
+115,H. OCR e digitalização,digitalizar documento em pdf,9900,330,Transacional,Alta,Média,3,/guias/ digitalizar
+116,H. OCR e digitalização,transformar pdf em texto,8100,270,Transacional,Alta,Média,2,Fora do escopo atual
+117,H. OCR e digitalização,ocr pdf,6600,220,Transacional,Média,Média,3,/guias/ ocr
+118,H. OCR e digitalização,pdf escaneado para word,3600,120,Transacional,Alta,Média,2,Fora do escopo atual
+119,H. OCR e digitalização,ocr online grátis em português,2400,80,Transacional,Média,Média,3,/guias/ ocr
+120,H. OCR e digitalização,converter foto de documento em pdf,2400,80,Transacional,Média,Média,5,/guias/ converter imagem (publicado)
+121,H. OCR e digitalização,pdf de várias imagens,1900,63,Transacional,Média,Média,4,Nova: imagem em PDF
+122,H. OCR e digitalização,pdf pesquisável,1300,43,Informacional,Baixa,Média,5,/guias/ ocr
+123,H. OCR e digitalização,transformar print em pdf,1300,43,Transacional,Média,Baixa,4,Nova: imagem em PDF
+124,H. OCR e digitalização,juntar comprovantes em um único pdf,320,11,Transacional,Baixa,Baixa,5,/juntar-pdf/
+125,H. OCR e digitalização,melhorar legibilidade de pdf digitalizado,170,6,Informacional,Baixa,Baixa,5,/guias/ digitalizar
+126,I. Rotina do advogado,modelo de petição inicial,27100,903,Informacional,Alta,Média,2,Conteúdo de atração
+127,I. Rotina do advogado,carteira oab digital,22200,740,Navegacional,Alta,Média,1,Não perseguir
+128,I. Rotina do advogado,contagem de prazo processual,3600,120,Informacional,Alta,Média,2,Conteúdo de atração
+129,I. Rotina do advogado,software para advogados,2400,80,Comercial,Alta,Média,2,Conteúdo de atração
+130,I. Rotina do advogado,primeiro acesso ao pje advogado,1900,63,Informacional,Média,Média,4,/guias/
+131,I. Rotina do advogado,ferramentas gratuitas para advogados,880,29,Comercial,Média,Baixa,5,/guias/ + home
+132,I. Rotina do advogado,organização de documentos em escritório de advocacia,320,11,Informacional,Baixa,Baixa,4,/guias/ checklist
+133,I. Rotina do advogado,checklist antes de protocolar,90,3,Informacional,Baixa,Baixa,5,/guias/ checklist (publicado)
+134,I. Rotina do advogado,digitalização de processos no escritório,210,7,Informacional,Baixa,Baixa,4,/guias/ digitalizar
+135,I. Rotina do advogado,como nomear arquivos de processo,70,2,Informacional,Baixa,Baixa,5,/guias/ checklist
+136,J. Concorrentes e marcas,ilovepdf,1500000,50000,Navegacional,Alta,Alta,1,Não perseguir
+137,J. Concorrentes e marcas,smallpdf,165000,5500,Navegacional,Alta,Alta,1,Não perseguir
+138,J. Concorrentes e marcas,pdf24,110000,3667,Navegacional,Alta,Alta,1,Não perseguir
+139,J. Concorrentes e marcas,ilovepdf comprimir,40500,1350,Transacional,Alta,Média,2,Comparativo
+140,J. Concorrentes e marcas,pdf candy,22200,740,Navegacional,Alta,Média,1,Não perseguir
+141,J. Concorrentes e marcas,sejda pdf,12100,403,Navegacional,Média,Média,1,Não perseguir
+142,J. Concorrentes e marcas,adobe comprimir pdf,8100,270,Transacional,Alta,Média,2,Comparativo
+143,J. Concorrentes e marcas,comprimir pdf sem enviar para servidor,90,3,Transacional,Baixa,Baixa,5,/privacidade/
+144,J. Concorrentes e marcas,ilovepdf é seguro,720,24,Informacional,Média,Baixa,5,/privacidade/ + comparativo
+145,J. Concorrentes e marcas,é seguro subir documento sigiloso em site de pdf,70,2,Informacional,Baixa,Baixa,5,/privacidade/

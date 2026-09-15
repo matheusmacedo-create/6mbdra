@@ -1,0 +1,93 @@
+---
+import Base from '../layouts/Base.astro'
+import { SITE } from '../config/site'
+import { regraPorId, formatLimite, rotuloSistema } from '../tool/lib/regras'
+import { formatBytes } from '../tool/lib/format'
+import { ALVOS, type Alvo } from '../data/tamanhosAlvo'
+
+export function getStaticPaths() {
+  return ALVOS.map((alvo) => ({ params: { tamanho: alvo.slug }, props: { alvo } }))
+}
+
+const { alvo } = Astro.props as { alvo: Alvo }
+const path = `/comprimir-pdf-para-${alvo.slug}/`
+const ctaHref = alvo.ctaRegraId ? `/?regra=${alvo.ctaRegraId}` : `/?limiteMb=${alvo.mb}`
+const regrasCitadas = alvo.citarIds.map((id) => regraPorId(id)).filter((r): r is NonNullable<typeof r> => Boolean(r))
+const { titulo, descricao } = alvo
+
+const PERGUNTAS = [
+  {
+    q: `Dá para garantir exatamente ${alvo.rotulo}?`,
+    a: 'A ferramenta mira um pouco abaixo do alvo (a meta segura), porque alguns portais contam megabyte de outro jeito e recusam o arquivo no valor cheio. O resultado fica dentro do limite com folga, não craquejado no número exato.',
+  },
+  {
+    q: alvo.porPagina ? 'O limite é por página ou pelo arquivo inteiro?' : `Esse valor é o limite oficial de algum tribunal?`,
+    a: alvo.porPagina
+      ? 'Por página. Um arquivo pequeno ainda pode ser recusado se uma única página, isolada, pesar mais que o limite — normalmente a página com mais imagem ou cor.'
+      : alvo.contexto,
+  },
+  {
+    q: 'E se nem comprimindo o arquivo couber?',
+    a: 'A ferramenta divide automaticamente em partes por páginas inteiras, numeradas e na ordem — sem cortar nenhuma página ao meio.',
+  },
+  {
+    q: 'O texto pesquisável e a assinatura continuam intactos?',
+    a: 'O texto e a camada de OCR sim, sempre. A assinatura digital, não: qualquer alteração no arquivo invalida uma assinatura já aplicada. Comprima antes de assinar.',
+  },
+]
+
+const dados = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'FAQPage', mainEntity: PERGUNTAS.map((p) => ({ '@type': 'Question', name: p.q, acceptedAnswer: { '@type': 'Answer', text: p.a } })) },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Início', item: SITE.url },
+        { '@type': 'ListItem', position: 2, name: 'Comprimir PDF', item: new URL('/comprimir-pdf/', SITE.url).href },
+        { '@type': 'ListItem', position: 3, name: titulo, item: new URL(path, SITE.url).href },
+      ],
+    },
+  ],
+}
+---
+<Base title={titulo} description={descricao} path={path}>
+  <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
+  <main class="page prose">
+    <p><a href="/comprimir-pdf/">← Comprimir PDF para protocolo</a></p>
+    <h1>{titulo}</h1>
+    <p class="lead">{alvo.contexto}</p>
+    <p><a class="cta" href={ctaHref}>Comprimir para {alvo.rotulo} agora</a></p>
+
+    <h2>Vale a pena mirar {alvo.rotulo}?</h2>
+    <p>{alvo.dica}</p>
+
+    {regrasCitadas.length > 0 && (
+      <>
+        <h2>De onde vem esse número</h2>
+        <ul>
+          {regrasCitadas.map((r) => (
+            <li>
+              <a href={`/tribunais/${r.id}/`}>{r.tribunal_sigla} · {rotuloSistema(r)}</a> — {formatLimite(r)} por arquivo
+              {r.limite_por_pagina_kb ? <> ({formatBytes(r.limite_por_pagina_kb * 1000)} por página)</> : null}
+            </li>
+          ))}
+        </ul>
+        <p class="hint">Confira sempre a regra atualizada na página do seu tribunal antes de protocolar — regra de sistema muda sem aviso.</p>
+      </>
+    )}
+
+    <h2>Perguntas frequentes</h2>
+    <div class="faq-list">
+      {PERGUNTAS.map((p) => (<details><summary>{p.q}</summary><p>{p.a}</p></details>))}
+    </div>
+
+    <h2>Leia também</h2>
+    <ul>
+      <li><a href="/comprimir-pdf/">Comprimir PDF para protocolo</a></li>
+      <li><a href="/dividir-pdf/">Dividir PDF por tamanho</a>, quando a compressão não basta</li>
+      <li><a href="/guias/limite-por-arquivo-pagina-e-peticao/">Limite por arquivo, por página e por petição</a></li>
+      <li><a href="/tribunais/">Limite do seu tribunal no diretório</a></li>
+    </ul>
+  </main>
+</Base>
