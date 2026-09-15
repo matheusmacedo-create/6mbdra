@@ -1,0 +1,224 @@
+---
+import Base from '../../layouts/Base.astro'
+import { SITE } from '../../config/site'
+
+/*
+ * Página-âncora da garantia de sigilo.
+ *
+ * Existe porque a promessa mais forte do projeto estava só na política de privacidade, escrita em
+ * linguagem de política — e promessa de privacidade é exatamente o tipo de coisa que todo site faz.
+ * O que diferencia aqui é que a garantia é checável por quem desconfia, e isso não estava dito em
+ * lugar nenhum. Estas páginas mostram o mecanismo, não a intenção.
+ */
+const dados = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'FAQPage',
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'O brpdf envia meus documentos para algum servidor?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Não. A compressão roda dentro do navegador, em WebAssembly. Não existe endereço no servidor que receba documentos — não é uma política, é a arquitetura. Dá para conferir: com a página aberta, desligue a internet e processe um arquivo; funciona igual.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Como posso verificar que o arquivo não sai do meu computador?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Três formas, da mais rápida à mais completa: processar um arquivo em modo avião; abrir a aba Rede do navegador e conferir que nenhuma requisição carrega o documento; ou ler o código-fonte, que é aberto sob licença AGPL-3.0.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'O brpdf guarda nome de arquivo ou número de processo?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Não. A medição de uso aceita apenas uma lista fechada de campos, toda ela de contagem e categoria — quantos arquivos, qual faixa de tamanho, qual tribunal foi escolhido. Nome de arquivo, conteúdo e número de processo não estão nessa lista e são descartados antes do envio.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'É seguro usar com documento sob sigilo profissional?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'O documento não deixa o seu computador, então não há transferência a terceiro no processamento. Ainda assim, a responsabilidade pelo sigilo é de quem opera: confira a garantia por conta própria antes de adotar a ferramenta em rotina de escritório.',
+          },
+        },
+      ],
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Início', item: SITE.url },
+        { '@type': 'ListItem', position: 2, name: 'Segurança', item: new URL('/seguranca/', SITE.url).href },
+      ],
+    },
+  ],
+}
+---
+<Base
+  title="Como o brpdf protege seus documentos (e como conferir)"
+  description="O documento não sai do seu computador — não por política, mas por arquitetura. Veja o fluxo, o que trafega na rede e como verificar por conta própria."
+  path="/seguranca/"
+>
+  <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
+
+  <main class="page prose">
+    <h1>Seu documento não sai do seu computador</h1>
+    <p class="lead">
+      Isso não é uma promessa de política de privacidade. É uma consequência de como a ferramenta foi construída — e você
+      pode conferir sozinho, em menos de um minuto.
+    </p>
+
+    <h2>A diferença, em um desenho</h2>
+    <p>
+      Serviços de PDF online costumam funcionar do mesmo jeito: você envia o arquivo, um servidor processa, você baixa o
+      resultado. O documento atravessa a internet e fica, por algum tempo, na máquina de outra pessoa.
+    </p>
+
+    <figure class="diagrama">
+      <svg viewBox="0 0 760 330" role="img" aria-labelledby="t-comp d-comp" class="svg-diagrama">
+        <title id="t-comp">Comparação entre um serviço online comum e o brpdf</title>
+        <desc id="d-comp">
+          No serviço comum, o documento sai do computador, atravessa a internet e é processado num servidor, voltando
+          depois. No brpdf, o documento permanece no computador durante todo o processo; apenas o programa de compressão
+          é baixado.
+        </desc>
+
+        <!-- ——— Serviço comum ——— -->
+        <text x="0" y="16" class="d-rot">Serviço de PDF online comum</text>
+
+        <rect x="0" y="34" width="150" height="86" rx="8" class="d-caixa" />
+        <text x="75" y="66" class="d-cap" text-anchor="middle">Seu</text>
+        <text x="75" y="84" class="d-cap" text-anchor="middle">computador</text>
+        <text x="75" y="106" class="d-doc" text-anchor="middle">📄 documento</text>
+
+        <!-- seta de ida com o documento -->
+        <path d="M156 64 H352" class="d-seta d-perigo" marker-end="url(#pta-perigo)" />
+        <rect x="212" y="42" width="88" height="19" rx="4" class="d-tag-perigo" />
+        <text x="256" y="55" class="d-tag-txt" text-anchor="middle">documento →</text>
+
+        <path d="M352 96 H156" class="d-seta d-perigo" marker-end="url(#pta-perigo)" />
+        <rect x="212" y="101" width="88" height="19" rx="4" class="d-tag-perigo" />
+        <text x="256" y="114" class="d-tag-txt" text-anchor="middle">← resultado</text>
+
+        <rect x="358" y="34" width="150" height="86" rx="8" class="d-caixa d-caixa-perigo" />
+        <text x="433" y="66" class="d-cap" text-anchor="middle">Servidor</text>
+        <text x="433" y="84" class="d-cap" text-anchor="middle">de terceiro</text>
+        <text x="433" y="106" class="d-doc" text-anchor="middle">📄 seu documento</text>
+
+        <text x="528" y="66" class="d-nota">O arquivo atravessa a rede</text>
+        <text x="528" y="86" class="d-nota">e fica na máquina</text>
+        <text x="528" y="106" class="d-nota">de outra pessoa.</text>
+
+        <!-- divisória -->
+        <line x1="0" y1="158" x2="760" y2="158" class="d-divisa" />
+
+        <!-- ——— brpdf ——— -->
+        <!--
+          A linha de baixo repete a geometria da de cima de propósito: mesma largura de caixa, mesma
+          posição do servidor, notas começando na mesma coluna. A comparação só funciona se a única
+          diferença visível for o que muda de verdade — as setas.
+        -->
+        <text x="0" y="192" class="d-rot d-rot-ok">brpdf</text>
+
+        <rect x="0" y="210" width="240" height="104" rx="8" class="d-caixa d-caixa-ok" />
+        <text x="120" y="238" class="d-cap" text-anchor="middle">Seu computador</text>
+        <rect x="16" y="250" width="208" height="50" rx="6" class="d-interno" />
+        <text x="120" y="271" class="d-doc" text-anchor="middle">📄 documento</text>
+        <text x="120" y="289" class="d-mini" text-anchor="middle">+ compressor, aqui dentro</text>
+
+        <!-- única seta, e ela vem de lá para cá: o programa desce, nada sobe -->
+        <path d="M352 262 H252" class="d-seta d-ok" marker-end="url(#pta-ok)" />
+        <rect x="238" y="222" width="114" height="19" rx="4" class="d-tag-ok" />
+        <text x="295" y="235" class="d-tag-txt" text-anchor="middle">← só o programa</text>
+
+        <rect x="358" y="210" width="150" height="104" rx="8" class="d-caixa" />
+        <text x="433" y="248" class="d-cap" text-anchor="middle">Servidor</text>
+        <text x="433" y="266" class="d-cap" text-anchor="middle">do brpdf</text>
+        <text x="433" y="292" class="d-vazio" text-anchor="middle">nenhum documento</text>
+
+        <text x="528" y="248" class="d-nota">Entrega os arquivos</text>
+        <text x="528" y="268" class="d-nota">do site, e só.</text>
+        <text x="528" y="292" class="d-nota">Não recebe nada.</text>
+
+        <defs>
+          <marker id="pta-perigo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" class="d-pta-perigo" />
+          </marker>
+          <marker id="pta-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" class="d-pta-ok" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>
+        No brpdf, a única coisa que atravessa a rede é o <strong>programa</strong> — baixado uma vez, como qualquer
+        página. O documento fica onde sempre esteve.
+      </figcaption>
+    </figure>
+
+    <h2>Por que isso é diferente de “criptografado”</h2>
+    <p>
+      Criptografia em trânsito protege o arquivo <em>enquanto ele viaja</em>. É importante, e todo serviço sério usa. Mas
+      ela pressupõe que a viagem acontece: o documento chega ao servidor, é decifrado ali para poder ser processado, e
+      depende da política daquela empresa — retenção, acesso interno, subcontratados, jurisdição.
+    </p>
+    <p>
+      <strong>Aqui a viagem não acontece.</strong> Isso elimina a classe inteira de perguntas em vez de respondê-las uma
+      a uma. Não é um grau a mais de segurança; é outra categoria.
+    </p>
+
+    <div class="callout">
+      Para quem advoga, a diferença é prática: não havendo transferência do documento a terceiro no processamento, não há
+      a discussão sobre compartilhamento de material sob sigilo profissional com um fornecedor.
+    </div>
+
+    <h2>As três perguntas que isso levanta</h2>
+    <ul class="grid-cards seg-cards">
+      <li>
+        <a href="/seguranca/como-funciona/">Como funciona por dentro</a>
+        <p>O caminho que o arquivo faz da área de upload até o resultado, e por que ele nunca encontra uma requisição de rede.</p>
+      </li>
+      <li>
+        <a href="/seguranca/o-que-sai-do-navegador/">O que sai do navegador</a>
+        <p>O inventário honesto: tudo que trafega, campo por campo. Inclui a medição de uso, que existe e é limitada de propósito.</p>
+      </li>
+      <li>
+        <a href="/seguranca/verifique/">Como verificar você mesmo</a>
+        <p>Quatro formas de conferir, do teste de 30 segundos em modo avião à leitura do código-fonte e do teste automático.</p>
+      </li>
+    </ul>
+
+    <h2>O que esta garantia não cobre</h2>
+    <p>Sendo específico, porque uma promessa sem limites declarados não vale muito:</p>
+    <ul>
+      <li>
+        <strong>O seu próprio computador.</strong> Se a máquina estiver comprometida, nada que o site faça resolve isso.
+        A garantia é sobre não haver transferência, não sobre o ambiente de quem usa.
+      </li>
+      <li>
+        <strong>O que você faz depois.</strong> O arquivo preparado é salvo por você, e o que acontece com ele em seguida
+        — anexar, enviar por e-mail, guardar em nuvem — está fora do alcance da ferramenta.
+      </li>
+      <li>
+        <strong>Medição de uso existe.</strong> Contagens e categorias, sem nome de arquivo nem conteúdo. Está tudo
+        listado em <a href="/seguranca/o-que-sai-do-navegador/">o que sai do navegador</a> — inclusive os cookies do
+        Google, que só carregam se você aceitar.
+      </li>
+      <li>
+        <strong>Ninguém auditou por fora.</strong> O código é aberto e há teste automático verificando a garantia a cada
+        versão, mas nenhuma empresa independente examinou e atestou isso. Dizemos <em>verificável</em>, não
+        <em>auditado</em> — a diferença importa.
+      </li>
+    </ul>
+
+    <div class="callout">
+      Quer conferir agora? <a href="/seguranca/verifique/">O teste mais rápido leva 30 segundos</a> e não exige nenhum
+      conhecimento técnico. A política de privacidade completa está em <a href="/privacidade/">privacidade</a>.
+    </div>
+  </main>
+</Base>

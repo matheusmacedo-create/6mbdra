@@ -187,6 +187,17 @@ describe('malha de links no site construído', () => {
     expect(orfas, 'página de tamanho-alvo alcançável só por /comprimir-pdf/').toEqual([])
   })
 
+  it('nenhuma página de segurança é órfã', () => {
+    /*
+     * A seção de segurança é o argumento de venda mais forte do projeto e a única que explica a
+     * garantia com o mecanismo à mostra. Órfã, ela não seria encontrada nem por quem procura
+     * exatamente isso.
+     */
+    const seg = [...paginas.keys()].filter((r) => r.startsWith('/seguranca/'))
+    expect(seg.length, 'seção de segurança não encontrada').toBe(4)
+    expect(seg.filter((r) => (entrada.get(r) ?? 0) < 2), 'página de segurança com menos de 2 links').toEqual([])
+  })
+
   it('toda página de tribunal aponta para guias', () => {
     const sem = tribunais.filter((r) => !/href="\/guias\/[a-z]/.test(semRodape(paginas.get(r)!)))
     expect(sem, 'página de tribunal sem nenhum link para guia').toEqual([])

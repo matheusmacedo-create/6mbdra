@@ -1,0 +1,181 @@
+---
+import Base from '../../layouts/Base.astro'
+import { SITE } from '../../config/site'
+
+/*
+ * A página que tira a garantia do campo da promessa.
+ *
+ * Todo site de PDF afirma que respeita a privacidade. O que quase nenhum faz é ensinar o visitante
+ * a desmentir a própria afirmação. Os quatro métodos abaixo estão em ordem de esforço: o primeiro
+ * não exige nada além de desligar o wi-fi; o último é ler o código.
+ */
+const METODOS = [
+  {
+    n: 1,
+    esforco: '30 segundos',
+    titulo: 'Processe um arquivo em modo avião',
+    corpo:
+      'É o teste mais direto e não exige nenhum conhecimento técnico: se a ferramenta funciona sem internet, é porque não está mandando nada para lugar nenhum.',
+    passos: [
+      'Abra a ferramenta e espere a página carregar por completo.',
+      'Desligue o wi-fi, ative o modo avião ou tire o cabo de rede.',
+      'Arraste um PDF e prepare normalmente.',
+      'Baixe o resultado.',
+    ],
+    remate:
+      'Funciona igual. Na primeira vez pode ser preciso preparar um arquivo antes de desconectar, para o compressor de 15,4 MB terminar de baixar — depois disso ele fica no cache.',
+  },
+  {
+    n: 2,
+    esforco: '2 minutos',
+    titulo: 'Olhe a aba de rede do seu navegador',
+    corpo:
+      'Todo navegador tem um painel que mostra cada requisição que a página faz. É a mesma ferramenta que um desenvolvedor usaria para auditar isso.',
+    passos: [
+      'Aperte F12 (ou clique com o botão direito → Inspecionar) e vá na aba Rede / Network.',
+      'Marque "Preservar registro" / "Preserve log", para nada sumir.',
+      'Prepare um arquivo do começo ao fim.',
+      'Ordene as requisições por tamanho e olhe a coluna de método.',
+    ],
+    remate:
+      'Você verá o site, o compressor em .wasm e, se tiver aceitado os cookies, o Google. Nenhuma requisição carrega o seu documento — e o único envio ao brpdf é a medição de uso, um punhado de bytes com contagens.',
+  },
+  {
+    n: 3,
+    esforco: '5 minutos',
+    titulo: 'Leia o teste que verifica isso a cada versão',
+    corpo:
+      'Esta garantia não depende de alguém lembrar de mantê-la: existe um teste automático que a verifica, e ele roda antes de qualquer versão ir ao ar.',
+    passos: [
+      'O teste processa um PDF de verdade, do tamanho de um processo real.',
+      'Ele grava toda requisição de rede que a página faz, incluindo WebSockets e os envios em segundo plano.',
+      'Calcula o tamanho em bytes e a impressão digital (SHA-256) do arquivo usado.',
+      'E falha se qualquer parte disso aparecer em qualquer lugar do tráfego.',
+    ],
+    remate:
+      'Está em tests/e2e/app.spec.ts, com o nome "nenhuma requisição de rede transporta os documentos (RF06)". Se alguém introduzir um envio de arquivo por engano, a versão não é publicada.',
+  },
+  {
+    n: 4,
+    esforco: 'sem limite',
+    titulo: 'Leia o código-fonte',
+    corpo:
+      'O brpdf é software livre sob licença AGPL-3.0. Não há parte fechada: o que roda no seu navegador é o que está publicado.',
+    passos: [
+      'src/tool/ — a ferramenta inteira, incluindo os workers que rodam o compressor.',
+      'src/worker/ — o servidor, que entrega arquivos estáticos e recebe a medição de uso.',
+      'tests/ — os testes, inclusive o de rede descrito acima.',
+    ],
+    remate:
+      'A AGPL obriga quem fizer uma versão modificada e colocar no ar a publicar o código dela também. Na prática: ninguém pode pegar esta ferramenta, adicionar um envio escondido e distribuir sem mostrar.',
+  },
+]
+
+const dados = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'HowTo',
+      name: 'Como verificar que o brpdf não envia seus documentos',
+      description: 'Quatro formas de conferir por conta própria, do teste em modo avião à leitura do código-fonte.',
+      inLanguage: 'pt-BR',
+      totalTime: 'PT5M',
+      step: METODOS.map((m) => ({
+        '@type': 'HowToStep',
+        name: m.titulo,
+        text: m.corpo,
+        itemListElement: m.passos.map((p) => ({ '@type': 'HowToDirection', text: p })),
+      })),
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Início', item: SITE.url },
+        { '@type': 'ListItem', position: 2, name: 'Segurança', item: new URL('/seguranca/', SITE.url).href },
+        { '@type': 'ListItem', position: 3, name: 'Verifique você mesmo', item: new URL('/seguranca/verifique/', SITE.url).href },
+      ],
+    },
+  ],
+}
+---
+<Base
+  title="Como verificar que o brpdf não envia seus documentos"
+  description="Quatro formas de conferir por conta própria: teste em modo avião, aba de rede do navegador, o teste automático da garantia e o código-fonte aberto."
+  path="/seguranca/verifique/"
+>
+  <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
+
+  <main class="page prose">
+    <p><a href="/seguranca/">← Segurança</a></p>
+    <h1>Verifique você mesmo</h1>
+    <p class="lead">
+      Todo site de PDF diz que respeita a sua privacidade. A diferença aqui é que você não precisa acreditar — pode
+      testar. Quatro caminhos, do que leva meio minuto ao que não tem limite.
+    </p>
+
+    <ol class="metodos">
+      {METODOS.map((m) => (
+        <li>
+          <div class="metodo-topo">
+            <span class="metodo-num">{m.n}</span>
+            <div>
+              <h2>{m.titulo}</h2>
+              <span class="metodo-esforco">{m.esforco}</span>
+            </div>
+          </div>
+          <p>{m.corpo}</p>
+          <ol class="metodo-passos">
+            {m.passos.map((p) => <li>{p}</li>)}
+          </ol>
+          <p class="metodo-remate">{m.remate}</p>
+        </li>
+      ))}
+    </ol>
+
+    <h2>O teste da garantia, por dentro</h2>
+    <p>
+      O trecho abaixo é o coração do método 3 — não é ilustração, é o código que roda. Ele calcula a impressão digital do
+      arquivo e procura por ela em tudo que a página mandou para a rede:
+    </p>
+
+    <div class="codigo">
+      <pre><code>{`const fileBytes = readFileSync(fx.scanBig)
+const size = String(fileBytes.length)
+const sha = createHash('sha256').update(fileBytes).digest('hex')
+
+expect(sockets, 'nenhum WebSocket').toHaveLength(0)`}</code></pre>
+    </div>
+
+    <p>
+      Por que a impressão digital e não só o nome do arquivo: um envio escondido poderia renomear, fatiar ou codificar o
+      documento. O que não dá para disfarçar é a quantidade de bytes e o conteúdo em si — e é isso que o teste procura,
+      em toda requisição, em todo WebSocket e no corpo de cada envio em segundo plano.
+    </p>
+
+    <h2>Duas proteções a mais, que não aparecem na tela</h2>
+    <ul>
+      <li>
+        <strong>O navegador é proibido de falar com quem não está na lista.</strong> O site declara uma política de
+        segurança de conteúdo que restringe as conexões permitidas. Mesmo que um código malicioso entrasse na página por
+        alguma falha, o próprio navegador bloquearia a tentativa de mandar dados para fora.
+      </li>
+      <li>
+        <strong>Nem o site pode executar código improvisado.</strong> A mesma política proíbe as duas brechas mais comuns
+        para injeção de script. Isso torna o site mais chato de desenvolver, de propósito.
+      </li>
+    </ul>
+
+    <h2>Se você encontrar algo diferente do que está escrito aqui</h2>
+    <p>
+      Queremos saber, e isso não é formalidade: uma página que ensina a desconfiar precisa aceitar o resultado da
+      desconfiança. <a href="/contato/">Fale com a gente</a> — e se for uma falha de segurança, descreva o que observou
+      antes de publicar em qualquer lugar.
+    </p>
+
+    <div class="callout">
+      Voltar para <a href="/seguranca/">a visão geral da segurança</a>, ver
+      <a href="/seguranca/como-funciona/">o fluxo por dentro</a> ou ler
+      <a href="/privacidade/">a política de privacidade completa</a>.
+    </div>
+  </main>
+</Base>

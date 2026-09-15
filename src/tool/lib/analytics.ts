@@ -71,6 +71,29 @@ export type CampoDeMedicao =
 
 export type EventProps = Partial<Record<CampoDeMedicao, string | number | boolean>>
 
+/*
+ * A mesma lista como valor, para a página de segurança listar os campos sem ninguém redigitá-los.
+ * `satisfies` faz o compilador exigir que os dois lados continuem iguais: campo novo no tipo e
+ * esquecido aqui não compila. Uma página que promete transparência não pode mostrar uma lista
+ * desatualizada — seria pior que não mostrar nenhuma.
+ */
+export const CAMPOS_DE_MEDICAO = [
+  'caminho',
+  'origem',
+  'tribunal',
+  'sistema',
+  'situacao',
+  'categoria',
+  'faixa',
+  'tipo',
+  'quantidade',
+  'nivel',
+  'partes',
+  'segundos',
+  'paginas',
+  'meta_mb',
+] as const satisfies readonly CampoDeMedicao[]
+
 declare global {
   interface Window {
     __analytics?: (event: EventName, props?: EventProps) => void

@@ -1,0 +1,226 @@
+---
+import Base from '../../layouts/Base.astro'
+import { SITE } from '../../config/site'
+import { CAMPOS_DE_MEDICAO } from '../../tool/lib/analytics'
+
+/*
+ * O contrapeso da página anterior.
+ *
+ * Dizer só "o documento não sai" é meia verdade útil: alguma coisa sai, e uma página de
+ * transparência que esconde a parte inconveniente vale menos que nenhuma. Aqui está o inventário
+ * inteiro, inclusive a medição de uso e o Google.
+ *
+ * A lista de campos vem de src/tool/lib/analytics.ts, não daqui — assim ela não pode ficar
+ * desatualizada em relação ao que o código realmente envia.
+ */
+const EXPLICACAO: Record<string, { o: string; ex: string }> = {
+  caminho: { o: 'qual página do site foi aberta', ex: '/tribunais/tjsp-esaj/' },
+  origem: { o: 'domínio de quem indicou o link, sem o caminho', ex: 'google.com' },
+  tribunal: { o: 'sigla do tribunal escolhido na ferramenta', ex: 'TJSP' },
+  sistema: { o: 'sistema de peticionamento da regra escolhida', ex: 'e-SAJ' },
+  situacao: { o: 'em que estado o processamento terminou', ex: 'dividido' },
+  categoria: { o: 'código do erro, quando algo falha', ex: 'ENGINE_TIMEOUT' },
+  faixa: { o: 'faixa de tamanho do original — nunca o tamanho exato', ex: '20-50MB' },
+  tipo: { o: 'subtipo do evento', ex: 'zip' },
+  quantidade: { o: 'quantos arquivos havia no lote', ex: '3' },
+  nivel: { o: 'nível de compressão que foi necessário', ex: '2' },
+  partes: { o: 'em quantas partes o documento foi dividido', ex: '8' },
+  segundos: { o: 'quanto tempo o processamento levou', ex: '38' },
+  paginas: { o: 'quantas páginas o documento tinha', ex: '1322' },
+  meta_mb: { o: 'o limite-alvo usado, em MB', ex: '9.5' },
+}
+
+const NUNCA = [
+  'O conteúdo do documento, inteiro ou em pedaço',
+  'O nome do arquivo',
+  'Número de processo, nome de parte ou qualquer texto extraído',
+  'Seu endereço IP',
+  'Cookie de identificação próprio',
+  'Qualquer identificador que siga você de um dia para o outro',
+]
+
+const dados = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'TechArticle',
+      headline: 'O que o brpdf envia pela rede, campo por campo',
+      description: 'Inventário completo do tráfego: arquivos do site, medição de uso agregada e cookies do Google mediante aceite.',
+      inLanguage: 'pt-BR',
+      isAccessibleForFree: true,
+      mainEntityOfPage: new URL('/seguranca/o-que-sai-do-navegador/', SITE.url).href,
+      publisher: { '@type': 'Organization', name: SITE.name, url: SITE.url },
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Início', item: SITE.url },
+        { '@type': 'ListItem', position: 2, name: 'Segurança', item: new URL('/seguranca/', SITE.url).href },
+        { '@type': 'ListItem', position: 3, name: 'O que sai do navegador', item: new URL('/seguranca/o-que-sai-do-navegador/', SITE.url).href },
+      ],
+    },
+  ],
+}
+---
+<Base
+  title="O que o brpdf envia pela rede, campo por campo"
+  description="O inventário completo do que trafega: arquivos do site, medição de uso agregada e cookies do Google só após aceite. Nenhum documento, nome ou número de processo."
+  path="/seguranca/o-que-sai-do-navegador/"
+>
+  <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
+
+  <main class="page prose">
+    <p><a href="/seguranca/">← Segurança</a></p>
+    <h1>O que sai do navegador</h1>
+    <p class="lead">
+      Dizer apenas “seu documento não sai” seria meia verdade. Alguma coisa sai — e aqui está tudo, inclusive a parte
+      que dá mais trabalho explicar.
+    </p>
+
+    <h2>As três coisas que trafegam</h2>
+
+    <figure class="diagrama">
+      <svg viewBox="0 0 760 240" role="img" aria-labelledby="t-inv d-inv" class="svg-diagrama">
+        <title id="t-inv">Inventário do que trafega entre o navegador e a rede</title>
+        <desc id="d-inv">
+          Três fluxos saem ou entram: os arquivos do site, baixados como em qualquer página; a medição de uso, enviada
+          como contagens; e os cookies do Google, apenas se a pessoa aceitar. O documento permanece no navegador.
+        </desc>
+
+        <rect x="1" y="30" width="240" height="196" rx="10" class="d-moldura" />
+        <text x="16" y="52" class="d-rot d-rot-ok">Seu navegador</text>
+        <rect x="20" y="70" width="202" height="52" rx="7" class="d-caixa d-caixa-ok" />
+        <text x="121" y="94" class="d-doc" text-anchor="middle">📄 seu documento</text>
+        <text x="121" y="112" class="d-mini" text-anchor="middle">nunca atravessa esta borda</text>
+
+        <!-- fluxo 1: arquivos do site -->
+        <path d="M600 74 H250" class="d-seta d-ok" marker-end="url(#i-pta)" />
+        <rect x="300" y="52" width="196" height="19" rx="4" class="d-tag-ok" />
+        <text x="398" y="65" class="d-tag-txt" text-anchor="middle">1 · arquivos do site (entram)</text>
+
+        <!-- fluxo 2: medicao -->
+        <path d="M250 140 H600" class="d-seta d-neutro" marker-end="url(#i-pta-n)" />
+        <rect x="300" y="118" width="196" height="19" rx="4" class="d-tag-neutro" />
+        <text x="398" y="131" class="d-tag-txt" text-anchor="middle">2 · medição de uso (sai)</text>
+
+        <!-- fluxo 3: google -->
+        <path d="M250 200 H600" class="d-seta d-tracejada" marker-end="url(#i-pta-n)" />
+        <rect x="290" y="178" width="216" height="19" rx="4" class="d-tag-neutro" />
+        <text x="398" y="191" class="d-tag-txt" text-anchor="middle">3 · Google, só se você aceitar</text>
+
+        <rect x="606" y="30" width="153" height="196" rx="10" class="d-caixa" />
+        <text x="682" y="62" class="d-cap" text-anchor="middle">Rede</text>
+        <text x="682" y="96" class="d-mini" text-anchor="middle">HTML, CSS,</text>
+        <text x="682" y="114" class="d-mini" text-anchor="middle">o compressor</text>
+        <text x="682" y="146" class="d-mini" text-anchor="middle">contagens e</text>
+        <text x="682" y="164" class="d-mini" text-anchor="middle">categorias</text>
+        <text x="682" y="200" class="d-mini" text-anchor="middle">medição Google</text>
+
+        <defs>
+          <marker id="i-pta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" class="d-pta-ok" />
+          </marker>
+          <marker id="i-pta-n" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" class="d-pta-neutro" />
+          </marker>
+        </defs>
+      </svg>
+    </figure>
+
+    <h3>1. Os arquivos do site</h3>
+    <p>
+      HTML, folha de estilo, o código da ferramenta e o motor de compressão em WebAssembly. É o mesmo que qualquer site
+      baixa para funcionar, e vai só numa direção: da rede para você. O compressor tem 15,4 MB e é baixado uma vez.
+    </p>
+
+    <h3>2. A medição de uso</h3>
+    <p>
+      O brpdf conta quanta gente usa, o que dá certo e o que dá errado — porque sem isso não há como melhorar a
+      ferramenta. Esses eventos são <strong>contagens e categorias</strong>, nunca conteúdo.
+    </p>
+    <p>
+      A proteção não é uma promessa: o servidor aceita <strong>apenas os {CAMPOS_DE_MEDICAO.length} campos abaixo</strong>
+      e descarta silenciosamente qualquer outro na entrada. A lista desta página é gerada do próprio código, então ela
+      não pode ficar desatualizada em relação ao que é enviado de verdade.
+    </p>
+
+    <div class="rules-table">
+      <table>
+        <thead>
+          <tr><th>Campo</th><th>O que registra</th><th>Exemplo</th></tr>
+        </thead>
+        <tbody>
+          {CAMPOS_DE_MEDICAO.map((c) => (
+            <tr>
+              <td><code>{c}</code></td>
+              <td>{EXPLICACAO[c]?.o ?? '—'}</td>
+              <td><code>{EXPLICACAO[c]?.ex ?? '—'}</code></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <p>Repare no que <em>não</em> está na tabela:</p>
+    <ul class="nunca">
+      {NUNCA.map((n) => <li>{n}</li>)}
+    </ul>
+
+    <h3>Como contamos visitantes sem identificar ninguém</h3>
+    <p>
+      Para saber quantas pessoas diferentes usaram a ferramenta num dia, é preciso distinguir uma da outra — e isso
+      normalmente se faz com cookie. Aqui não: o identificador é um <strong>hash</strong> calculado a partir do seu IP,
+      do navegador, de um segredo do servidor <strong>e da data</strong>.
+    </p>
+    <p>
+      Três consequências, e a terceira é um custo assumido:
+    </p>
+    <ul>
+      <li>o IP não é guardado, e o hash não pode ser revertido para descobri-lo;</li>
+      <li>à meia-noite o valor muda, então <strong>ninguém é seguido de um dia para o outro</strong>;</li>
+      <li>
+        por isso mesmo, <strong>não sabemos quantas pessoas únicas usam o site</strong> — só quantas visitas por dia. O
+        painel interno diz “visitas”, e não “usuários”, porque é o número que este banco honestamente tem.
+      </li>
+    </ul>
+
+    <h3>3. O Google, e só se você aceitar</h3>
+    <p>
+      Há medição do Google Analytics configurada. Diferente do padrão da maioria dos sites, <strong>o script não é
+      baixado antes do aceite</strong> — se você recusar ou ignorar o aviso, nenhuma conexão com domínio do Google é
+      aberta pela ferramenta. Recusar não muda nada no funcionamento.
+    </p>
+
+    <h2>O que fica guardado no seu navegador</h2>
+    <p>
+      Fora da rede, a ferramenta guarda localmente apenas as suas preferências: tribunal escolhido, opções marcadas,
+      resposta ao aviso de cookies. Isso fica na sua máquina, não é enviado, e some quando você limpa os dados do site.
+      Nada disso descreve um documento.
+    </p>
+
+    <h2>A trava que impede isso de mudar sem ninguém notar</h2>
+    <p>
+      Uma lista de campos é fácil de escrever e fácil de esquecer. Por isso a lista é verificada por três caminhos
+      diferentes, e o build quebra se algum deles falhar:
+    </p>
+    <ul>
+      <li>
+        <strong>o navegador só compila</strong> se todo campo enviado estiver na lista — campo inventado é erro de
+        compilação, não descarte silencioso;
+      </li>
+      <li>
+        <strong>um teste compara</strong> a lista do navegador com a lista que o servidor aceita, e a lista do servidor
+        com as colunas que existem no banco;
+      </li>
+      <li>
+        <strong>outro teste rejeita</strong> qualquer campo cujo nome sugira dado de documento — se alguém no futuro
+        criar um campo chamado <code>nome_arquivo</code>, o teste quebra antes de ir ao ar.
+      </li>
+    </ul>
+
+    <div class="callout">
+      Não acredite em nada disso pela palavra: <a href="/seguranca/verifique/">veja como conferir por conta própria</a>,
+      inclusive abrindo a aba de rede do seu navegador enquanto processa um arquivo.
+    </div>
+  </main>
+</Base>

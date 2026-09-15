@@ -340,3 +340,92 @@ tr.sem-regra td { color: var(--muted); }
  * colapso de margem e soma 32px à caixa. Reservar menos que o total deixaria o salto de volta.
  */
 .ilha-ferramenta { width: 100%; min-height: 400px; }
+
+/* ——————————————————————————————————————————————————————————————
+ * Páginas de segurança: diagramas e blocos próprios.
+ *
+ * Os diagramas são SVG inline, desenhados com os tokens do site — nada de imagem, para que o texto
+ * dentro deles seja lido por leitor de tela, encontrado pela busca do navegador e continue nítido
+ * em qualquer zoom. Cada um tem <title> e <desc> descrevendo o mecanismo, não a aparência.
+ * —————————————————————————————————————————————————————————————— */
+.diagrama { margin: 24px 0 28px; }
+.svg-diagrama { width: 100%; height: auto; display: block; }
+.diagrama figcaption { margin-top: 10px; font-size: 14.5px; color: var(--muted); }
+
+/* Caixas e molduras */
+.d-caixa { fill: var(--surface); stroke: var(--border-strong); stroke-width: 1.5; }
+.d-caixa-ok { fill: var(--accent-soft); stroke: var(--accent); }
+.d-caixa-perigo { fill: var(--warn-bg, #fdf3d7); stroke: var(--ic-yellow, #b9540a); }
+.d-interno { fill: var(--surface); stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.d-moldura { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.d-divisa { stroke: var(--border-strong); stroke-width: 1.5; stroke-dasharray: 5 4; }
+
+/* Texto dentro do desenho */
+.d-rot { font: 600 13px var(--font-sans, system-ui); fill: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; }
+.d-rot-ok { fill: var(--accent); }
+.d-cap { font: 600 14px var(--font-sans, system-ui); fill: var(--ink); }
+.d-mini { font: 400 12.5px var(--font-sans, system-ui); fill: var(--muted); }
+.d-doc { font: 500 13.5px var(--font-sans, system-ui); fill: var(--ink-2); }
+.d-nota { font: 400 13px var(--font-sans, system-ui); fill: var(--muted); }
+.d-vazio { font: 500 12.5px var(--font-sans, system-ui); fill: var(--success); }
+
+/* Setas: a cor carrega o significado — o que é risco, o que é seguro, o que é neutro. */
+.d-seta { fill: none; stroke-width: 2; }
+.d-perigo { stroke: var(--ic-yellow, #b9540a); }
+.d-ok { stroke: var(--accent); }
+.d-neutro { stroke: var(--muted); }
+.d-tracejada { stroke: var(--muted); stroke-dasharray: 5 4; fill: none; stroke-width: 2; }
+.d-pta-perigo { fill: var(--ic-yellow, #b9540a); }
+.d-pta-ok { fill: var(--accent); }
+.d-pta-neutro { fill: var(--muted); }
+
+/* Etiquetas sobre as setas */
+.d-tag-perigo { fill: var(--ic-yellow-bg, #fdf3d7); stroke: var(--ic-yellow, #b9540a); stroke-width: 1; }
+.d-tag-ok { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1; }
+.d-tag-neutro { fill: var(--surface-2); stroke: var(--border-strong); stroke-width: 1; }
+.d-tag-txt { font: 500 11.5px var(--font-sans, system-ui); fill: var(--ink-2); }
+
+/* Cartões da visão geral */
+.seg-cards a { font-size: 17px; }
+
+/* Etapas numeradas do fluxo */
+.etapas { list-style: none; counter-reset: none; padding: 0; margin: 20px 0 0; display: grid; gap: 4px; }
+.etapas > li { display: grid; grid-template-columns: auto 1fr; gap: 16px; padding: 18px 0; border-top: 1px solid var(--border); }
+.etapa-num {
+  width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent);
+  display: grid; place-items: center; font-weight: 700; font-size: 14px;
+}
+.etapas h3 { margin: 2px 0 6px; }
+.etapas .onde { margin: 8px 0 0; font-size: 13.5px; color: var(--muted); }
+
+/* Lista do que nunca é enviado */
+.nunca { list-style: none; padding: 0; margin: 12px 0 22px; display: grid; gap: 8px; }
+.nunca li { padding-left: 28px; position: relative; color: var(--ink-2); }
+.nunca li::before {
+  content: "✕"; position: absolute; left: 6px; top: -1px;
+  color: var(--danger, #d92d20); font-weight: 700;
+}
+
+/* Métodos de verificação */
+.metodos { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 18px; }
+.metodos > li { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; }
+.metodo-topo { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; margin-bottom: 10px; }
+.metodo-num {
+  width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: #fff;
+  display: grid; place-items: center; font-weight: 700;
+}
+.metodo-topo h2 { margin: 0; font-size: 20px; }
+.metodo-esforco { font-size: 13px; color: var(--muted); font-weight: 600; }
+.metodo-passos { margin: 12px 0; padding-left: 20px; }
+.metodo-passos li { margin-bottom: 6px; color: var(--ink-2); }
+.metodo-remate { margin: 12px 0 0; padding-left: 14px; border-left: 3px solid var(--accent); color: var(--ink-2); font-size: 15px; }
+
+/* Bloco de código */
+.codigo { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); overflow-x: auto; margin: 18px 0; }
+.codigo pre { margin: 0; padding: 18px 20px; }
+.codigo code { font-size: 13.5px; line-height: 1.7; white-space: pre; color: var(--ink); }
+
+@media (max-width: 560px) {
+  .metodos > li { padding: 18px 16px; }
+  .etapas > li { gap: 12px; }
+}

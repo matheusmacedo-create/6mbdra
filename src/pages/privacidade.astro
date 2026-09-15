@@ -8,6 +8,12 @@ const USA_GOOGLE = Boolean((SITE.analytics.ga4 ?? '').trim() || (SITE.analytics.
     <h1>Privacidade e segurança</h1>
     <p class="lead">Documentos jurídicos contêm dados pessoais, financeiros e, muitas vezes, sigilosos. A regra número um deste serviço é: <strong>o conteúdo dos seus documentos não sai do seu dispositivo.</strong></p>
 
+    <div class="callout">
+      Este é o documento formal. Se o que você quer é <strong>entender o mecanismo e conferir por conta própria</strong>,
+      comece por <a href="/seguranca/">como o brpdf protege seus documentos</a> — com os fluxos desenhados, o inventário
+      do que trafega e quatro formas de verificar sem depender da nossa palavra.
+    </div>
+
     <h2>Como o processamento local funciona</h2>
     <ul>
       <li>A página é um site estático. O motor de compressão (Ghostscript) é baixado uma vez para o seu navegador e executado ali, em WebAssembly, dentro de um Web Worker.</li>
