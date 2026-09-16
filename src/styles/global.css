@@ -138,7 +138,7 @@ img, svg { max-width: 100%; }
 /*
  * Faixa apertada do cabeçalho.
  *
- * Com quatro itens de navegação mais o botão, entre ~900 e 1120 px a linha não cabia com o
+ * Com cinco itens de navegação mais o botão, abaixo de ~1220 px a linha não cabe com o
  * espaçamento cheio: o cabeçalho estourava e a PÁGINA INTEIRA passava a rolar na horizontal. Foi o
  * custo de colocar "Verificar assinatura" na barra, e apareceu só ao medir largura por largura.
  *
@@ -146,11 +146,24 @@ img, svg { max-width: 100%; }
  * notebook, que é onde o escritório trabalha. O espaçamento encolhe, e a assinatura da marca
  * ("PDF Jurídico") sai, como já sai no celular: ela é o primeiro elemento dispensável da linha.
  */
-@media (min-width: 901px) and (max-width: 1120px) {
+@media (min-width: 901px) and (max-width: 1220px) {
   .site-header .inner { gap: 14px; }
   .site-nav a { padding: 9px 8px; font-size: 14.5px; }
   .header-cta { padding: 10px 14px; }
   .brand .brand-sub { display: none; }
+}
+
+/*
+ * Faixa mais apertada ainda: com CINCO ferramentas na barra, nem encolhendo o espaçamento a linha
+ * cabe abaixo de ~1000 px (medido: faltavam 92 px a 901 px).
+ *
+ * Quem sai é o botão "Preparar PDFs", e não um item de navegação — ele duplica o "Compactar PDF"
+ * que está logo ali na barra, então é o único elemento da linha cuja ausência não tira nada de
+ * ninguém. Perder uma ferramenta de vista custaria mais.
+ */
+@media (min-width: 901px) and (max-width: 1000px) {
+  .header-cta { display: none; }
+  .site-nav { margin-left: auto; }
 }
 
 @media (max-width: 900px) {

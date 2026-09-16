@@ -106,6 +106,12 @@ const ROTULOS: Record<string, string> = {
   indeterminada: 'Não deu para concluir',
   nao_suportada: 'Formato ainda não lido',
   conferidor: 'Conferidor de assinaturas',
+  metadados_lidos: 'Metadados lidos',
+  metadados: 'Leitor de metadados',
+  com_metadados: 'Tinha metadados',
+  sem_metadados: 'Arquivo limpo',
+  // 'assinado' já está mapeado acima (análise prévia da bancada), com o mesmo sentido.
+  simples: 'Sem assinatura',
   UNSUPPORTED: 'Navegador sem suporte',
   PASSWORD: 'PDF com senha',
   INVALID: 'PDF inválido ou corrompido',

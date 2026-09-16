@@ -1,0 +1,66 @@
+/*
+ * Leitor de metadados.
+ *
+ * Duas hierarquias visuais convivem aqui, e a diferença é deliberada: os FATOS declarados (data,
+ * autor, programa) usam o tom neutro do site, porque são pistas; o aviso de gravação posterior à
+ * assinatura usa destaque, porque é a única afirmação desta tela que é prova.
+ */
+.metadados { width: 100%; min-width: 0; }
+.md-dica { margin: 14px 0 0; text-align: center; font-size: 14.5px; color: var(--muted); }
+.md-erro-linha { margin: 8px 0 0; text-align: center; font-size: 14.5px; color: var(--warn); }
+.md-topo { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.md-topo h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.4px; }
+.md-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+
+.md-cartao {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius, 12px);
+  padding: 20px; box-shadow: var(--shadow);
+}
+.md-cartao h3 { margin: 0; font-size: 17px; font-weight: 800; letter-spacing: -0.3px; word-break: break-word; }
+.md-arquivo { margin: 4px 0 0; font-size: 13.5px; color: var(--muted); }
+
+.md-vazio {
+  margin: 16px 0 0; padding: 14px; border-radius: 10px; font-size: 15px; color: var(--ink-2);
+  background: var(--success-background); border: 1px solid var(--success-line);
+}
+
+.md-fatos { margin: 18px 0 0; display: grid; gap: 14px; }
+.md-fatos > div { display: grid; gap: 4px; }
+.md-fatos dt {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+}
+.md-fatos dd { margin: 0; font-size: 16px; color: var(--ink); display: grid; gap: 2px; }
+.md-fatos dd span { font-size: 15px; color: var(--ink-2); }
+/* Os dois campos que as pessoas vieram buscar ganham peso. */
+.md-fatos > div.destaque dd { font-size: 18px; font-weight: 700; letter-spacing: -0.2px; }
+.md-ausente { color: var(--muted); font-style: italic; font-size: 15px !important; font-weight: 400; }
+
+.md-prova {
+  margin: 18px 0 0; padding: 13px 14px; border-radius: 10px;
+  display: flex; align-items: flex-start; gap: 10px; font-size: 14.5px; color: var(--ink-2);
+  background: var(--warn-bg); border: 1px solid var(--warn-line);
+}
+.md-prova svg { flex: 0 0 auto; margin-top: 2px; color: var(--warn); }
+
+.md-revisoes { margin: 20px 0 0; padding-top: 16px; border-top: 1px solid var(--border); }
+.md-revisoes h4 {
+  display: flex; align-items: center; gap: 7px; margin: 0 0 6px;
+  font-size: 15px; font-weight: 700; color: var(--ink);
+}
+.md-nota { margin: 0 0 12px; font-size: 14px; color: var(--muted); }
+.md-trilha { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.md-trilha li { display: flex; align-items: flex-start; gap: 10px; font-size: 14.5px; color: var(--ink-2); }
+.md-trilha li > span:last-child { display: grid; gap: 1px; min-width: 0; }
+.md-trilha li.depois { color: var(--warn); }
+.md-trilha li.depois em { font-style: normal; font-weight: 700; }
+.md-rev-n {
+  display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; flex: 0 0 auto;
+  background: var(--surface-2); color: var(--ink-3); font-size: 12px; font-weight: 700;
+}
+.md-trilha li.depois .md-rev-n { background: var(--warn-bg); color: var(--warn); }
+
+@media (max-width: 560px) {
+  .md-cartao { padding: 16px; }
+  .md-fatos > div.destaque dd { font-size: 16.5px; }
+}

@@ -1,0 +1,217 @@
+---
+import Base from '../layouts/Base.astro'
+import Metadados from '../tool/metadados/Metadados'
+import { SITE } from '../config/site'
+
+/*
+ * Raio-X do PDF — leitor de metadados.
+ *
+ * NOME E BUSCA, a mesma lição que o verificador de assinaturas ensinou: "Raio-X do PDF" é o nome
+ * do produto, memorável e bom em barra de navegação e em cartão; "metadados de PDF" é o que as
+ * pessoas digitam. Os dois convivem — o primeiro rotula, o segundo está no endereço, no título e
+ * no H1, que é onde o buscador olha.
+ *
+ * A página aponta nos DOIS sentidos de propósito. Quem chega quer saber quem fez o documento que
+ * recebeu; a metade mais útil, e a única de que ninguém desconfia, é que o próprio arquivo dessa
+ * pessoa conta o mesmo para quem o receber. É também a metade que dá a busca de maior intenção
+ * comercial ("remover metadados do pdf").
+ */
+const PERGUNTAS = [
+  {
+    q: 'Como saber quando um PDF foi alterado pela última vez?',
+    a: 'Todo PDF pode guardar a data da última modificação num campo interno chamado ModDate. Arraste o arquivo para a área acima e, se o campo existir, a data aparece na hora — junto com a data de criação, o autor declarado e os programas usados. Nada é enviado: a leitura acontece dentro do seu navegador.',
+  },
+  {
+    q: 'Dá para descobrir quem criou um PDF?',
+    a: 'Em muitos casos, sim. O PDF guarda um campo de autor que costuma trazer o nome de quem salvou o arquivo, ou o nome de usuário do computador. Na nossa medição em 60 documentos públicos de tribunais, 20 traziam nome no campo de autor — incluindo nomes completos de pessoas. Também aparecem o programa usado e, às vezes, um histórico de edição com data e software de cada passo.',
+  },
+  {
+    q: 'Essa data serve como prova de quando o documento foi feito?',
+    a: 'Não. Praticamente tudo que um PDF conta sobre si é declaração, não prova: a data de alteração é o que o programa gravou, e qualquer editor muda. São pistas boas — úteis para entender a origem de um documento — mas não substituem perícia. A única exceção é quando o arquivo está assinado digitalmente: aí dá para provar que uma gravação veio depois da assinatura, porque isso não depende de nenhuma data escrita, e sim do alcance da própria assinatura.',
+  },
+  {
+    q: 'O que meu PDF está entregando sobre mim?',
+    a: 'Provavelmente mais do que você imagina: seu nome ou o nome de usuário do computador, o programa e a versão que você usa, quando o arquivo foi criado e alterado, e às vezes o título interno de um rascunho antigo que nada tem a ver com o documento final. Ao protocolar uma peça, tudo isso vai junto para os autos e para a parte contrária. Solte o seu próprio arquivo aqui para ver.',
+  },
+  {
+    q: 'Como remover os metadados de um PDF?',
+    a: 'A forma mais simples é reprocessar o arquivo: ao passar um PDF pela compressão do brpdf, os campos de identificação do original não são carregados para o arquivo de saída. Em programas de escritório, procure por "Inspecionar documento" (Word) ou "Remover informações ocultas" antes de exportar. Atenção à ordem: se o documento vai ser assinado, limpe antes — mexer depois quebra a assinatura.',
+  },
+  {
+    q: 'Por que aparece "este arquivo foi salvo N vezes"?',
+    a: 'O formato PDF permite gravar acrescentando conteúdo ao fim do arquivo, sem apagar o que já estava lá. É assim que uma assinatura é aplicada sem invalidar outra anterior. Contar essas marcas mostra quantas vezes o documento foi tocado depois de nascer — e o conteúdo das versões anteriores continua dentro do arquivo.',
+  },
+  {
+    q: 'O documento é enviado para algum servidor?',
+    a: 'Não. A leitura acontece dentro do seu navegador, como no resto do brpdf. Com a página carregada, dá para desligar a internet e ler mesmo assim. Nem o documento, nem o nome do arquivo, nem os metadados saem da sua máquina — o que importa especialmente aqui, já que esta ferramenta lida justamente com dados pessoais embutidos em documentos.',
+  },
+  {
+    q: 'É grátis? Precisa instalar ou criar conta?',
+    a: 'É grátis, sem cadastro, sem instalar nada e sem limite de arquivos. O brpdf é software livre sob licença AGPL-3.0 e o código está publicado.',
+  },
+]
+
+const dados = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebApplication',
+      name: 'Raio-X do PDF — metadados, autor e data de alteração',
+      url: new URL('/metadados-pdf/', SITE.url).href,
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Navegador (Chrome, Edge, Firefox, Safari)',
+      inLanguage: 'pt-BR',
+      isAccessibleForFree: true,
+      description:
+        'Veja os metadados de um PDF: quem criou, quando foi alterado pela última vez, com qual programa e quantas vezes foi salvo. Sem enviar o arquivo.',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'BRL' },
+      license: 'https://www.gnu.org/licenses/agpl-3.0.html',
+      codeRepository: SITE.repo,
+      featureList: [
+        'Data da última alteração e da criação do PDF',
+        'Autor declarado e programas usados',
+        'Histórico de edição e trilha de revisões salvas',
+        'Prova de gravação posterior à assinatura digital',
+        'Processamento local, sem envio de arquivos',
+      ],
+    },
+    { '@type': 'FAQPage', mainEntity: PERGUNTAS.map((p) => ({ '@type': 'Question', name: p.q, acceptedAnswer: { '@type': 'Answer', text: p.a } })) },
+    {
+      '@type': 'HowTo',
+      name: 'Como ver os metadados de um PDF',
+      description: 'Três passos, sem instalar programa e sem enviar o documento para a internet.',
+      inLanguage: 'pt-BR',
+      totalTime: 'PT1M',
+      estimatedCost: { '@type': 'MonetaryAmount', currency: 'BRL', value: '0' },
+      step: [
+        { '@type': 'HowToStep', name: 'Abra a ferramenta', text: 'Abra esta página em qualquer navegador. Não é preciso instalar programa nem criar conta.' },
+        { '@type': 'HowToStep', name: 'Solte o PDF', text: 'Arraste o arquivo para a área de upload ou clique para escolhê-lo. O documento não é enviado: a leitura acontece dentro do navegador.' },
+        { '@type': 'HowToStep', name: 'Leia a ficha', text: 'A tela mostra a última alteração, a criação, o autor declarado, os programas usados e quantas vezes o arquivo foi salvo.' },
+      ],
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Início', item: SITE.url },
+        { '@type': 'ListItem', position: 2, name: 'Metadados de PDF', item: new URL('/metadados-pdf/', SITE.url).href },
+      ],
+    },
+  ],
+}
+---
+<Base
+  title="Metadados de PDF: quem criou e quando foi alterado"
+  description="Veja em 1 segundo quem criou um PDF, quando ele foi alterado pela última vez e com qual programa. Grátis, sem cadastro e sem enviar o arquivo para a internet."
+  path="/metadados-pdf/"
+>
+  <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
+
+  <main class="page prose metadados-page">
+    <h1>Metadados de PDF: quem criou e quando foi alterado</h1>
+    <p class="lead">
+      Todo PDF carrega uma ficha escondida — autor, datas, programa, histórico de edição. O <strong>Raio-X do PDF</strong> abre essa ficha na
+      tela. <strong>Grátis, sem cadastro</strong>, e o arquivo nunca sai do seu computador.
+    </p>
+
+    <div class="metadados-ilha"><Metadados client:only="react" /></div>
+
+    <ul class="vantagens">
+      <li><span class="v-marca" aria-hidden="true">✓</span>Grátis e sem cadastro</li>
+      <li><span class="v-marca" aria-hidden="true">✓</span>Resposta imediata</li>
+      <li><span class="v-marca" aria-hidden="true">✓</span>O arquivo não sai do seu computador</li>
+      <li><span class="v-marca" aria-hidden="true">✓</span>Funciona até sem internet</li>
+    </ul>
+
+    <p class="selo-sigilo">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="4" y="10" width="16" height="11" rx="2" />
+        <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+      </svg>
+      <span>
+        A leitura acontece dentro do navegador. Numa ferramenta que lida com dados pessoais embutidos em documentos, isso importa mais ainda.{' '}
+        <a href="/seguranca/verifique/">Veja como conferir isso</a>.
+      </span>
+    </p>
+
+    <h2>O que aparece na ficha</h2>
+    <ul class="grid-cards descobertas">
+      <li>
+        <strong>A última alteração</strong>
+        <p>A data que o programa gravou ao salvar. É o campo que a maioria das pessoas vem buscar aqui.</p>
+      </li>
+      <li>
+        <strong>Quem consta como autor</strong>
+        <p>Muitas vezes o nome da pessoa, às vezes o nome de usuário do computador — e quase sempre sem ela saber.</p>
+      </li>
+      <li>
+        <strong>Com qual programa foi feito</strong>
+        <p>Word, InDesign, um scanner, o sistema do tribunal. Dois campos: o que criou o conteúdo e o que gravou o PDF.</p>
+      </li>
+      <li>
+        <strong>Quantas vezes foi salvo</strong>
+        <p>PDF grava acrescentando ao fim, sem apagar o anterior. A trilha de gravações mostra quantas vezes o arquivo foi tocado.</p>
+      </li>
+    </ul>
+
+    <div class="callout warn">
+      <strong>Isto são pistas, não perícia.</strong> Quase tudo que um PDF conta sobre si é <em>declaração</em>: a data de alteração é o que o
+      programa escreveu, e qualquer editor muda. Serve para entender a origem de um documento, não para provar nada sozinho.
+    </div>
+
+    <h2>A exceção: quando a data vira prova</h2>
+    <p>
+      Há um caso em que não é declaração. Se o PDF está <strong>assinado digitalmente</strong>, a assinatura fixa exatamente até onde o conteúdo
+      protegido vai. Tudo escrito depois desse ponto é <em>provadamente</em> posterior — sem depender de nenhuma data gravada por software.
+    </p>
+    <p>
+      Quando isso acontece, a ferramenta avisa: <em>“escreveram neste arquivo depois de ele ser assinado”</em>. É a diferença entre uma pista e um
+      fato, e é o único lugar desta página onde usamos a palavra prova.
+      Para saber se a assinatura ainda confere, use o <a href="/conferir-assinatura/">verificador de assinatura</a>.
+    </p>
+
+    <h2>A pergunta que quase ninguém faz: e o <em>meu</em> PDF?</h2>
+    <p>
+      Vale nos dois sentidos. Tudo que você acabou de ler sobre o documento de outra pessoa é o que o <strong>seu</strong> arquivo conta a
+      qualquer um que o receba — inclusive à parte contrária, quando você protocola.
+    </p>
+    <p>
+      Numa medição em <strong>60 documentos públicos de tribunais</strong>, 20 traziam nome no campo de autor, 29 traziam a data da última
+      alteração e 21 guardavam mais de uma versão dentro do próprio arquivo. Em nenhum desses casos alguém decidiu publicar isso: o programa
+      gravou sozinho.
+    </p>
+    <p>
+      O teste leva cinco segundos: solte aqui a última petição que você enviou.{' '}
+      <a href="/guias/metadados-do-pdf-o-que-voce-esta-entregando-sem-saber/">O guia sobre o que fazer com o resultado</a> mostra como limpar
+      antes de protocolar — e por que a ordem importa quando o documento vai ser assinado.
+    </p>
+
+    <h2>Perguntas frequentes</h2>
+    <div class="faq-list">
+      {PERGUNTAS.map((p) => (<details><summary>{p.q}</summary><p>{p.a}</p></details>))}
+    </div>
+
+    <h2>Leia também</h2>
+    <ul>
+      <li><a href="/guias/metadados-do-pdf-o-que-voce-esta-entregando-sem-saber/">Metadados do PDF: o que você entrega sem saber</a></li>
+      <li><a href="/guias/como-saber-se-um-pdf-foi-alterado/">Como saber se um PDF foi alterado</a></li>
+      <li><a href="/conferir-assinatura/">Verificar a assinatura digital de um PDF</a></li>
+      <li><a href="/guias/checklist-antes-de-protocolar-anexos-em-pdf/">Checklist antes de protocolar</a></li>
+    </ul>
+  </main>
+</Base>
+
+<style>
+  .metadados-page { max-width: 860px; }
+  /* Altura reservada: a ilha só existe depois de hidratar, e sem isto o texto pula (CLS). */
+  .metadados-ilha { min-height: 330px; margin: 8px 0 4px; }
+  .vantagens { list-style: none; margin: 18px 0 6px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 22px; }
+  .vantagens li { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 15px; font-weight: 600; color: var(--ink-2); }
+  .v-marca {
+    display: inline-grid; place-items: center; width: 19px; height: 19px; border-radius: 50%; flex: 0 0 auto;
+    background: var(--success-background); color: var(--success); font-size: 12px; font-weight: 800;
+  }
+  .vantagens + .selo-sigilo { margin-top: 18px; }
+  .descobertas strong { display: block; margin-bottom: 4px; font-size: 16px; color: var(--ink); }
+  .descobertas p { margin: 0; }
+  @media (max-width: 560px) { .metadados-ilha { min-height: 300px; } }
+</style>

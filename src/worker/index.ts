@@ -24,7 +24,7 @@ const EVENTOS = new Set([
   'abriu_ferramenta', 'voltou_inicio', 'motor', 'regra_selecionada', 'opcao_alterada',
   'arquivo_adicionado', 'arquivo_analisado', 'arquivo_removido', 'liberar_arquivo',
   'juntou_documentos', 'lote_iniciado', 'lote_cancelado', 'lote_concluido', 'arquivo_resultado', 'tentar_novamente', 'erro',
-  'assinatura_conferida',
+  'assinatura_conferida', 'metadados_lidos',
   'zip_gerado', 'download',
 ])
 
