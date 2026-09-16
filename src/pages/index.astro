@@ -89,12 +89,14 @@ const PERGUNTAS = [
   { q: 'E se o PDF não couber mesmo comprimido?', a: 'Com a divisão automática ativada, o arquivo é separado em partes numeradas sem cortar páginas.' },
   { q: 'Posso preparar vários arquivos de uma vez?', a: 'Sim. O usuário pode selecionar vários PDFs ou uma pasta e baixar o lote em um único ZIP organizado.' },
   { q: 'Existe cobrança, cadastro ou limite diário?', a: 'Não. O brpdf é gratuito, não exige conta e pode ser utilizado quantas vezes o escritório precisar.' },
+  { q: 'Dá para saber se a assinatura digital de um PDF ainda vale?', a: 'Sim. O verificador de assinatura confere em menos de um segundo se o documento foi alterado depois de assinado e se o certificado encadeia até as raízes da ICP-Brasil — tudo dentro do navegador, sem enviar o documento.' },
+  { q: 'Como descubro quem criou um PDF e quando foi alterado?', a: 'O Raio-X do PDF abre a ficha interna do arquivo: autor declarado, datas de criação e alteração, programas usados e quantas vezes o documento foi salvo. Serve também para ver o que o seu próprio PDF entrega quando você protocola.' },
 ]
 
 const SEGURANCA = [
-  { t: 'Processamento local', d: 'Depois de carregar a ferramenta, o usuário pode até ficar offline.' },
-  { t: 'Texto e OCR preservados', d: 'O conteúdo pesquisável continua disponível no arquivo final.' },
-  { t: 'Sem cadastro', d: 'Nenhuma conta, e-mail ou assinatura para começar.' },
+  { t: 'Nada sai da sua máquina', d: 'Não é política de privacidade: não existe endereço no servidor que receba documento.' },
+  { t: 'Funciona offline', d: 'Com a página carregada, dá para desligar a internet e continuar trabalhando.' },
+  { t: 'Verificável por você', d: 'Código aberto, teste automático da garantia e quatro formas de conferir por conta própria.' },
 ]
 const dadosEstruturados = {
   '@context': 'https://schema.org',
@@ -108,13 +110,15 @@ const dadosEstruturados = {
       inLanguage: 'pt-BR',
       isAccessibleForFree: true,
       description:
-        'Comprima, divida e organize PDFs para PJe, eproc, e-SAJ e Projudi. Gratuito, sem cadastro e sem enviar documentos para a internet.',
+        'Comprima no limite do tribunal, divida em partes, verifique assinatura digital ICP-Brasil e leia os metadados de um PDF. Gratuito, sem cadastro e sem enviar documentos para a internet.',
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'BRL' },
       license: 'https://www.gnu.org/licenses/agpl-3.0.html',
       codeRepository: SITE.repo,
       featureList: [
         'Compressão de PDF até o limite do tribunal',
         'Divisão automática em partes por páginas inteiras',
+        'Verificação de assinatura digital e da cadeia ICP-Brasil',
+        'Leitura de metadados: autor, datas e revisões do arquivo',
         'Lote em ZIP com nomes padronizados',
         'Processamento local, sem envio de arquivos',
       ],
@@ -132,7 +136,7 @@ const dadosEstruturados = {
 ---
 <Base
   title="PDF pronto para protocolar"
-  description="Comprima, divida e organize PDFs para PJe, eproc, e-SAJ e Projudi. Gratuito, sem cadastro e sem enviar documentos para a internet."
+  description="Comprima no limite do tribunal, divida, verifique assinatura digital e veja o que seus PDFs revelam. Grátis, sem cadastro e sem enviar arquivo nenhum."
   path="/"
 >
   <Fragment slot="head">
@@ -142,10 +146,19 @@ const dadosEstruturados = {
     <section class="hero-band">
       <div class="wrap hero">
         <div class="hero-content home-only">
-          <p class="eyebrow">Ferramenta gratuita para advogados</p>
+          <p class="eyebrow">Grátis para advogados e escritórios</p>
           <h1 class="hero-title">PDF pronto para protocolar.</h1>
+          {/*
+            O herói descrevia só a compressão, que era o produto inteiro quando foi escrito. Hoje são
+            cinco ferramentas, e duas delas não têm concorrente que faça sem receber o arquivo.
+
+            A ordem da frase é deliberada: primeiro o que se resolve, depois a única coisa que
+            nenhum concorrente pode dizer. Quem já foi atrás de "comprimir PDF online" sabe o que
+            significa entregar a petição de um cliente para um servidor desconhecido.
+          */}
           <p class="hero-description">
-            Comprima seus documentos no limite certo do tribunal. Grátis, sem cadastro e sem enviar arquivos.
+            Comprima no limite do tribunal, divida, verifique assinatura digital e veja o que seus arquivos revelam.{' '}
+            <strong>Nada é enviado para a internet</strong> — tudo acontece dentro do seu navegador.
           </p>
         </div>
         {/*
@@ -158,18 +171,28 @@ const dadosEstruturados = {
     </section>
 
     <section class="trust-bar home-only" aria-label="Resumo do serviço">
+      {/*
+        Cada item é conferível por quem desconfia — nenhum número de usuário, nota ou depoimento.
+        "Código aberto" só entrou na lista depois de o site passar a linkar o repositório: antes
+        seria uma afirmação sem endereço, que é o mesmo que não afirmar.
+      */}
       <ul class="wrap">
-        <li><Fragment set:html={icone('check')} />Uso gratuito</li>
+        <li><Fragment set:html={icone('check')} />Grátis, sem cadastro</li>
         <li><Fragment set:html={icone('check')} />{cobertos} tribunais mapeados</li>
-        <li><Fragment set:html={icone('check')} />Processamento no navegador</li>
-        <li><Fragment set:html={icone('check')} />Texto pesquisável preservado</li>
+        {/*
+          Aqui ficava "Nenhum arquivo enviado", que é quase a mesma frase do herói logo acima.
+          Repetir uma promessa não a fortalece; provar, sim. Funcionar sem internet é consequência
+          de não haver envio — e é a única das quatro que a pessoa pode testar em trinta segundos.
+        */}
+        <li><Fragment set:html={icone('check')} />Funciona sem internet</li>
+        <li><Fragment set:html={icone('check')} />Código aberto e auditável</li>
       </ul>
     </section>
 
     <section class="wrap home-section home-only" id="ferramentas">
       <div class="section-head">
-        <h2>Resolva o PDF sem interromper o trabalho</h2>
-        <p>Uma bancada simples para preparar anexos, petições e documentos digitalizados.</p>
+        <h2>Cinco ferramentas, nenhuma que peça seu arquivo</h2>
+        <p>Preparar anexos, conferir assinatura e descobrir o que um documento revela — sem instalar nada e sem criar conta.</p>
       </div>
       <ul class="tools-grid">
         {FERRAMENTAS.map((f) =>
@@ -234,7 +257,8 @@ const dadosEstruturados = {
           <p class="eyebrow">Sigilo em primeiro lugar</p>
           <h2>Seus documentos jurídicos continuam seus.</h2>
           <p>
-            A preparação acontece dentro do seu navegador. Arquivos, nomes de documentos e números de processo não são enviados para o brpdf.
+            Tudo acontece dentro do seu navegador. Arquivos, nomes de documentos e números de processo não são enviados para o brpdf — e você não
+            precisa acreditar na nossa palavra: dá para conferir em trinta segundos.
           </p>
         </div>
         <ul class="security-grid">

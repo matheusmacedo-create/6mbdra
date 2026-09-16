@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro'
 import Metadados from '../tool/metadados/Metadados'
+import Vantagens from '../layouts/Vantagens.astro'
 import { SITE } from '../config/site'
 
 /*
@@ -90,6 +91,8 @@ const dados = {
     </p>
 
     <div class="metadados-ilha"><Metadados client:only="react" /></div>
+
+    <Vantagens destaque="Resposta na hora, sem percentual inventado" />
 
     <p class="selo-sigilo">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

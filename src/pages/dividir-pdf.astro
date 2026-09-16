@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro'
 import SeloSigilo from '../layouts/SeloSigilo.astro'
+import Vantagens from '../layouts/Vantagens.astro'
 import { SITE } from '../config/site'
 
 const PERGUNTAS = [
@@ -31,10 +32,11 @@ const dados = {
   <main class="page prose">
     <h1>Dividir PDF por tamanho para protocolar</h1>
     <p class="lead">
-      Quando o documento não cabe nem comprimido, ele precisa virar partes. Aqui a divisão é pelo <strong>limite em megabytes</strong>, não por número
+      Seu PDF não cabe nem comprimido? Ele vira partes numeradas que cabem — <strong>grátis, em segundos</strong>, e sem sair do seu computador. A divisão é pelo <strong>limite em megabytes</strong>, não por número
       fixo de páginas — cada parte fica o maior possível sem passar do que o tribunal aceita.
     </p>
     <p><a class="cta" href="/?view=tool">Dividir meus PDFs</a></p>
+    <Vantagens />
     <SeloSigilo />
 
     <h2>Divisão por tamanho, não por página</h2>

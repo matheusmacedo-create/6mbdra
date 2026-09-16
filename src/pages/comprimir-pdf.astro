@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro'
 import SeloSigilo from '../layouts/SeloSigilo.astro'
+import Vantagens from '../layouts/Vantagens.astro'
 import { SITE } from '../config/site'
 import { faixaDeLimites, sistemas } from '../tool/lib/sistemas'
 import { formatLimite, tribunaisCobertos, TRIBUNAIS } from '../tool/lib/regras'
@@ -52,6 +53,7 @@ const dados = {
       momento nenhum.
     </p>
     <p><a class="cta" href="/?view=tool">Comprimir meus PDFs</a></p>
+    <Vantagens />
     <SeloSigilo />
 
     <h2>O que a ferramenta faz de diferente</h2>

@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro'
 import SeloSigilo from '../layouts/SeloSigilo.astro'
+import Vantagens from '../layouts/Vantagens.astro'
 import { SITE } from '../config/site'
 
 const PERGUNTAS = [
@@ -31,10 +32,11 @@ const dados = {
   <main class="page prose">
     <h1>Juntar PDFs em um arquivo só</h1>
     <p class="lead">
-      Quando o sistema limita a <strong>quantidade</strong> de anexos, e não só o tamanho, vários documentos precisam virar um. Aqui eles viram — na
+      O sistema limita a <strong>quantidade</strong> de anexos e você tem oito arquivos? Eles viram um só, <strong>grátis e sem enviar nada</strong> — na
       ordem certa, e sem levar junto um problema que costuma passar despercebido.
     </p>
     <p><a class="cta" href="/?view=tool">Juntar meus PDFs</a></p>
+    <Vantagens />
     <SeloSigilo />
 
     <div class="callout warn">

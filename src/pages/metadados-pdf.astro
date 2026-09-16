@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro'
 import Metadados from '../tool/metadados/Metadados'
+import Vantagens from '../layouts/Vantagens.astro'
 import { SITE } from '../config/site'
 
 /*
@@ -115,12 +116,7 @@ const dados = {
 
     <div class="metadados-ilha"><Metadados client:only="react" /></div>
 
-    <ul class="vantagens">
-      <li><span class="v-marca" aria-hidden="true">✓</span>Grátis e sem cadastro</li>
-      <li><span class="v-marca" aria-hidden="true">✓</span>Resposta imediata</li>
-      <li><span class="v-marca" aria-hidden="true">✓</span>O arquivo não sai do seu computador</li>
-      <li><span class="v-marca" aria-hidden="true">✓</span>Funciona até sem internet</li>
-    </ul>
+    <Vantagens />
 
     <p class="selo-sigilo">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -205,13 +201,6 @@ const dados = {
   .metadados-page { max-width: 860px; }
   /* Altura reservada: a ilha só existe depois de hidratar, e sem isto o texto pula (CLS). */
   .metadados-ilha { min-height: 330px; margin: 8px 0 4px; }
-  .vantagens { list-style: none; margin: 18px 0 6px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 22px; }
-  .vantagens li { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 15px; font-weight: 600; color: var(--ink-2); }
-  .v-marca {
-    display: inline-grid; place-items: center; width: 19px; height: 19px; border-radius: 50%; flex: 0 0 auto;
-    background: var(--success-background); color: var(--success); font-size: 12px; font-weight: 800;
-  }
-  .vantagens + .selo-sigilo { margin-top: 18px; }
   .descobertas strong { display: block; margin-bottom: 4px; font-size: 16px; color: var(--ink); }
   .descobertas p { margin: 0; }
   @media (max-width: 560px) { .metadados-ilha { min-height: 300px; } }

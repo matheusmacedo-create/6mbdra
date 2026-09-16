@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro'
 import Conferidor from '../tool/conferidor/Conferidor'
+import Vantagens from '../layouts/Vantagens.astro'
 import { SITE } from '../config/site'
 
 /*
@@ -144,12 +145,7 @@ const dados = {
       Todo item aqui é verificável — nada de número inventado, nota ou depoimento. "Menos de 1
       segundo" é o tempo medido nos testes; "funciona offline" tem teste automático.
     */}
-    <ul class="vantagens">
-      <li><span class="v-marca" aria-hidden="true">✓</span>Grátis e sem cadastro</li>
-      <li><span class="v-marca" aria-hidden="true">✓</span>Resposta em menos de 1 segundo</li>
-      <li><span class="v-marca" aria-hidden="true">✓</span>O arquivo não sai do seu computador</li>
-      <li><span class="v-marca" aria-hidden="true">✓</span>Funciona até sem internet</li>
-    </ul>
+    <Vantagens />
 
     <p class="selo-sigilo">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -352,17 +348,6 @@ const dados = {
 
 <style>
   .conferidor-page { max-width: 860px; }
-  /* Linha de argumentos: some em coluna no celular, onde caber quatro lado a lado ilegibiliza. */
-  .vantagens {
-    list-style: none; margin: 18px 0 6px; padding: 0;
-    display: flex; flex-wrap: wrap; gap: 8px 22px;
-  }
-  .vantagens li { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 15px; font-weight: 600; color: var(--ink-2); }
-  .vantagens + .selo-sigilo { margin-top: 18px; }
-  .v-marca {
-    display: inline-grid; place-items: center; width: 19px; height: 19px; border-radius: 50%; flex: 0 0 auto;
-    background: var(--success-background); color: var(--success); font-size: 12px; font-weight: 800;
-  }
   .descobertas strong { display: block; margin-bottom: 4px; font-size: 16px; color: var(--ink); }
   .descobertas p { margin: 0; }
   /* Altura reservada: a ilha só existe depois de hidratar, e sem isto o texto pula (CLS). */

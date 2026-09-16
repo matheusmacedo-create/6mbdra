@@ -1,0 +1,32 @@
+---
+/*
+ * Linha de argumentos que acompanha uma ferramenta.
+ *
+ * Nasceu duplicada em três páginas — copiada junto com o CSS a cada ferramenta nova, que é como
+ * uma linha dessas começa a divergir: uma diz "sem cadastro", outra "não exige conta", e em seis
+ * meses o site promete coisas diferentes na mesma dobra.
+ *
+ * REGRA DO QUE PODE ENTRAR AQUI: só afirmação verificável. Nada de número de usuários, nota,
+ * depoimento ou "o mais usado do Brasil". Não é escrúpulo decorativo — o produto inteiro se
+ * sustenta em dizer apenas o que dá para conferir, e uma linha de marketing inventada logo abaixo
+ * do botão contamina a promessa que está logo acima dele.
+ *
+ * Os quatro padrões são, cada um, checável por quem desconfia: o preço, a ausência de cadastro, a
+ * ausência de envio (que tem teste automático) e o funcionamento offline (idem).
+ */
+interface Props {
+  /** Substitui a lista inteira, quando a ferramenta tem argumentos próprios. */
+  itens?: string[]
+  /** Acrescenta um argumento específico da página antes dos padrões. */
+  destaque?: string
+}
+const { itens, destaque } = Astro.props
+
+const PADRAO = ['Grátis e sem cadastro', 'O arquivo não sai do seu computador', 'Sem limite de uso', 'Funciona até sem internet']
+const lista = itens ?? (destaque ? [destaque, ...PADRAO.slice(0, 3)] : PADRAO)
+---
+<ul class="vantagens">
+  {lista.map((v) => (
+    <li><span class="v-marca" aria-hidden="true">✓</span>{v}</li>
+  ))}
+</ul>
