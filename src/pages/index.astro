@@ -26,15 +26,15 @@ const FERRAMENTAS = [
     icone: 'comprimir',
     cor: 'blue',
     title: 'Compactar para o tribunal',
-    desc: 'Escolha o sistema e receba cada PDF abaixo da margem segura aceita no protocolo.',
+    desc: 'Reduza o tamanho dos anexos com uma meta em MB ou uma regra cadastrada do tribunal.',
     status: 'Disponível',
     cta: 'Compactar agora',
   },
   {
     icone: 'dividir',
     cor: 'green',
-    title: 'Dividir por limite',
-    desc: 'Cria partes numeradas, por páginas inteiras, quando o arquivo não pode ser reduzido.',
+    title: 'Dividir PDFs grandes',
+    desc: 'Separe arquivos grandes em partes numeradas, sem cortar páginas ao meio.',
     status: 'Disponível',
     cta: 'Dividir PDF',
   },
@@ -59,7 +59,7 @@ const FERRAMENTAS = [
     icone: 'lupa',
     cor: 'purple',
     title: 'Raio-X do PDF',
-    desc: 'Veja quem criou o arquivo, quando foi alterado e o que ele revela sem você saber.',
+    desc: 'Consulte autor, datas e outras informações registradas nos metadados do documento.',
     status: 'Disponível',
     cta: 'Abrir o Raio-X',
     href: '/metadados-pdf/',
@@ -67,8 +67,8 @@ const FERRAMENTAS = [
   {
     icone: 'lupa',
     cor: 'red',
-    title: 'Foi feito por IA?',
-    desc: 'Veja o que o arquivo declara sobre a origem — sem percentual inventado, porque isso não existe.',
+    title: 'Consultar origem do arquivo',
+    desc: 'Confira registros de origem e declarações sobre IA, quando disponíveis no arquivo.',
     status: 'Disponível',
     cta: 'Ver a origem',
     href: '/documento-feito-por-ia/',
@@ -80,19 +80,19 @@ const FERRAMENTAS = [
 const PASSOS = [
   { n: '01', t: 'Selecione os PDFs', d: 'Arraste vários documentos ou uma pasta inteira de uma vez.' },
   { n: '02', t: 'Escolha o tribunal', d: 'Informe o sistema ou use um limite personalizado em MB.' },
-  { n: '03', t: 'Baixe tudo pronto', d: 'Receba arquivos conferidos, numerados e dentro da meta.' },
+  { n: '03', t: 'Confira e baixe', d: 'Revise o resultado e baixe os documentos em um ZIP organizado.' },
 ]
 
 const PERGUNTAS = [
   { q: 'Meus documentos são enviados para algum servidor?', a: 'Não. Todo o processamento acontece no navegador e nenhum PDF é enviado para a internet.' },
   { q: 'O texto continua pesquisável?', a: 'Sim. A ferramenta preserva texto, fontes e a camada de OCR durante a compressão.' },
   { q: 'E se o PDF não couber mesmo comprimido?', a: 'Com a divisão automática ativada, o arquivo é separado em partes numeradas sem cortar páginas.' },
-  { q: 'Posso preparar vários arquivos de uma vez?', a: 'Sim. O usuário pode selecionar vários PDFs ou uma pasta e baixar o lote em um único ZIP organizado.' },
+  { q: 'Posso preparar vários arquivos de uma vez?', a: 'Sim. Selecione vários PDFs ou arraste uma pasta e baixe o lote em um único ZIP organizado.' },
   { q: 'Existe cobrança, cadastro ou limite diário?', a: 'Não. O brpdf é gratuito, não exige conta e pode ser utilizado quantas vezes o escritório precisar.' },
 ]
 
 const SEGURANCA = [
-  { t: 'Processamento local', d: 'Depois de carregar a ferramenta, o usuário pode até ficar offline.' },
+  { t: 'Processamento local', d: 'A preparação dos PDFs acontece no seu próprio dispositivo.' },
   { t: 'Texto e OCR preservados', d: 'O conteúdo pesquisável continua disponível no arquivo final.' },
   { t: 'Sem cadastro', d: 'Nenhuma conta, e-mail ou assinatura para começar.' },
 ]
@@ -138,14 +138,14 @@ const dadosEstruturados = {
   <Fragment slot="head">
     <script type="application/ld+json" is:inline set:html={JSON.stringify(dadosEstruturados)} />
   </Fragment>
-  <main>
+  <main class="home-refresh">
     <section class="hero-band">
       <div class="wrap hero">
         <div class="hero-content home-only">
-          <p class="eyebrow">Ferramenta gratuita para advogados</p>
-          <h1 class="hero-title">PDF pronto para protocolar.</h1>
+          <p class="eyebrow">Seu PDF. Seu prazo. Tudo mais simples.</p>
+          <h1 class="hero-title">Menos tempo no PDF.<br /><span>Mais tempo no processo.</span></h1>
           <p class="hero-description">
-            Comprima seus documentos no limite certo do tribunal. Grátis, sem cadastro e sem enviar arquivos.
+            Compacte e divida seus PDFs para o limite do tribunal.<br class="desktop-break" /> Grátis, sem cadastro e com os arquivos no seu dispositivo.
           </p>
         </div>
         {/*
@@ -168,18 +168,18 @@ const dadosEstruturados = {
 
     <section class="wrap home-section home-only" id="ferramentas">
       <div class="section-head">
-        <h2>Resolva o PDF sem interromper o trabalho</h2>
-        <p>Uma bancada simples para preparar anexos, petições e documentos digitalizados.</p>
+        <h2>O que você precisa resolver agora?</h2>
+        <p>Ferramentas gratuitas para os documentos do seu dia a dia.</p>
       </div>
       <ul class="tools-grid">
-        {FERRAMENTAS.map((f) =>
+        {FERRAMENTAS.filter((f) => f.cta).map((f) =>
           f.cta ? (
             <li>
               <a class="tool-card" href={f.href ?? '/?view=tool'} data-open-tool={f.href ? undefined : 'card'}>
                 <span class={`mark ${f.cor}`} aria-hidden="true" set:html={icone(f.icone)} />
                 <span class="title">{f.title}</span>
                 <span class="desc">{f.desc}</span>
-                <span class="status"><span class="pill ok">{f.status}</span></span>
+                
                 <span class="card-cta">{f.cta} →</span>
               </a>
             </li>
@@ -194,13 +194,6 @@ const dadosEstruturados = {
             </li>
           ),
         )}
-        <li>
-          <div class="tool-card bookmark">
-            <span class="mark" aria-hidden="true" set:html={icone('favorito')} />
-            <span class="title">Deixe na aba do escritório</span>
-            <span class="desc">Use <kbd>Ctrl</kbd> + <kbd>D</kbd> para salvar o brpdf nos favoritos e voltar sempre que precisar.</span>
-          </div>
-        </li>
       </ul>
       <p class="mais-sobre">
         Como cada uma funciona: <a href="/comprimir-pdf/">comprimir PDF</a> · <a href="/dividir-pdf/">dividir por tamanho</a> ·{' '}
@@ -212,8 +205,8 @@ const dadosEstruturados = {
 
     <section class="wrap home-section home-only" id="como-funciona">
       <div class="section-head">
-        <h2>Três passos. Nenhuma configuração técnica.</h2>
-        <p>O brpdf escolhe uma margem segura, tenta primeiro a compressão mais leve e divide apenas quando for necessário.</p>
+        <h2>Do arquivo pesado ao próximo passo.</h2>
+        <p>Selecione os documentos, escolha o limite e baixe o resultado. Simples assim.</p>
       </div>
       <ol class="steps">
         {PASSOS.map((p) => (
@@ -232,7 +225,7 @@ const dadosEstruturados = {
       <div class="wrap security">
         <div class="section-head">
           <p class="eyebrow">Sigilo em primeiro lugar</p>
-          <h2>Seus documentos jurídicos continuam seus.</h2>
+          <h2>O documento é confidencial.<br />E continua com você.</h2>
           <p>
             A preparação acontece dentro do seu navegador. Arquivos, nomes de documentos e números de processo não são enviados para o brpdf.
           </p>
@@ -245,14 +238,14 @@ const dadosEstruturados = {
             </li>
           ))}
         </ul>
-        <a class="btn" href="/seguranca/">Ver como funciona, e conferir</a>
+        <a class="btn" href="/seguranca/">Entenda como seus arquivos são protegidos</a>
       </div>
     </section>
 
     <section class="wrap home-section home-only">
       <div class="courts-card">
         <div>
-          <h2>Não precisa decorar a regra de cada sistema.</h2>
+          <h2>Cada tribunal tem um limite. Encontre o seu.</h2>
           <p>
             Consulte PJe, eproc, e-SAJ e Projudi por tribunal, instância e tipo de petição. Cada regra mostra a fonte oficial e a data da última
             conferência.
@@ -261,6 +254,11 @@ const dadosEstruturados = {
         </div>
         <a class="btn" href="/tribunais/">Consultar tribunais</a>
       </div>
+    </section>
+
+    <section class="wrap home-only return-strip" aria-label="Acesso rápido">
+      <div><strong>Sua próxima petição também pode dar menos trabalho.</strong><p>Salve o brpdf nos favoritos e tenha suas ferramentas sempre à mão.</p></div>
+      <a class="btn" href="/?view=tool" data-open-tool="favoritos">Preparar meus PDFs →</a>
     </section>
 
     <section class="wrap home-section home-only faq" id="perguntas">
@@ -306,4 +304,64 @@ const dadosEstruturados = {
   .faq-list { max-width: 760px; }
   .guias { padding-bottom: 56px; }
   .more { margin-top: 16px; }
+</style>
+
+<style is:global>
+  /* Landing styles are scoped so the PDF workspace and other tools keep their layout. */
+  .home-refresh { background: #fff; }
+  .home-refresh .hero-band { background: radial-gradient(ellipse at 50% 0%, #eaf2ff 0%, #f8faff 52%, #fff 100%); }
+  .home-refresh .hero { padding-top: 48px; padding-bottom: 32px; min-height: 0; }
+  .home-refresh .hero-title { max-width: 900px; font-size: clamp(2.25rem, 4.5vw, 3.75rem); line-height: 1.1; letter-spacing: -.055em; }
+  .home-refresh .hero-title span { color: var(--accent); }
+  .home-refresh .eyebrow { letter-spacing: .08em; font-size: 11px; }
+  .home-refresh .hero-description { margin-top: 18px; font-size: 17px; color: var(--ink-3); }
+  .home-refresh .ilha-ferramenta { min-height: 340px; }
+  .home-refresh .landing .dropzone.zone-hero { max-width: 640px; min-height: 220px; margin-top: 24px; padding: 22px; border: 1.5px dashed #9ab4d9; box-shadow: 0 12px 36px #0733810a; }
+  .home-refresh .landing .icon-box { width: 42px; height: 42px; margin-bottom: 12px; border-radius: 12px; }
+  .home-refresh .landing .upload-button { margin-bottom: 10px; box-shadow: 0 4px 10px #0733811a; }
+  .home-refresh .landing .trust-line { margin-top: 16px; font-size: 13px; }
+  .home-refresh .landing .step-hint { margin-top: 16px; font-size: 12px; font-weight: 500; }
+  .home-refresh .trust-bar { background: #f8faff; }
+  .home-refresh .trust-bar ul { padding-block: 20px; }
+  .home-refresh .trust-bar li { font-size: 13px; }
+  .home-refresh .home-section { padding-top: 68px; padding-bottom: 12px; }
+  .home-refresh .section-head { max-width: 760px; }
+  .home-refresh .section-head h2 { font-size: clamp(24px, 3vw, 32px); letter-spacing: -.035em; }
+  .home-refresh .section-head p { font-size: 16px; }
+  .home-refresh .tools-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .home-refresh .tool-card { padding: 26px; border-color: #e3e8f0; box-shadow: none; gap: 10px; transition: border-color .15s, box-shadow .15s; }
+  .home-refresh a.tool-card:hover { text-decoration: none; border-color: #9ab4d9; box-shadow: 0 8px 24px #0733810b; }
+  .home-refresh .tool-card .card-cta { margin-top: auto; padding-top: 14px; font-size: 14px; }
+  .home-refresh .tool-card .title { font-size: 18px; }
+  .home-refresh .tool-card .desc { font-size: 14px; }
+  .home-refresh .mais-sobre { font-size: 13px; line-height: 1.8; }
+  .home-refresh .step-card { padding: 22px 0 28px; border: 0; border-top: 2px solid #dae5f6; border-radius: 0; }
+  .home-refresh .step-card .n { font-size: 28px; color: #6c89b4; }
+  .home-refresh .band-soft { margin-top: 48px; background: #f3f6fb; border: 0; }
+  .home-refresh .security-grid li { background: transparent; border: 0; border-left: 2px solid #c4d5ed; border-radius: 0; padding: 4px 20px; }
+  .home-refresh .courts-card { box-shadow: none; padding: 32px; }
+  .home-refresh .return-strip { margin-top: 48px; padding: 26px 32px; display: flex; gap: 24px; align-items: center; justify-content: space-between; border-block: 1px solid var(--border); }
+  .home-refresh .return-strip strong { font-size: 18px; letter-spacing: -.02em; }
+  .home-refresh .return-strip p { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+  .home-refresh .return-strip .btn { flex-shrink: 0; }
+  .home-refresh .faq-list { max-width: 900px; }
+  html[data-view="tool"] .home-refresh .hero { padding: 0; }
+  @media (max-width: 800px) {
+    .home-refresh .tools-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .home-refresh .return-strip { flex-direction: column; align-items: flex-start; }
+  }
+  @media (max-width: 560px) {
+    .home-refresh .hero { padding: 32px 16px 24px; }
+    .home-refresh .hero-title { font-size: 36px; }
+    .home-refresh .hero-description { font-size: 15px; }
+    .home-refresh .desktop-break { display: none; }
+    .home-refresh .eyebrow { font-size: 10px; }
+    .home-refresh .tools-grid { grid-template-columns: 1fr; }
+    .home-refresh .home-section { padding-top: 44px; }
+    .home-refresh .tool-card { padding: 22px; }
+    .home-refresh .courts-card { padding: 22px; }
+    .home-refresh .trust-bar ul { gap: 12px; }
+    .home-refresh .trust-bar li { font-size: 12px; align-items: flex-start; }
+    .home-refresh .return-strip { margin-top: 32px; padding: 24px 20px; }
+  }
 </style>
