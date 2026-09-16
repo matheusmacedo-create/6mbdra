@@ -9,7 +9,8 @@
   --ink: #15171b;
   --ink-2: #344054;
   --ink-3: #475467;
-  --muted: #667085;
+  /* 5,8:1 no branco e 5,2:1 no surface-2. O #667085 anterior dava 4,42:1 — abaixo do mínimo de 4,5 (WCAG AA). */
+  --muted: #5b6677;
   --background: #f7f9fc;
   --surface: #ffffff;
   --surface-2: #eef2f8;
@@ -519,6 +520,8 @@ tr.sem-regra td { color: var(--muted); }
 .aviso-form input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
 .aviso-form .btn { flex: 0 0 auto; min-height: 46px; }
 .aviso-nota { margin: 12px 0 0; font-size: 13.5px; color: var(--ink-3); }
+/* Sublinhado: num texto cinza, a cor sozinha não distingue o link (Lighthouse link-in-text-block). */
+.aviso-nota a { text-decoration: underline; }
 .aviso-nota[data-estado='erro'] { color: var(--err); font-weight: 600; }
 .aviso-nota[data-estado='ok'] { color: var(--success); font-weight: 600; font-size: 15px; }
 @media (max-width: 560px) {

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type DragEvent } from 'react'
+import { useCallback, useId, useRef, useState, type DragEvent } from 'react'
 
 /** Como os arquivos chegaram: arrastados para a área ou escolhidos no seletor do sistema. */
 export type OrigemArquivos = 'arrastar' | 'escolher'
@@ -61,6 +61,12 @@ export function DropZone({ onFiles, disabled, variant = 'hero', title, big, smal
   const [active, setActive] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const compact = variant === 'compact'
+  /*
+   * O nome acessível é o próprio texto visível, via aria-labelledby. Um aria-label fixo
+   * ("Selecionar arquivos PDF") deixava de fora o resto do que está escrito na área — e quem usa
+   * comando de voz fala o que lê na tela (WCAG 2.5.3, "Label in Name").
+   */
+  const id = useId()
 
   const onDrop = useCallback(
     async (e: DragEvent) => {
@@ -78,7 +84,7 @@ export function DropZone({ onFiles, disabled, variant = 'hero', title, big, smal
       className={`dropzone zone-${variant}${active ? ' is-dragging' : ''}`}
       role="button"
       tabIndex={0}
-      aria-label={compact ? 'Adicionar mais arquivos PDF' : 'Selecionar arquivos PDF'}
+      aria-labelledby={`${id}-titulo ${id}-grande ${id}-pequeno`}
       onClick={() => inputRef.current?.click()}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -99,11 +105,11 @@ export function DropZone({ onFiles, disabled, variant = 'hero', title, big, smal
             <UploadIcon />
           </div>
           {/* Pintado como botão, mas é um span: a área inteira já é o controle focável. */}
-          <span className="upload-button">{title ?? 'Selecionar arquivos PDF'}</span>
+          <span id={`${id}-titulo`} className="upload-button">{title ?? 'Selecionar arquivos PDF'}</span>
         </>
       )}
-      <div className="big">{big ?? (compact ? 'Adicionar mais documentos' : 'ou arraste seus PDFs aqui')}</div>
-      <div className="small">{small ?? (compact ? 'Arraste ou clique para escolher' : 'Vários documentos de uma vez.')}</div>
+      <div id={`${id}-grande`} className="big">{big ?? (compact ? 'Adicionar mais documentos' : 'ou arraste seus PDFs aqui')}</div>
+      <div id={`${id}-pequeno`} className="small">{small ?? (compact ? 'Arraste ou clique para escolher' : 'Vários documentos de uma vez.')}</div>
       <input
         ref={inputRef}
         type="file"

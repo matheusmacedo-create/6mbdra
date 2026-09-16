@@ -199,7 +199,8 @@ test('dá para conferir um arquivo atrás do outro sem recarregar', async ({ pag
   await abrir(page)
   await conferir(page, 'assinado-ok.pdf')
   await expect(page.locator('.conf-cartao')).toHaveAttribute('data-estado', 'conferida')
-  await page.getByRole('button', { name: 'Conferir outro' }).click()
+  // exact: a dropzone compacta também se chama "Conferir outro documento" (nome vem do texto visível).
+  await page.getByRole('button', { name: 'Conferir outro', exact: true }).click()
   await expect(page.locator('.conf-cartao')).toHaveCount(0)
   await conferir(page, 'assinado-quebrado.pdf')
   await expect(page.locator('.conf-cartao')).toHaveAttribute('data-estado', 'quebrada')

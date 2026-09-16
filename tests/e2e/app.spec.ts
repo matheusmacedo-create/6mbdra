@@ -244,7 +244,8 @@ test('a área de upload inteira é o controle: clique, teclado e arrastar', asyn
   const area = page.locator('.dropzone.zone-hero')
   await expect(area).toBeVisible()
   await expect(area).toHaveAttribute('role', 'button')
-  await expect(area).toHaveAttribute('aria-label', 'Selecionar arquivos PDF')
+  // O nome acessível vem do texto visível (aria-labelledby), não de um aria-label fixo.
+  await expect(area).toHaveAccessibleName(/Selecionar arquivos PDF/)
   const caixa = (await area.boundingBox())!
   expect(caixa.height, 'altura mínima da área').toBeGreaterThanOrEqual(260)
 
