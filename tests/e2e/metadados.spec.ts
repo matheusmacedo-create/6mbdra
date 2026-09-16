@@ -110,3 +110,45 @@ test('no celular a página não rola na horizontal, antes e depois do resultado 
   await soltar(page, `%PDF-1.7\n2 0 obj\n<< /Author (Fulano de Tal) /Producer (Adobe PDF Library 10.0) /ModDate (D:20211210154036-03'00') >>\nendobj\ntrailer\n<< /Info 2 0 R >>\n%%EOF\n`)
   expect(await rola(), 'rola na horizontal com o resultado na tela').toBe(false)
 })
+
+test('a origem declarada aparece com o nome da ferramenta @navegadores', async ({ page }) => {
+  await abrir(page)
+  await soltar(page, `%PDF-1.7\n2 0 obj\n<< /Producer (Microsoft\\256 Word 2019) >>\nendobj\ntrailer\n<< /Info 2 0 R >>\n%%EOF\n`)
+  const origem = page.locator('.md-cartao .md-origem')
+  await expect(origem).toBeVisible()
+  await expect(origem).toContainText('Microsoft Word')
+  await expect(origem).toContainText(/segundo o próprio arquivo/i)
+})
+
+test('ferramenta com recursos de IA não vira acusação de IA @navegadores', async ({ page }) => {
+  /*
+   * Canva tem geração por IA e é usado o tempo todo sem ela. É o falso positivo mais fácil de
+   * cometer, e o que derrubaria a credibilidade da ferramenta no primeiro caso real.
+   */
+  await abrir(page)
+  await soltar(page, `%PDF-1.7\n2 0 obj\n<< /Producer (Canva) >>\nendobj\ntrailer\n<< /Info 2 0 R >>\n%%EOF\n`)
+  const origem = page.locator('.md-cartao .md-origem')
+  await expect(origem).toContainText('Canva')
+  await expect(origem).not.toHaveClass(/\bia\b/)
+  await expect(origem).toContainText(/não diz se foram usados/i)
+})
+
+test('a marca oficial de IA é mostrada como declaração do gerador @navegadores', async ({ page }) => {
+  await abrir(page)
+  await soltar(page, `%PDF-1.7\n<Iptc4xmpExt:DigitalSourceType>http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia</Iptc4xmpExt:DigitalSourceType>\n%%EOF\n`)
+  const origem = page.locator('.md-cartao .md-origem')
+  await expect(origem).toHaveClass(/\bia\b/)
+  await expect(origem).toContainText(/declara conteúdo gerado por inteligência artificial/i)
+})
+
+test('a tela nunca mostra percentual de probabilidade de IA', async ({ page }) => {
+  /*
+   * A regra que define a ferramenta de origem. Detector de texto por IA não funciona de forma
+   * confiável, e um percentual errado num documento que instrui processo vira acusação falsa. Este
+   * teste existe para que ninguém acrescente um "score" achando que melhora o produto.
+   */
+  await abrir(page)
+  await soltar(page, `%PDF-1.7 trainedAlgorithmicMedia\n2 0 obj\n<< /Producer (Canva) >>\nendobj\ntrailer\n<< /Info 2 0 R >>\n%%EOF\n`)
+  const texto = (await page.locator('.md-cartao').innerText()).toLowerCase()
+  expect(texto, 'apareceu vocabulário de probabilidade').not.toMatch(/probabilidade|\bchance\b|percentual|\bscore\b|pontuação|\d+\s*%/)
+})

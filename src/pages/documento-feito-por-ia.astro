@@ -1,0 +1,189 @@
+---
+import Base from '../layouts/Base.astro'
+import Metadados from '../tool/metadados/Metadados'
+import { SITE } from '../config/site'
+
+/*
+ * "Este documento foi feito por IA?"
+ *
+ * A página existe para responder uma busca que cresce rápido e hoje só tem resposta ruim: sites que
+ * devolvem um percentual inventado. A nossa resposta é outra, e a página precisa vender essa
+ * diferença em vez de se desculpar por ela.
+ *
+ * A ferramenta é a mesma do Raio-X — mesma ilha, mesmo código. O que muda é a pergunta que a página
+ * faz e o que ela explica. Duas portas de entrada para o mesmo motor, cada uma com a intenção de
+ * busca que lhe corresponde.
+ */
+const PERGUNTAS = [
+  {
+    q: 'Dá para saber se um documento foi escrito por IA?',
+    a: 'Com certeza, não — e desconfie de qualquer ferramenta que diga um percentual. Detectores de texto por IA não funcionam de forma confiável: a própria OpenAI desligou o detector dela em 2023 por baixa precisão, e os estudos mostram taxa alta de falso positivo, ainda maior em textos que não são em inglês. O que dá para saber com segurança é outra coisa: o que o arquivo declara sobre a própria origem. Se o gerador marcou o conteúdo, a marca está lá e nós mostramos.',
+  },
+  {
+    q: 'Por que vocês não dão uma porcentagem, como outros sites?',
+    a: 'Porque um número implica uma calibração que ninguém tem. Num documento que vai instruir um processo, "87% de chance de ser IA" vira acusação contra uma pessoa. Se estiver errado — e esses detectores erram muito — o estrago é do cliente de quem levou a informação ao juízo, e da credibilidade de quem forneceu. Preferimos dizer menos e estar certos.',
+  },
+  {
+    q: 'O que são Content Credentials?',
+    a: 'É um padrão aberto de proveniência (C2PA) apoiado por Adobe, Microsoft, OpenAI, Google e outros. Quando um gerador participa, ele embute no arquivo um manifesto assinado dizendo qual ferramenta produziu aquilo e o que foi feito depois. Quando está presente, é o próprio gerador afirmando — não uma adivinhação. Nós lemos e mostramos o que o manifesto declara.',
+  },
+  {
+    q: 'Meu arquivo não tem nenhuma marca. Quer dizer que não é IA?',
+    a: 'Não quer dizer nada. Os campos são opcionais, a maioria das ferramentas ainda não marca nada, e qualquer marca existente pode ser removida com um clique. Ausência de indicação é ausência de informação — nunca prova de autoria humana. É a parte que mais importa entender desta página.',
+  },
+  {
+    q: 'Então para que serve a ferramenta?',
+    a: 'Para três coisas concretas: ver com qual programa o arquivo diz ter sido feito (Word, Canva, um sistema do tribunal, um scanner), ler a marca oficial de conteúdo gerado por IA quando o gerador a aplicou, e encontrar Content Credentials quando existem. É informação verificável sobre a origem — e, num documento assinado, também dá para provar se escreveram nele depois da assinatura.',
+  },
+  {
+    q: 'O documento é enviado para algum servidor?',
+    a: 'Não. A leitura acontece dentro do seu navegador. Nem o documento, nem o nome do arquivo, nem nada que ele contenha sai da sua máquina — o que importa em dobro quando o assunto é autoria de documento alheio.',
+  },
+]
+
+const dados = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebApplication',
+      name: 'Verificar a origem de um documento — brpdf',
+      url: new URL('/documento-feito-por-ia/', SITE.url).href,
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Navegador (Chrome, Edge, Firefox, Safari)',
+      inLanguage: 'pt-BR',
+      isAccessibleForFree: true,
+      description:
+        'Veja o que um PDF declara sobre a própria origem: com qual ferramenta foi feito, se traz a marca oficial de conteúdo gerado por IA e se tem Content Credentials.',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'BRL' },
+      license: 'https://www.gnu.org/licenses/agpl-3.0.html',
+      codeRepository: SITE.repo,
+      featureList: [
+        'Identificação da ferramenta declarada no arquivo',
+        'Leitura da marca IPTC de conteúdo gerado por IA',
+        'Detecção de Content Credentials (C2PA)',
+        'Processamento local, sem envio de arquivos',
+      ],
+    },
+    { '@type': 'FAQPage', mainEntity: PERGUNTAS.map((p) => ({ '@type': 'Question', name: p.q, acceptedAnswer: { '@type': 'Answer', text: p.a } })) },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Início', item: SITE.url },
+        { '@type': 'ListItem', position: 2, name: 'Documento feito por IA', item: new URL('/documento-feito-por-ia/', SITE.url).href },
+      ],
+    },
+  ],
+}
+---
+<Base
+  title="Este documento foi feito por IA? O que dá para saber de verdade"
+  description="Veja o que um PDF declara sobre a própria origem: ferramenta usada, marca oficial de conteúdo gerado por IA e Content Credentials. Sem percentual inventado."
+  path="/documento-feito-por-ia/"
+>
+  <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
+
+  <main class="page prose metadados-page">
+    <h1>Este documento foi feito por IA?</h1>
+    <p class="lead">
+      Solte o arquivo e veja o que ele <strong>declara</strong> sobre a própria origem: com qual ferramenta foi feito e se traz a marca oficial de
+      conteúdo gerado por inteligência artificial. <strong>Sem percentual inventado</strong> — e a página explica por quê.
+    </p>
+
+    <div class="metadados-ilha"><Metadados client:only="react" /></div>
+
+    <p class="selo-sigilo">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="4" y="10" width="16" height="11" rx="2" />
+        <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+      </svg>
+      <span>
+        A leitura acontece no seu navegador. Quando o assunto é autoria de documento alheio, isso importa em dobro.{' '}
+        <a href="/seguranca/verifique/">Veja como conferir isso</a>.
+      </span>
+    </p>
+
+    <div class="callout warn">
+      <strong>Comece por aqui:</strong> nenhuma ferramenta do mundo — inclusive esta — sabe dizer com segurança se um texto foi escrito por IA.
+      O que existe de confiável é o que o próprio arquivo registra. É isso que mostramos.
+    </div>
+
+    <h2>Por que não damos uma porcentagem</h2>
+    <p>
+      Há sites que devolvem “83% de chance de ser IA”. O número passa confiança e não tem lastro: detectores de texto por IA erram muito, a
+      própria OpenAI <strong>desligou o detector dela em 2023</strong> por baixa precisão, e a taxa de falso positivo é ainda maior fora do inglês.
+    </p>
+    <p>
+      Num documento que vai instruir processo, isso deixa de ser detalhe técnico. Alguém leva ao juízo que “a ferramenta apontou 87%”, está errado,
+      e o prejuízo é do cliente de quem levou — além da credibilidade de quem forneceu o número.
+    </p>
+    <p>
+      Um percentual <strong>implica uma calibração que ninguém tem</strong>. Então não damos. Dizemos o que o arquivo declara, e dizemos com todas
+      as letras quando não sabemos.
+    </p>
+
+    <h2>O que dá para saber, e vale</h2>
+    <table class="tabela-compacta">
+      <thead><tr><th>Pergunta</th><th>Respondemos?</th></tr></thead>
+      <tbody>
+        <tr><td>Com qual programa o arquivo diz ter sido feito?</td><td><strong>Sim</strong> — Word, Canva, scanner, sistema do tribunal…</td></tr>
+        <tr><td>O arquivo traz a marca oficial de conteúdo gerado por IA?</td><td><strong>Sim</strong>, quando o gerador a aplicou.</td></tr>
+        <tr><td>Tem Content Credentials (C2PA)?</td><td><strong>Sim</strong>, e mostramos o gerador declarado.</td></tr>
+        <tr><td>Escreveram no arquivo depois de ele ser assinado?</td><td><strong>Sim</strong>, e isso é prova, não indício.</td></tr>
+        <tr><td>Este texto foi escrito por IA?</td><td>Não. Ninguém responde isso com segurança.</td></tr>
+        <tr><td>Qual IA escreveu?</td><td>Só se o próprio arquivo disser.</td></tr>
+      </tbody>
+    </table>
+
+    <h2>A marca oficial: quando é o gerador que afirma</h2>
+    <p>
+      Existe um vocabulário padronizado pela <strong>IPTC</strong> para o arquivo registrar como o conteúdo nasceu. O valor
+      <code>trainedAlgorithmicMedia</code> significa “gerado inteiramente por um modelo treinado” — ou seja, IA. Quando ele está lá, quem está
+      afirmando é a ferramenta que produziu o arquivo, não nós.
+    </p>
+    <p>
+      Um detalhe que engana e que tratamos com cuidado: <code>algorithmicMedia</code> sozinho <em>não</em> é IA. Pela definição da IPTC, é conteúdo
+      criado por algoritmo que não parte de dados de treino — geração procedural, gráfico calculado, captura de tela. Confundir os dois seria
+      produzir o falso positivo mais fácil de cometer neste assunto.
+    </p>
+
+    <h2>Content Credentials: proveniência assinada</h2>
+    <p>
+      O <strong>C2PA</strong> é um padrão aberto apoiado por Adobe, Microsoft, OpenAI e Google, entre outros. Ferramentas que participam embutem no
+      arquivo um manifesto assinado com o que foi usado para criar e o que foi feito depois. Quando existe, é a informação de origem mais forte
+      disponível hoje.
+    </p>
+    <p>
+      Em PDF ainda é raro: medimos <strong>166 documentos</strong>, incluindo um exportado do Adobe Express, e nenhum trazia manifesto. A
+      especificação já prevê o caso e nosso leitor já lê — falta o mundo emitir. Lemos o que o manifesto declara; ainda não verificamos a assinatura
+      dele, e a tela diz isso.
+    </p>
+
+    <div class="callout">
+      <strong>A parte que mais importa:</strong> arquivo sem marca nenhuma não prova nada. Os campos são opcionais, a maioria das ferramentas
+      ainda não marca, e qualquer marca existente sai com um clique. Ausência de indicação é ausência de informação — nunca prova de autoria humana.
+    </div>
+
+    <h2>Perguntas frequentes</h2>
+    <div class="faq-list">
+      {PERGUNTAS.map((p) => (<details><summary>{p.q}</summary><p>{p.a}</p></details>))}
+    </div>
+
+    <h2>Leia também</h2>
+    <ul>
+      <li><a href="/metadados-pdf/">Raio-X do PDF: quem criou e quando foi alterado</a></li>
+      <li><a href="/guias/como-saber-se-um-pdf-foi-alterado/">Como saber se um PDF foi alterado</a></li>
+      <li><a href="/conferir-assinatura/">Verificar a assinatura digital de um PDF</a></li>
+      <li><a href="/guias/metadados-do-pdf-o-que-voce-esta-entregando-sem-saber/">O que o seu PDF entrega sem você saber</a></li>
+    </ul>
+  </main>
+</Base>
+
+<style>
+  .metadados-page { max-width: 860px; }
+  .metadados-ilha { min-height: 330px; margin: 8px 0 4px; }
+  .tabela-compacta { width: 100%; border-collapse: collapse; margin: 18px 0 8px; font-size: 15px; }
+  .tabela-compacta th, .tabela-compacta td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .tabela-compacta th { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+  .tabela-compacta tbody tr:last-child td { border-bottom: none; }
+  @media (max-width: 560px) { .metadados-ilha { min-height: 300px; } .tabela-compacta { font-size: 14px; } }
+</style>

@@ -3,6 +3,7 @@ import { DropZone, type OrigemArquivos } from '../components/DropZone'
 import { track, sizeBucket } from '../lib/analytics'
 import { formatBytes } from '../lib/format'
 import type { Metadados as Dados } from '../lib/metadados'
+import type { Origem } from '../lib/origem'
 import '../tool.css'
 import './metadados.css'
 
@@ -18,7 +19,7 @@ import './metadados.css'
  * sobre o próprio arquivo é a mais útil, e a única honesta de destacar.
  */
 
-type Item = { arquivo: string; tamanho: number; dados?: Dados; erro?: string }
+type Item = { arquivo: string; tamanho: number; dados?: Dados; origem?: Origem; erro?: string }
 
 const ehPdf = (f: File) => f.type === 'application/pdf' || /\.pdf$/i.test(f.name)
 
@@ -58,8 +59,10 @@ export default function Metadados() {
     track('arquivo_adicionado', { origem, quantidade: pdfs.length, categoria: 'metadados' })
 
     let ler: (b: Uint8Array) => Dados
+    let lerOrigem: (b: Uint8Array, campos: (string | undefined)[]) => Origem
     try {
       ler = (await import('../lib/metadados')).lerMetadados
+      lerOrigem = (await import('../lib/origem')).lerOrigem
     } catch {
       if (!vivo.current) return
       setItens(pdfs.map((f) => ({ arquivo: f.name, tamanho: f.size, erro: 'Não foi possível carregar o leitor. Verifique a conexão e tente de novo.' })))
@@ -70,13 +73,16 @@ export default function Metadados() {
     const saida: Item[] = []
     for (const f of pdfs) {
       try {
-        const dados = ler(new Uint8Array(await f.arrayBuffer()))
-        saida.push({ arquivo: f.name, tamanho: f.size, dados })
+        const b = new Uint8Array(await f.arrayBuffer())
+        const dados = ler(b)
+        const origem = lerOrigem(b, [dados.criadoPor, dados.gravadoPor])
+        saida.push({ arquivo: f.name, tamanho: f.size, dados, origem })
         track('metadados_lidos', {
           faixa: sizeBucket(f.size),
           situacao: dados.vazio ? 'sem_metadados' : 'com_metadados',
           quantidade: dados.revisoes.length,
           tipo: dados.temAssinatura ? 'assinado' : 'simples',
+          categoria: origem.veredito,
         })
       } catch {
         saida.push({ arquivo: f.name, tamanho: f.size, erro: 'Não foi possível ler este arquivo. Ele pode estar corrompido ou não ser um PDF.' })
@@ -171,6 +177,34 @@ function Cartao({ item }: { item: Item }) {
       )}
 
       {/*
+        Origem: com que ferramenta o arquivo diz ter sido feito, e se traz a marca oficial de
+        conteúdo gerado por IA. Nunca um percentual — ver o comentário em src/tool/lib/origem.ts.
+      */}
+      {item.origem && item.origem.veredito !== 'sem_indicacao' && (
+        <div className={`md-origem ${item.origem.veredito === 'ia_declarada' ? 'ia' : ''}`}>
+          <h4>Origem declarada</h4>
+          <p className="md-origem-resumo">{item.origem.resumo}</p>
+          {item.origem.ferramentas.length > 0 && (
+            <ul className="md-ferramentas">
+              {item.origem.ferramentas.map((f) => (
+                <li key={f.nome}><strong>{f.nome}</strong><span className="conf-meta">{f.nota}</span></li>
+              ))}
+            </ul>
+          )}
+          {item.origem.marcaIptc && (
+            <p className="md-nota"><strong>Marca IPTC:</strong> {item.origem.marcaIptc.rotulo}</p>
+          )}
+          {item.origem.temCredenciais && (
+            <p className="md-nota">
+              <strong>Content Credentials presentes.</strong>{' '}
+              {item.origem.geradorC2pa ? <>Gerador declarado: <code>{item.origem.geradorC2pa}</code>.</> : null}{' '}
+              Lemos o que o manifesto declara; não verificamos a assinatura dele.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/*
         O cruzamento com a assinatura é o único dado aqui que não é declaração. Merece destaque
         próprio e linguagem diferente do resto: "prova", e não "consta".
       */}
@@ -236,6 +270,12 @@ function Cartao({ item }: { item: Item }) {
         <p>
           A única exceção é o aviso de gravação posterior à assinatura: ele não depende de nenhuma data escrita no arquivo, e sim de até onde a
           assinatura alcança.
+        </p>
+        <p>
+          Sobre a origem: <strong>não damos probabilidade de o documento ter sido feito por IA</strong>, e isso é decisão, não limitação.
+          Detector de texto por IA não funciona de forma confiável, e um percentual errado aqui vira acusação falsa contra alguém. Dizemos o que o
+          arquivo declara — e a ausência de marca não significa nada, porque os campos são opcionais e removíveis.{' '}
+          <a href="/documento-feito-por-ia/">Entenda o que dá e o que não dá para saber</a>.
         </p>
       </details>
 
