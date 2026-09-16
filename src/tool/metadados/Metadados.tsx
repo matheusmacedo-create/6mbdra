@@ -217,7 +217,7 @@ function Cartao({ item }: { item: Item }) {
               ? 'Há uma gravação posterior'
               : `São ${d.revisoesDepoisDaAssinatura} gravações posteriores`}{' '}
             ao trecho que a assinatura protege. Isto não depende de nenhuma data escrita no arquivo: é o alcance da própria assinatura.{' '}
-            <a href="/conferir-assinatura/">Verifique a assinatura</a> para saber se ela ainda confere.
+            <a href="/verificar-assinatura-digital/">Verifique a assinatura</a> para saber se ela ainda confere.
           </span>
         </p>
       )}

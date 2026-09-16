@@ -33,7 +33,7 @@ Quando o PDF está **assinado digitalmente**, a coisa muda de natureza.
 
 A assinatura cobre uma sequência exata de bytes e registra, dentro do próprio arquivo, até onde essa proteção vai. Isso cria dois fatos verificáveis, que não dependem de ninguém ter escrito a verdade em campo nenhum:
 
-**1. Se o conteúdo assinado mudou.** Um único byte trocado dentro do trecho protegido derruba a conferência. Não há como alterar o documento e manter a assinatura conferindo — é justamente para isso que ela existe. O [verificador de assinatura](/conferir-assinatura/) responde isso em menos de um segundo.
+**1. Se o conteúdo assinado mudou.** Um único byte trocado dentro do trecho protegido derruba a conferência. Não há como alterar o documento e manter a assinatura conferindo — é justamente para isso que ela existe. O [verificador de assinatura](/verificar-assinatura-digital/) responde isso em menos de um segundo.
 
 **2. Se escreveram depois.** O formato PDF permite gravar acrescentando ao fim do arquivo. Tudo que está além do ponto onde a assinatura alcança é, comprovadamente, posterior a ela. A assinatura pode continuar conferindo — ela cobre o que cobria — e ainda assim o documento não ser mais só aquilo que foi assinado.
 
@@ -62,7 +62,7 @@ Para quem recebe um documento, é informação. Para quem envia, é aviso: apaga
 ## Um roteiro prático
 
 1. **Solte o arquivo no [Raio-X do PDF](/metadados-pdf/).** Veja datas, autor, programa e quantas gravações existem.
-2. **Se houver assinatura, [verifique](/conferir-assinatura/).** É aqui que aparecem os fatos: integridade e gravação posterior.
+2. **Se houver assinatura, [verifique](/verificar-assinatura-digital/).** É aqui que aparecem os fatos: integridade e gravação posterior.
 3. **Compare com o que se alega.** Incoerência entre a data declarada e o programa usado, ou entre o número de gravações e a história contada, é motivo para perguntar.
 4. **Se for virar disputa, chame perícia.** Nenhuma ferramenta gratuita substitui laudo. O que ela faz é dizer se vale a pena ir atrás.
 

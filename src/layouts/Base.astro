@@ -31,7 +31,13 @@ interface NavLink {
   match?: string
   /** Abre a ferramenta sem recarregar; o valor vira a "origem" na medição */
   tool?: string
-  /** Volta à página inicial e rola até a âncora do próprio link */
+  /**
+   * Volta à página inicial e rola até a âncora do próprio link.
+   *
+   * Sem uso na barra desde que "Ferramentas" saiu (ver o comentário abaixo de LINKS). O mecanismo
+   * fica: é genérico, custa um atributo, e a alternativa seria arrancar o tratador em App.tsx que
+   * pode voltar a ser preciso na próxima âncora.
+   */
   home?: boolean
 }
 /*
@@ -46,11 +52,23 @@ interface NavLink {
  */
 const LINKS: NavLink[] = [
   { href: '/?view=tool', label: 'Compactar PDF', tool: 'menu' },
-  { href: '/conferir-assinatura/', label: 'Verificar assinatura', match: '/conferir-assinatura/' },
+  { href: '/verificar-assinatura-digital/', label: 'Verificar assinatura', match: '/verificar-assinatura-digital/' },
   { href: '/metadados-pdf/', label: 'Raio-X do PDF', match: '/metadados-pdf/' },
+  { href: '/documento-feito-por-ia/', label: 'Feito por IA?', match: '/documento-feito-por-ia/' },
   { href: '/tribunais/', label: 'Limites por tribunal', match: '/tribunais/' },
-  { href: '/#ferramentas', label: 'Ferramentas', home: true },
 ]
+
+/*
+ * "Ferramentas" saiu da barra quando a quarta ferramenta entrou.
+ *
+ * Era uma âncora para a grade da página inicial — uma lista das mesmas ferramentas que hoje estão
+ * na própria barra. Deixar as duas coisas custava ~120 px de uma linha que já não fechava em
+ * largura nenhuma (medido: 850 px só de navegação, estourando de 920 a 1600 px), e o que se ganhava
+ * era um link para uma lista do que está ao lado dele.
+ *
+ * Sai um atalho, não um destino: a grade continua na home, com as ferramentas futuras, e o rodapé
+ * lista todas em todas as páginas.
+ */
 ---
 <!doctype html>
 <html lang="pt-BR">
@@ -135,7 +153,7 @@ const LINKS: NavLink[] = [
           <a href="/comprimir-pdf/">Comprimir PDF</a>
           <a href="/dividir-pdf/">Dividir PDF</a>
           <a href="/juntar-pdf/">Juntar PDFs</a>
-          <a href="/conferir-assinatura/">Verificar assinatura</a>
+          <a href="/verificar-assinatura-digital/">Verificar assinatura</a>
           <a href="/metadados-pdf/">Raio-X do PDF</a>
           <a href="/documento-feito-por-ia/">Documento feito por IA</a>
           <a href="/sistemas/">Limites por sistema</a>

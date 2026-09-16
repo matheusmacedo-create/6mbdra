@@ -297,10 +297,34 @@ function semWww(url: URL): Response | null {
   return Response.redirect(destino.toString(), 301)
 }
 
+/*
+ * Endereços que mudaram de nome.
+ *
+ * A verificação de assinatura nasceu em /conferir-assinatura/ e virou /verificar-assinatura-digital/
+ * quando a página inteira passou a usar "verificar" — a palavra que as pessoas de fato buscam. O
+ * endereço antigo circulou, está indexado e recebia links de todas as páginas do site: apagá-lo
+ * geraria 404 para quem salvou, e jogaria fora o que o buscador já tinha aprendido.
+ *
+ * 301 preserva as duas coisas. A lista fica aqui, versionada, pelo mesmo motivo que o www: para ser
+ * testável e não depender de uma regra no painel que ninguém encontra depois.
+ */
+const MUDARAM: Record<string, string> = {
+  '/conferir-assinatura': '/verificar-assinatura-digital/',
+  '/conferir-assinatura/': '/verificar-assinatura-digital/',
+}
+
+function mudouDeEndereco(url: URL): Response | null {
+  const destino = MUDARAM[url.pathname]
+  if (!destino) return null
+  const novo = new URL(destino, url)
+  novo.search = url.search
+  return Response.redirect(novo.toString(), 301)
+}
+
 export default {
   async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url)
-    const redirecionamento = semWww(url)
+    const redirecionamento = semWww(url) ?? mudouDeEndereco(url)
     if (redirecionamento) return redirecionamento
     // Fora do caminho da resposta: a página não espera o banco.
     if (req.method === 'GET') ctx.waitUntil(contarRastreador(req, env, url))

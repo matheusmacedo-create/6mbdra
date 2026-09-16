@@ -38,7 +38,7 @@ O mesmo vale para outras ações aparentemente inofensivas:
 
 Em todos esses casos, o sistema do tribunal pode recusar o documento ou exibi-lo com alerta de assinatura inválida. Não há como "consertar" a assinatura depois: a única saída é assinar de novo.
 
-Na dúvida sobre um arquivo específico, o [conferidor de assinatura](/conferir-assinatura/) responde em segundos, sem enviar o documento para lugar nenhum — melhor que descobrir pela recusa do protocolo.
+Na dúvida sobre um arquivo específico, o [conferidor de assinatura](/verificar-assinatura-digital/) responde em segundos, sem enviar o documento para lugar nenhum — melhor que descobrir pela recusa do protocolo.
 
 ## A ordem correta do fluxo
 

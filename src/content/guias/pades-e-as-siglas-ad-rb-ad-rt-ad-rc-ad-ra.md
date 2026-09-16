@@ -63,7 +63,7 @@ Na dúvida e sem exigência do sistema, AD-RT é um meio-termo razoável: custa 
 
 ## Como saber qual política o arquivo declara
 
-O PDF carrega essa informação, e dá para lê-la sem enviar o documento a lugar nenhum: o [conferidor de assinatura](/conferir-assinatura/) mostra a política declarada, com a sigla e o que ela exige.
+O PDF carrega essa informação, e dá para lê-la sem enviar o documento a lugar nenhum: o [conferidor de assinatura](/verificar-assinatura-digital/) mostra a política declarada, com a sigla e o que ela exige.
 
 Uma ressalva importante: **declarar não é cumprir.** O arquivo diz qual política segue; verificar se ele de fato cumpre exige conferir carimbo do tempo e referências, o que é outra etapa. O conferidor é explícito sobre isso, e o [validador do ITI](https://validar.iti.gov.br/) faz a verificação completa.
 

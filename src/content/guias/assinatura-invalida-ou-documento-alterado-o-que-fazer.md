@@ -15,7 +15,7 @@ A boa notícia é que nem todo aviso desses significa documento estragado. Duas 
 
 ## Primeiro, descubra qual é o seu caso
 
-Antes de qualquer coisa, [passe o arquivo pelo conferidor](/conferir-assinatura/). Ele roda no navegador, não envia o documento e distingue as duas situações que os leitores de PDF costumam misturar:
+Antes de qualquer coisa, [passe o arquivo pelo conferidor](/verificar-assinatura-digital/). Ele roda no navegador, não envia o documento e distingue as duas situações que os leitores de PDF costumam misturar:
 
 - **"O documento foi alterado depois de assinado"** — o conteúdo mudou de verdade. Causas 1 a 3 abaixo.
 - **"Não foi possível concluir a conferência"** — a verificação não chegou a rodar. Isso **não** é um documento com problema.
@@ -87,4 +87,4 @@ Se foi você quem assinou e o original se perdeu, assine outra vez — desta vez
 
 ## Para não voltar aqui
 
-A regra cabe numa linha: **assinar é a última coisa que acontece antes de protocolar.** Junte, comprima, divida, numere, converta — e só então assine. O [checklist antes de protocolar](/guias/checklist-antes-de-protocolar-anexos-em-pdf/) coloca isso na ordem, e o [conferidor](/conferir-assinatura/) fecha a conta em segundos.
+A regra cabe numa linha: **assinar é a última coisa que acontece antes de protocolar.** Junte, comprima, divida, numere, converta — e só então assine. O [checklist antes de protocolar](/guias/checklist-antes-de-protocolar-anexos-em-pdf/) coloca isso na ordem, e o [conferidor](/verificar-assinatura-digital/) fecha a conta em segundos.

@@ -81,7 +81,7 @@ const dados = {
     {
       '@type': 'WebApplication',
       name: 'Verificador de assinatura digital em PDF — brpdf',
-      url: new URL('/conferir-assinatura/', SITE.url).href,
+      url: new URL('/verificar-assinatura-digital/', SITE.url).href,
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'Navegador (Chrome, Edge, Firefox, Safari)',
       inLanguage: 'pt-BR',
@@ -117,7 +117,7 @@ const dados = {
       '@type': 'BreadcrumbList',
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Início', item: SITE.url },
-        { '@type': 'ListItem', position: 2, name: 'Verificar assinatura digital', item: new URL('/conferir-assinatura/', SITE.url).href },
+        { '@type': 'ListItem', position: 2, name: 'Verificar assinatura digital', item: new URL('/verificar-assinatura-digital/', SITE.url).href },
       ],
     },
   ],
@@ -126,7 +126,7 @@ const dados = {
 <Base
   title="Verificar assinatura digital de PDF grátis, sem enviar o arquivo"
   description="Verifique em 1 segundo se a assinatura digital do seu PDF continua íntegra ou se o arquivo foi alterado depois de assinado. Grátis, sem cadastro e sem enviar o documento."
-  path="/conferir-assinatura/"
+  path="/verificar-assinatura-digital/"
 >
   <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
 

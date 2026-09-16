@@ -66,7 +66,7 @@ Ausência de indicação é **ausência de informação**, nunca prova de autori
 
 1. **Leia a origem declarada.** Solte o arquivo em [documento feito por IA](/documento-feito-por-ia/). Em segundos você vê a ferramenta declarada, a marca IPTC se houver, e Content Credentials se existirem. O arquivo não sai do seu computador.
 2. **Confira a coerência.** A ferramenta declarada bate com o que o documento diz ser? As datas fazem sentido com a história contada? O [Raio-X do PDF](/metadados-pdf/) mostra o resto da ficha.
-3. **Se houver assinatura, verifique.** É aqui que existem fatos: o [verificador de assinatura](/conferir-assinatura/) diz se o conteúdo mudou e se escreveram no arquivo depois da assinatura.
+3. **Se houver assinatura, verifique.** É aqui que existem fatos: o [verificador de assinatura](/verificar-assinatura-digital/) diz se o conteúdo mudou e se escreveram no arquivo depois da assinatura.
 4. **Para o texto em si, não existe atalho.** Contradição interna, citação de julgado inexistente, referência que não confere — isso se acha lendo, e é o que efetivamente sustenta uma alegação.
 
 ## O que isto significa na prática forense

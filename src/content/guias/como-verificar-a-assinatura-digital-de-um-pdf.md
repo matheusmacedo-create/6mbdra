@@ -17,7 +17,7 @@ Existem três caminhos, e eles respondem perguntas diferentes. Escolher o errado
 
 A pergunta mais frequente no dia a dia não é "este certificado é legítimo?" — é **"eu estraguei este arquivo?"**. Alguém comprimiu, dividiu, juntou ou salvou de novo um PDF que já estava assinado, e agora precisa saber se ainda dá para protocolar.
 
-Para isso existe o [conferidor de assinatura do brpdf](/conferir-assinatura/). Arraste o PDF e a resposta vem em menos de um segundo, com o documento nunca saindo do seu computador.
+Para isso existe o [conferidor de assinatura do brpdf](/verificar-assinatura-digital/). Arraste o PDF e a resposta vem em menos de um segundo, com o documento nunca saindo do seu computador.
 
 Ele responde:
 

@@ -538,9 +538,15 @@ test('cabeçalho: âncora, CTA e ferramenta se comportam sem recarregar a págin
    */
   await expect(page.locator('.site-nav').getByRole('link', { name: 'Segurança' })).toHaveCount(0)
   await expect(page.locator('.site-footer').getByRole('link', { name: 'Segurança' })).toBeVisible()
-  // Âncora de seção rola para a própria seção.
-  await page.getByRole('link', { name: 'Ferramentas' }).first().click()
-  await expect(page.locator('#ferramentas')).toBeInViewport()
+  /*
+   * A barra deixou de ter a âncora "Ferramentas" quando a quinta ferramenta entrou: era um link
+   * para uma grade que lista o que já está ao lado dele. O que substitui a antiga asserção é o
+   * fato estrutural que passou a valer — toda ferramenta pronta é alcançável direto da barra.
+   */
+  for (const nome of ['Compactar PDF', 'Verificar assinatura', 'Raio-X do PDF', 'Feito por IA?']) {
+    await expect(page.locator('.site-nav').getByRole('link', { name: nome }), nome).toBeVisible()
+  }
+  await expect(page.locator('#ferramentas')).toHaveCount(1)
   // Sem arquivos, "Preparar PDFs" não troca de tela: leva o foco para a área de upload.
   await page.getByRole('link', { name: 'Preparar PDFs' }).first().click()
   await expect(page.locator('.dropzone.zone-hero')).toBeFocused()
@@ -579,7 +585,7 @@ test('o cabeçalho cabe em toda largura, do celular ao monitor grande @navegador
   const ruins: string[] = []
   for (const w of larguras) {
     await page.setViewportSize({ width: w, height: 760 })
-    await page.goto('/conferir-assinatura/')
+    await page.goto('/verificar-assinatura-digital/')
     const r = await page.evaluate(() => {
       const inner = document.querySelector('.site-header .inner') as HTMLElement
       return {
@@ -595,7 +601,7 @@ test('o cabeçalho cabe em toda largura, do celular ao monitor grande @navegador
 
 test('a barra leva às duas ferramentas prontas, e marca a página atual', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
-  await page.goto('/conferir-assinatura/')
+  await page.goto('/verificar-assinatura-digital/')
   const barra = page.locator('.site-nav')
   await expect(barra.getByRole('link', { name: 'Verificar assinatura' })).toBeVisible()
   await expect(barra.getByRole('link', { name: 'Verificar assinatura' })).toHaveAttribute('aria-current', 'page')
@@ -605,7 +611,7 @@ test('a barra leva às duas ferramentas prontas, e marca a página atual', async
 
   // No celular a barra some, mas o item tem que continuar alcançável pelo hambúrguer.
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('/conferir-assinatura/')
+  await page.goto('/verificar-assinatura-digital/')
   const menu = page.locator('.nav-toggle')
   await menu.locator('summary').click()
   await expect(menu.getByRole('link', { name: 'Verificar assinatura' })).toBeVisible()

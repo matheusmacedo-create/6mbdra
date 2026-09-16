@@ -44,7 +44,7 @@ O `.p7s` não abre com duplo clique, e não deveria: ele não é para ser lido, 
 
 **Programas de gestão de certificado digital** — os que vêm com o token ou o cartão — costumam ter função de verificar `.p7s`.
 
-O [conferidor do brpdf](/conferir-assinatura/) hoje lê a assinatura **embutida** no PDF, não o `.p7s`. Se você tem os dois arquivos, o ITI é o caminho.
+O [conferidor do brpdf](/verificar-assinatura-digital/) hoje lê a assinatura **embutida** no PDF, não o `.p7s`. Se você tem os dois arquivos, o ITI é o caminho.
 
 ## Como saber qual dos dois você tem
 

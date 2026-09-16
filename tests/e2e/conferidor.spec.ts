@@ -13,7 +13,7 @@ import { join } from 'node:path'
 const fx = (n: string) => join(process.cwd(), 'tests', 'fixtures', n)
 
 async function abrir(page: Page) {
-  await page.goto('/conferir-assinatura/')
+  await page.goto('/verificar-assinatura-digital/')
   await expect(page.locator('.dropzone.zone-hero')).toBeVisible()
 }
 
