@@ -135,6 +135,24 @@ img, svg { max-width: 100%; }
   .brand .brand-logo svg { height: 30px; }
 }
 
+/*
+ * Faixa apertada do cabeçalho.
+ *
+ * Com quatro itens de navegação mais o botão, entre ~900 e 1120 px a linha não cabia com o
+ * espaçamento cheio: o cabeçalho estourava e a PÁGINA INTEIRA passava a rolar na horizontal. Foi o
+ * custo de colocar "Verificar assinatura" na barra, e apareceu só ao medir largura por largura.
+ *
+ * A saída não é esconder a navegação mais cedo — isso tiraria as ferramentas de vista justamente em
+ * notebook, que é onde o escritório trabalha. O espaçamento encolhe, e a assinatura da marca
+ * ("PDF Jurídico") sai, como já sai no celular: ela é o primeiro elemento dispensável da linha.
+ */
+@media (min-width: 901px) and (max-width: 1120px) {
+  .site-header .inner { gap: 14px; }
+  .site-nav a { padding: 9px 8px; font-size: 14.5px; }
+  .header-cta { padding: 10px 14px; }
+  .brand .brand-sub { display: none; }
+}
+
 @media (max-width: 900px) {
   .site-header .inner { min-height: 62px; gap: 12px; padding: 0 16px; }
   .site-nav { display: none; }

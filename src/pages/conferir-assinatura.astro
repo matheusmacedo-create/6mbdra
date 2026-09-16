@@ -4,17 +4,39 @@ import Conferidor from '../tool/conferidor/Conferidor'
 import { SITE } from '../config/site'
 
 /*
- * Página da ferramenta de conferência de assinatura.
+ * Página da ferramenta de verificação de assinatura.
  *
  * A ferramenta vem primeiro e o texto depois, ao contrário das outras páginas de ferramenta: quem
- * busca "assinatura digital do PDF" tem um arquivo na mão e uma dúvida urgente — protocolo ou não
- * protocolo. Fazer essa pessoa rolar por três parágrafos antes de conferir seria cobrar pedágio
- * numa resposta que leva 18 ms.
+ * chega aqui tem um arquivo na mão e uma dúvida urgente — protocolo ou não protocolo. Fazer essa
+ * pessoa rolar por três parágrafos antes de verificar seria cobrar pedágio numa resposta que leva
+ * menos de um segundo.
  *
- * O texto abaixo não é enfeite de SEO: é o que a ferramenta se recusa a dizer na tela de resultado.
- * "Confere" é uma frase curta; o que ela não abrange precisa de espaço.
+ * VOCABULÁRIO, e a distinção que sustenta as duas decisões abaixo:
+ *
+ * Na CHAMADA usamos "verificar", que é como a pessoa procura. Ninguém digita "conferir assinatura
+ * digital" no buscador; digita "verificar" ou "validar". Escrever com a palavra que só nós usamos
+ * é escrever para ninguém.
+ *
+ * No VEREDITO continuamos em "confere" e jamais "válida" — validade jurídica é decisão do juízo,
+ * não de uma ferramenta. As duas coisas convivem porque o escopo é diferente: uma é o convite,
+ * a outra é a afirmação. A FAQ explica isso em voz alta, e há teste e2e que trava o veredito.
+ *
+ * O texto abaixo também não é enfeite de SEO: é o que a ferramenta se recusa a dizer na tela de
+ * resultado. "Confere" é uma frase curta; o que ela não abrange precisa de espaço.
  */
 const PERGUNTAS = [
+  {
+    q: 'Como verificar a assinatura digital de um PDF?',
+    a: 'Arraste o arquivo para a área acima ou clique para escolhê-lo. Em menos de um segundo a tela mostra se o documento continua íntegro ou se foi alterado depois de assinado, quem consta como signatário e qual política da ICP-Brasil o arquivo declara. Não precisa instalar programa, criar conta nem enviar o documento para lugar nenhum — tudo acontece dentro do seu navegador.',
+  },
+  {
+    q: 'É grátis? Preciso me cadastrar ou instalar alguma coisa?',
+    a: 'É grátis, sem cadastro, sem instalar nada e sem limite de arquivos. Não há versão paga, não pedimos e-mail e não existe teste gratuito que expira. O brpdf é mantido como ferramenta aberta sob licença AGPL-3.0 e o código está publicado.',
+  },
+  {
+    q: 'Como saber se um PDF está assinado digitalmente?',
+    a: 'Nem sempre dá para saber olhando: a imagem de uma rubrica colada na página não é assinatura digital, e um documento sem nada visível pode estar assinado. Arraste o arquivo aqui e a resposta é direta — a ferramenta diz se existe assinatura eletrônica no arquivo e quantas são. Se o documento foi impresso e escaneado, a assinatura se perdeu e não é recuperável.',
+  },
   {
     q: 'Isto valida a assinatura como o validador oficial do ITI?',
     a: 'Não, e a diferença importa. Aqui conferimos a integridade: se o conteúdo assinado mudou desde a assinatura. O validador oficial do ITI vai além — confere a cadeia do certificado até as raízes da ICP-Brasil, a revogação e o carimbo do tempo. Para um parecer completo, use o ITI. Para descobrir em segundos se a compressão quebrou seu arquivo, esta ferramenta responde sem enviar o documento para lugar nenhum.',
@@ -50,14 +72,14 @@ const dados = {
   '@graph': [
     {
       '@type': 'WebApplication',
-      name: 'Conferidor de assinatura digital em PDF — brpdf',
+      name: 'Verificador de assinatura digital em PDF — brpdf',
       url: new URL('/conferir-assinatura/', SITE.url).href,
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'Navegador (Chrome, Edge, Firefox, Safari)',
       inLanguage: 'pt-BR',
       isAccessibleForFree: true,
       description:
-        'Confira se a assinatura digital de um PDF continua íntegra, sem enviar o documento para a internet. Detecta arquivos alterados depois de assinados.',
+        'Verifique se a assinatura digital de um PDF continua íntegra, sem enviar o documento para a internet. Detecta arquivos alterados depois de assinados. Grátis e sem cadastro.',
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'BRL' },
       license: 'https://www.gnu.org/licenses/agpl-3.0.html',
       codeRepository: SITE.repo,
@@ -70,30 +92,55 @@ const dados = {
     },
     { '@type': 'FAQPage', mainEntity: PERGUNTAS.map((p) => ({ '@type': 'Question', name: p.q, acceptedAnswer: { '@type': 'Answer', text: p.a } })) },
     {
+      '@type': 'HowTo',
+      name: 'Como verificar a assinatura digital de um PDF',
+      description: 'Três passos, sem instalar programa e sem enviar o documento para a internet.',
+      inLanguage: 'pt-BR',
+      totalTime: 'PT1M',
+      estimatedCost: { '@type': 'MonetaryAmount', currency: 'BRL', value: '0' },
+      step: [
+        { '@type': 'HowToStep', name: 'Abra a ferramenta', text: 'Abra esta página em qualquer navegador. Não é preciso instalar programa nem criar conta.' },
+        { '@type': 'HowToStep', name: 'Solte o PDF assinado', text: 'Arraste o arquivo para a área de upload ou clique para escolhê-lo. O documento não é enviado: a leitura acontece dentro do navegador.' },
+        { '@type': 'HowToStep', name: 'Leia o resultado', text: 'Em menos de um segundo a tela mostra se a integridade confere ou se o documento foi alterado depois de assinado, com os dados do certificado.' },
+      ],
+    },
+    {
       '@type': 'BreadcrumbList',
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Início', item: SITE.url },
-        { '@type': 'ListItem', position: 2, name: 'Conferir assinatura', item: new URL('/conferir-assinatura/', SITE.url).href },
+        { '@type': 'ListItem', position: 2, name: 'Verificar assinatura digital', item: new URL('/conferir-assinatura/', SITE.url).href },
       ],
     },
   ],
 }
 ---
 <Base
-  title="Conferir assinatura digital de PDF, sem enviar o arquivo"
-  description="Descubra em segundos se a assinatura digital do seu PDF continua íntegra ou se o arquivo foi alterado depois de assinado. Roda no navegador, sem enviar o documento."
+  title="Verificar assinatura digital de PDF grátis, sem enviar o arquivo"
+  description="Verifique em 1 segundo se a assinatura digital do seu PDF continua íntegra ou se o arquivo foi alterado depois de assinado. Grátis, sem cadastro e sem enviar o documento."
   path="/conferir-assinatura/"
 >
   <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
 
   <main class="page prose conferidor-page">
-    <h1>A assinatura digital deste PDF ainda confere?</h1>
+    <h1>Verificar assinatura digital de PDF</h1>
     <p class="lead">
-      Arraste o arquivo. Em menos de um segundo você sabe se o documento foi alterado depois de assinado — e o PDF não sai do seu computador
-      para isso.
+      Descubra na hora se um documento assinado continua íntegro — ou se foi alterado depois de assinado e vai ser recusado no protocolo.{' '}
+      <strong>Grátis, sem cadastro</strong>, e o arquivo nunca sai do seu computador.
     </p>
 
     <div class="conferidor-ilha"><Conferidor client:only="react" /></div>
+
+    {/*
+      Linha de argumentos logo abaixo da ferramenta, e não no fim da página.
+      Todo item aqui é verificável — nada de número inventado, nota ou depoimento. "Menos de 1
+      segundo" é o tempo medido nos testes; "funciona offline" tem teste automático.
+    */}
+    <ul class="vantagens">
+      <li><span class="v-marca" aria-hidden="true">✓</span>Grátis e sem cadastro</li>
+      <li><span class="v-marca" aria-hidden="true">✓</span>Resposta em menos de 1 segundo</li>
+      <li><span class="v-marca" aria-hidden="true">✓</span>O arquivo não sai do seu computador</li>
+      <li><span class="v-marca" aria-hidden="true">✓</span>Funciona até sem internet</li>
+    </ul>
 
     <p class="selo-sigilo">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -101,10 +148,42 @@ const dados = {
         <path d="M8 10V7a4 4 0 0 1 8 0v3" />
       </svg>
       <span>
-        A conferência acontece dentro do navegador — o documento e o certificado não são enviados para lugar nenhum.{' '}
+        A verificação acontece dentro do navegador — o documento e o certificado não são enviados para lugar nenhum.{' '}
         <a href="/seguranca/verifique/">Veja como conferir isso</a>.
       </span>
     </p>
+
+    <h2>O que você fica sabendo em um segundo</h2>
+    <ul class="grid-cards descobertas">
+      <li>
+        <strong>Se o documento foi alterado depois de assinado</strong>
+        <p>É a causa número um de peça recusada por assinatura. Melhor descobrir agora do que pela intimação.</p>
+      </li>
+      <li>
+        <strong>Quem consta como signatário</strong>
+        <p>Nome e emissor do certificado, como vieram no arquivo, além do período de validade.</p>
+      </li>
+      <li>
+        <strong>Se o certificado tem procedência</strong>
+        <p>Avisamos quando ele assina a si mesmo: qualquer pessoa gera um assim em dois minutos, e não é ICP-Brasil.</p>
+      </li>
+      <li>
+        <strong>Se escreveram no arquivo depois</strong>
+        <p>Página anexada ou carimbo aplicado depois da assinatura — ela continua conferindo, e o documento mudou.</p>
+      </li>
+    </ul>
+
+    <h2>Para quem isto serve</h2>
+    <p>
+      Qualquer pessoa que receba ou envie um PDF assinado digitalmente. Não é preciso entender de certificado para usar:
+      você solta o arquivo e a resposta vem em português, com o que fazer em seguida.
+    </p>
+    <ul>
+      <li><strong>Advogado antes de protocolar.</strong> Conferir que os anexos assinados sobreviveram ao preparo, junto com o resto do checklist.</li>
+      <li><strong>Quem recebeu um documento de terceiro.</strong> Cliente, correspondente, parte contrária — saber se o arquivo chegou íntegro antes de juntar aos autos.</li>
+      <li><strong>RH, contabilidade, cartório, imobiliária.</strong> Contrato, procuração, distrato: o mesmo lacre, a mesma pergunta.</li>
+      <li><strong>Quem mexeu no arquivo sem querer.</strong> Comprimiu, dividiu, juntou ou só salvou de novo — e agora precisa saber o estrago.</li>
+    </ul>
 
     <h2>Por que uma assinatura “some” depois que o arquivo passa por uma ferramenta</h2>
     <p>
@@ -252,6 +331,19 @@ const dados = {
 
 <style>
   .conferidor-page { max-width: 860px; }
+  /* Linha de argumentos: some em coluna no celular, onde caber quatro lado a lado ilegibiliza. */
+  .vantagens {
+    list-style: none; margin: 18px 0 6px; padding: 0;
+    display: flex; flex-wrap: wrap; gap: 8px 22px;
+  }
+  .vantagens li { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 15px; font-weight: 600; color: var(--ink-2); }
+  .vantagens + .selo-sigilo { margin-top: 18px; }
+  .v-marca {
+    display: inline-grid; place-items: center; width: 19px; height: 19px; border-radius: 50%; flex: 0 0 auto;
+    background: var(--success-background); color: var(--success); font-size: 12px; font-weight: 800;
+  }
+  .descobertas strong { display: block; margin-bottom: 4px; font-size: 16px; color: var(--ink); }
+  .descobertas p { margin: 0; }
   /* Altura reservada: a ilha só existe depois de hidratar, e sem isto o texto pula (CLS). */
   .conferidor-ilha { min-height: 330px; margin: 8px 0 4px; }
   .tabela-compacta { width: 100%; border-collapse: collapse; margin: 18px 0 8px; font-size: 15px; }

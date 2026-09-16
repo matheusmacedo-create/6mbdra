@@ -34,8 +34,19 @@ interface NavLink {
   /** Volta à página inicial e rola até a âncora do próprio link */
   home?: boolean
 }
+/*
+ * A barra leva as DUAS ferramentas prontas, não só uma.
+ *
+ * Verificar assinatura é a única coisa aqui que resolve um problema urgente e pontual — quem chega
+ * com essa dúvida não está navegando, está com um arquivo na mão e um prazo. Deixar isso a três
+ * cliques (rodapé ou grade da home) é esconder a porta de entrada de maior intenção do site.
+ *
+ * Rótulo em "verificar", e não "conferir": é a palavra que as pessoas digitam. O veredito da
+ * ferramenta continua em "confere" — ver o comentário em src/pages/conferir-assinatura.astro.
+ */
 const LINKS: NavLink[] = [
   { href: '/?view=tool', label: 'Compactar PDF', tool: 'menu' },
+  { href: '/conferir-assinatura/', label: 'Verificar assinatura', match: '/conferir-assinatura/' },
   { href: '/tribunais/', label: 'Limites por tribunal', match: '/tribunais/' },
   { href: '/#ferramentas', label: 'Ferramentas', home: true },
 ]
@@ -123,7 +134,7 @@ const LINKS: NavLink[] = [
           <a href="/comprimir-pdf/">Comprimir PDF</a>
           <a href="/dividir-pdf/">Dividir PDF</a>
           <a href="/juntar-pdf/">Juntar PDFs</a>
-          <a href="/conferir-assinatura/">Conferir assinatura</a>
+          <a href="/conferir-assinatura/">Verificar assinatura</a>
           <a href="/sistemas/">Limites por sistema</a>
           <a href="/tribunais/">Limites por tribunal</a>
           <a href="/guias/">Guias</a>

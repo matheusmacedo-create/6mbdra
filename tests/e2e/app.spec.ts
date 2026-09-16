@@ -531,8 +531,12 @@ test('a página inicial abre a ferramenta ao receber arquivos e volta com "Ferra
 test('cabeçalho: âncora, CTA e ferramenta se comportam sem recarregar a página', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByTestId('engine-status')).toHaveAttribute('data-state', 'ready', { timeout: 120_000 })
-  // O menu principal ficou com três itens; "Segurança" mudou para o rodapé.
-  await expect(page.locator('.site-nav a')).toHaveCount(3)
+  /*
+   * O que importa aqui é a DECISÃO, não a contagem: "Segurança" saiu do menu principal e foi para o
+   * rodapé. A versão anterior afirmava `toHaveCount(3)` e quebrou ao entrar a segunda ferramenta na
+   * barra — um teste que reprova crescimento legítimo em vez do erro que existia para pegar.
+   */
+  await expect(page.locator('.site-nav').getByRole('link', { name: 'Segurança' })).toHaveCount(0)
   await expect(page.locator('.site-footer').getByRole('link', { name: 'Segurança' })).toBeVisible()
   // Âncora de seção rola para a própria seção.
   await page.getByRole('link', { name: 'Ferramentas' }).first().click()
@@ -559,4 +563,50 @@ test('no celular o menu abre em hambúrguer acessível', async ({ page }) => {
   await expect(menu.getByRole('link', { name: 'Segurança' })).toHaveCount(0)
   await menu.locator('summary').press('Enter')
   await expect(menu.locator('.panel')).toBeHidden()
+})
+
+test('o cabeçalho cabe em toda largura, do celular ao monitor grande @navegadores', async ({ page }) => {
+  /*
+   * Este teste existe por causa de um estrago concreto: acrescentar "Verificar assinatura" à barra
+   * fez o cabeçalho estourar entre ~900 e 1120 px, e a PÁGINA INTEIRA passava a rolar na horizontal
+   * — numa faixa que é exatamente a de notebook com janela não maximizada. Não apareceu em nenhum
+   * teste existente porque os dois que mediam rolagem horizontal olhavam 390 px e 1280 px, e o
+   * problema morava no meio.
+   *
+   * Item novo na barra passa a ter que provar que cabe.
+   */
+  const larguras = [1440, 1280, 1120, 1040, 960, 901, 900, 820, 700, 560, 390, 360]
+  const ruins: string[] = []
+  for (const w of larguras) {
+    await page.setViewportSize({ width: w, height: 760 })
+    await page.goto('/conferir-assinatura/')
+    const r = await page.evaluate(() => {
+      const inner = document.querySelector('.site-header .inner') as HTMLElement
+      return {
+        cabecalho: inner.scrollWidth > inner.clientWidth + 1,
+        pagina: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+      }
+    })
+    if (r.cabecalho) ruins.push(`${w}px: cabeçalho estoura`)
+    if (r.pagina) ruins.push(`${w}px: página rola na horizontal`)
+  }
+  expect(ruins, 'larguras em que o cabeçalho não cabe').toEqual([])
+})
+
+test('a barra leva às duas ferramentas prontas, e marca a página atual', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.goto('/conferir-assinatura/')
+  const barra = page.locator('.site-nav')
+  await expect(barra.getByRole('link', { name: 'Verificar assinatura' })).toBeVisible()
+  await expect(barra.getByRole('link', { name: 'Verificar assinatura' })).toHaveAttribute('aria-current', 'page')
+  // E leva a alguma parte: do verificador dá para chegar na bancada sem passar pela home.
+  await barra.getByRole('link', { name: 'Compactar PDF' }).click()
+  await expect(page).toHaveURL(/view=tool/)
+
+  // No celular a barra some, mas o item tem que continuar alcançável pelo hambúrguer.
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/conferir-assinatura/')
+  const menu = page.locator('.nav-toggle')
+  await menu.locator('summary').click()
+  await expect(menu.getByRole('link', { name: 'Verificar assinatura' })).toBeVisible()
 })
