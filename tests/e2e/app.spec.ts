@@ -46,7 +46,7 @@ async function pageCount(path: string): Promise<number> {
   return doc.getPageCount()
 }
 
-test('fluxo completo: revisar, preparar e baixar um scan grande dentro da meta', async ({ page }) => {
+test('fluxo completo: revisar, preparar e baixar um scan grande dentro da meta @navegadores', async ({ page }) => {
   expect(statSync(fx.scanBig).size).toBeGreaterThan(6 * MB)
   await openApp(page)
   await addAndPrepare(page, [fx.scanBig], 6)
@@ -121,7 +121,7 @@ test('PDF assinado fica de fora por padrão e pode ser liberado', async ({ page 
   await expect(job).toHaveAttribute('data-kind', 'done')
 })
 
-test('divide em partes quando nem a compressão máxima cabe', async ({ page }) => {
+test('divide em partes quando nem a compressão máxima cabe @navegadores', async ({ page }) => {
   await openApp(page)
   await addAndPrepare(page, [fx.scanHuge], 0.5)
   await page.getByTestId('start').click()
@@ -164,7 +164,7 @@ interface Medicao {
   corpo: string
 }
 
-test('nenhuma requisição de rede transporta os documentos (RF06)', async ({ page }) => {
+test('nenhuma requisição de rede transporta os documentos (RF06) @navegadores', async ({ page }) => {
   const requests: { url: string; method: string; body: string | null; headers: Record<string, string> }[] = []
   const sockets: string[] = []
   page.on('request', (r) => requests.push({ url: r.url(), method: r.method(), body: r.postData() ?? null, headers: r.headers() }))
@@ -364,7 +364,7 @@ test('arquivos que já cabem não viram beco sem saída: o lote continua baixáv
   expect(conteudo).toContain(`${raiz}/02_text.pdf`)
 })
 
-test('juntar documentos: vira um PDF só, na ordem da lista', async ({ page }) => {
+test('juntar documentos: vira um PDF só, na ordem da lista @navegadores', async ({ page }) => {
   await openApp(page)
   await addAndPrepare(page, [fx.text, fx.text, fx.text], 50)
   const paginasPorArquivo = await pageCount(fx.text)
@@ -438,7 +438,7 @@ test('páginas públicas respondem e apontam para a ferramenta', async ({ page }
   expect(await links.count()).toBeGreaterThanOrEqual(8)
 })
 
-test('no celular a ferramenta não rola na horizontal, nas duas etapas', async ({ page }) => {
+test('no celular a ferramenta não rola na horizontal, nas duas etapas @navegadores', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/?view=tool')
   await expect(page.getByTestId('engine-status')).toHaveAttribute('data-state', 'ready', { timeout: 120_000 })

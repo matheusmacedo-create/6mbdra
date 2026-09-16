@@ -22,7 +22,7 @@ async function conferir(page: Page, arquivo: string) {
   await expect(page.locator('.conf-cartao')).toBeVisible({ timeout: 60_000 })
 }
 
-test('documento íntegro: a integridade confere, e a palavra "válida" não aparece', async ({ page }) => {
+test('documento íntegro: a integridade confere, e a palavra "válida" não aparece @navegadores', async ({ page }) => {
   await abrir(page)
   await conferir(page, 'assinado-ok.pdf')
 
@@ -43,7 +43,7 @@ test('documento íntegro: a integridade confere, e a palavra "válida" não apar
   expect(veredito, 'o veredito usou vocabulário de validade jurídica').not.toMatch(/válid|inválid|autentic/)
 })
 
-test('um byte trocado vira "documento alterado", nunca "não deu para conferir"', async ({ page }) => {
+test('um byte trocado vira "documento alterado", nunca "não deu para conferir" @navegadores', async ({ page }) => {
   await abrir(page)
   await conferir(page, 'assinado-quebrado.pdf')
 
@@ -80,7 +80,7 @@ test('PDF sem assinatura não vira falso positivo', async ({ page }) => {
   await expect(cartao.locator('h3')).toHaveText(/nenhuma assinatura/i)
 })
 
-test('o leitor de assinaturas só baixa quando um arquivo chega', async ({ page }) => {
+test('o leitor de assinaturas só baixa quando um arquivo chega @navegadores', async ({ page }) => {
   /*
    * São 376 KB de biblioteca de ASN.1. Quem abre a página para ler o texto não deveria pagar por
    * eles, e quem solta um arquivo não deveria esperar por eles duas vezes. O import() dinâmico
@@ -98,7 +98,7 @@ test('o leitor de assinaturas só baixa quando um arquivo chega', async ({ page 
   expect(baixados.filter((u) => /\/_astro\/assinatura\./.test(u)).length, 'o leitor não foi carregado').toBeGreaterThan(0)
 })
 
-test('nenhuma requisição carrega o documento conferido', async ({ page }) => {
+test('nenhuma requisição carrega o documento conferido @navegadores', async ({ page }) => {
   /*
    * A mesma garantia da bancada (RF06), agora para a ferramenta nova. Uma promessa de sigilo que
    * vale só na metade do site não vale.
@@ -182,7 +182,7 @@ test('vários documentos de uma vez viram um cartão cada', async ({ page }) => 
   await expect(page.locator('.conf-cartao').nth(1)).toHaveAttribute('data-estado', 'quebrada')
 })
 
-test('no celular a página não rola na horizontal, antes e depois do resultado', async ({ page }) => {
+test('no celular a página não rola na horizontal, antes e depois do resultado @navegadores', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await abrir(page)
   const rola = () => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1)

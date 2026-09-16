@@ -16,6 +16,16 @@ export const SITE = {
   /** E-mail de contato exibido na página /contato. */
   contactEmail: 'brpdf@proton.me',
   /**
+   * Repositório público.
+   *
+   * Não é enfeite de rodapé: o site afirma em cinco páginas que o código é aberto e que dá para
+   * conferir o que roda no navegador. Durante um bom tempo essa afirmação não vinha com endereço
+   * nenhum — quem quisesse verificar não tinha por onde começar, e uma garantia que não dá para
+   * checar é indistinguível de uma promessa vazia. A AGPL-3.0 também exige oferecer a fonte a quem
+   * usa o serviço, então isto é obrigação, não cortesia.
+   */
+  repo: 'https://github.com/matheusmacedo-create/6mbdra',
+  /**
    * Medição externa. O identificador do GA4 não é segredo: ele aparece no HTML de qualquer site que
    * o use. Fica versionado aqui para o build de produção não depender de ninguém lembrar da
    * variável; PUBLIC_GA4_ID / PUBLIC_GTM_ID no ambiente têm precedência (inclusive com valor vazio,

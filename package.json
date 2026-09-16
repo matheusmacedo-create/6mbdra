@@ -20,7 +20,8 @@
     "check:sources": "node scripts/check-sources.mjs",
     "test": "npm run build && vitest run",
     "test:unit": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test --project=chromium",
+    "test:e2e:navegadores": "playwright test"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.5",

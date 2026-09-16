@@ -1,6 +1,7 @@
 # Aderência à especificação V1
 
-Estado em 14/09/2026, após revisão adversarial (corretude, privacidade, regras, especificação, build/deploy, UX/acessibilidade). "Onde" aponta o código ou o teste que comprova.
+Estado em 16/09/2026. "Onde" aponta o código ou o teste que comprova. Linhas marcadas como parciais dizem
+exatamente o que falta — um checklist que arredonda para "feito" deixa de servir para alguma coisa.
 
 | Requisito | Situação | Onde |
 |---|---|---|
@@ -19,17 +20,19 @@ Estado em 14/09/2026, após revisão adversarial (corretude, privacidade, regras
 | RF13 Reprocessar um item | Feito | botão "Tentar de novo" (`retry`) |
 | RF14 Responsivo + aviso de capacidade | Feito | CSS mobile (e2e em 390 px sem rolagem horizontal); `deviceCapacityWarning` (deviceMemory, celular/tablet por UA e toque); contraste revisado no modo escuro |
 | RF15 Regras versionadas validadas no build | Feito | `scripts/validate-rules.mjs` em `npm run build` |
-| RF16 Medição sem dados de documentos | Feito (sem provedor ativo) | `analytics.ts` bloqueia chaves de nome/conteúdo/hash e mantém contagens; eventos: lote, resultado, download (todos os botões), regra (inclusive via ?regra=), erro |
-| §6.1 Páginas públicas (início, diretório, página por regra, guias, metodologia, privacidade, termos, contato) | Feito | `src/pages/**`, 8 guias em `src/content/guias` |
+| RF16 Medição sem dados de documentos | Feito (medição ativa: D1 própria + GA4 após consentimento) | `analytics.ts` bloqueia chaves de nome/conteúdo/hash e mantém contagens; eventos: lote, resultado, download (todos os botões), regra (inclusive via ?regra=), erro |
+| §6.1 Páginas públicas (início, diretório, página por regra, guias, metodologia, privacidade, termos, contato) | Feito | `src/pages/**`, 26 guias em `src/content/guias`, seção `/seguranca/` (4 páginas) e 158 rotas no total |
 | §8.2 Nomes `_otimizado` / `_parte_01` | Feito | `naming.ts` (`_parte_01_de_03`; nomes sem acento/espaço; numeração `NN_` no ZIP) |
 | §8.3 Assinados excluídos por padrão; com senha recusados | Feito | `deriveKind`: senha de abertura recusada; só restrições de edição (abre sem senha) fica fora por padrão e o usuário pode liberar, avisado de que o resultado sai sem as restrições; nunca tentamos senha alguma |
 | §8.4 Prova técnica do motor e licença | Feito | `docs/decisoes-tecnicas.md` |
 | §9.1 Monitor semanal das fontes | Feito | `scripts/check-sources.mjs` (trecho normalizado + hash de vizinhança, paralelo, assinatura) e `rules-monitor.yml` (comita o lock, issue com label, sem repetição, registra quando estabiliza; fechamento é humano) |
 | §12 CSP, sem scripts de terceiros, dependências fixadas | Feito | CSP com hashes (meta) + cabeçalho para os scripts dos workers; sem `unsafe-inline`/`unsafe-eval`; HSTS, COOP; nomes sanitizados no ZIP; log do motor só em dev; `package-lock.json` |
 | §13.2 Espaço reservado para anúncios sem deslocar layout | Feito (vazio) | `.ad-slot` abaixo de "Como funciona", longe dos botões |
-| §15.1 Navegadores: Chrome/Edge/Firefox/Safari | Parcial | Testado só em Chromium headless; Firefox/Safari pendentes de teste manual |
+| §15.1 Navegadores: Chrome/Edge/Firefox/Safari | Parcial | **Chromium**: suíte completa (32 e2e). **Firefox**: 10/10 dos testes `@navegadores` (WASM, workers, WebCrypto, download, celular), verificado em 16/09/2026. **WebKit/Safari**: projeto configurado e navegador instalável (`npm run test:e2e:navegadores`), mas a suíte ainda não foi executada nele — é o que falta para fechar este item |
 | §15.3 Piloto com profissionais | Pendente | Depende de pessoas reais |
-| §19 Nome público (brpdf), domínio, e-mail de contato, ferramenta de analytics | Parcial: nome definido; domínio e e-mail pendentes | `src/config/site.mjs`; hospedagem pronta em `wrangler.jsonc` (Cloudflare Workers, ver README "Colocar no ar") |
+| §19 Nome público (brpdf), domínio, e-mail de contato, ferramenta de analytics | Feito | `brpdf.com` no ar (Cloudflare Workers, `wrangler.jsonc`), contato `brpdf@proton.me`, medição própria em D1 + GA4 |
+| Conferidor de assinaturas (integridade PAdES no navegador) | Feito | `src/tool/lib/assinatura.ts`, `politicas-icp.ts`, ilha em `src/tool/conferidor/`, página `/conferir-assinatura/`; 13 unitários + 10 e2e; Etapa 0 documentada em `docs/conferidor-etapa-0.md` |
+| Código aberto verificável: a promessa vem com endereço | Feito | `SITE.repo` no rodapé de todas as páginas, nas 5 páginas que afirmam código aberto e em `SoftwareSourceCode`; `tests/unit/codigoAberto.test.ts` quebra se a afirmação ficar sem link |
 
 ## Tribunais ainda sem regra (7 de 92)
 

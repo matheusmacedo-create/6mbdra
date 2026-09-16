@@ -29,7 +29,7 @@ const dados = {
           name: 'Como posso verificar que o arquivo não sai do meu computador?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Três formas, da mais rápida à mais completa: processar um arquivo em modo avião; abrir a aba Rede do navegador e conferir que nenhuma requisição carrega o documento; ou ler o código-fonte, que é aberto sob licença AGPL-3.0.',
+            text: `Três formas, da mais rápida à mais completa: processar um arquivo em modo avião; abrir a aba Rede do navegador e conferir que nenhuma requisição carrega o documento; ou ler o código-fonte, que é aberto sob licença AGPL-3.0 e está publicado em ${SITE.repo}.`,
           },
         },
         {
@@ -210,9 +210,9 @@ const dados = {
         Google, que só carregam se você aceitar.
       </li>
       <li>
-        <strong>Ninguém auditou por fora.</strong> O código é aberto e há teste automático verificando a garantia a cada
-        versão, mas nenhuma empresa independente examinou e atestou isso. Dizemos <em>verificável</em>, não
-        <em>auditado</em> — a diferença importa.
+        <strong>Ninguém auditou por fora.</strong> O <a href={SITE.repo} rel="noreferrer noopener" target="_blank">código é aberto</a> e há
+        teste automático verificando a garantia a cada versão, mas nenhuma empresa independente examinou e atestou isso. Dizemos
+        <em>verificável</em>, não <em>auditado</em> — a diferença importa.
       </li>
     </ul>
 

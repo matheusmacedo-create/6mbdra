@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro'
 import { REGRAS } from '../tool/lib/regras'
 import { formatDate } from '../tool/lib/format'
+import { SITE } from '../config/site'
 ---
 <Base title="Metodologia: como cadastramos e atualizamos os limites dos tribunais" description="Como cada regra de tamanho de PDF entra na base, o que exigimos de fonte, como conferimos e o que fazer quando algo mudou." path="/metodologia/">
   <main class="page prose">
@@ -24,7 +25,11 @@ import { formatDate } from '../tool/lib/format'
 
     <h2>Como conferimos e atualizamos</h2>
     <ol>
-      <li>As regras ficam em um arquivo público e versionado no repositório do projeto (<code>src/data/regras.json</code>), validado automaticamente a cada publicação.</li>
+      <li>
+        As regras ficam em um arquivo público e versionado
+        <a href={SITE.repo} rel="noreferrer noopener" target="_blank">no repositório do projeto</a>
+        (<code>src/data/regras.json</code>), validado automaticamente a cada publicação.
+      </li>
       <li>Uma rotina semanal automática visita cada fonte e compara o texto com a última versão vista. Se o texto mudou ou a página saiu do ar, abre-se uma tarefa de revisão humana.</li>
       <li>A base só é alterada depois que alguém confirma o significado da mudança. Versões anteriores ficam no histórico do Git.</li>
       <li>A rotina não acessa áreas autenticadas, não contorna bloqueios e não faz peticionamentos de teste.</li>
@@ -57,7 +62,8 @@ import { formatDate } from '../tool/lib/format'
     <p>
       Alguns tribunais publicam o limite, mas não conseguimos confirmar a fonte oficial na última rodada (sites que bloqueiam acesso automatizado,
       certificados inválidos ou páginas fora do ar): TJRJ (PJe), TJRS (eproc), TJRN, TRF3, TJMS (e-SAJ), STJ e Justiça Eleitoral. Para eles, informe o
-      limite manualmente conforme a tela de anexar do sistema. A lista completa está no repositório (<code>docs/checklist-v1.md</code>).
+      limite manualmente conforme a tela de anexar do sistema. A lista completa está
+      <a href={SITE.repo} rel="noreferrer noopener" target="_blank">no repositório</a> (<code>docs/checklist-v1.md</code>).
     </p>
 
     <h2>Encontrou um erro ou uma regra que falta?</h2>
