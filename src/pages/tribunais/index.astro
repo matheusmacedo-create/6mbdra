@@ -5,12 +5,19 @@ import { formatBytes, formatDate } from '../../tool/lib/format'
 const vigentes = regrasVigentes()
 const cobertos = tribunaisCobertos(vigentes)
 const contexto = (r: Parameters<typeof rotuloContexto>[0]) => rotuloContexto(r, { omitirAmbos: true }) || 'geral'
+import { dadosEstruturados, trilha } from '../../tool/lib/trilha'
+import { SITE } from '../../config/site'
+const dados = dadosEstruturados(
+  { '@type': 'CollectionPage', name: 'Limites de tamanho de PDF por tribunal e sistema', url: new URL('/tribunais/', SITE.url).href, inLanguage: 'pt-BR' },
+  trilha({ nome: 'Tribunais', caminho: '/tribunais/' }),
+)
 ---
 <Base
   title="Limites de tamanho de PDF por tribunal e sistema"
   description="Diretório dos limites por arquivo para anexar PDFs no PJe, eproc, e-SAJ, Projudi e outros sistemas, com fonte oficial e data de verificação."
   path="/tribunais/"
 >
+  <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
   <main class="page prose wide">
     <h1>Limites de PDF por tribunal e sistema</h1>
     <p class="lead">

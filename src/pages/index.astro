@@ -101,6 +101,21 @@ const SEGURANCA = [
 const dadosEstruturados = {
   '@context': 'https://schema.org',
   '@graph': [
+    /*
+     * WebSite é o que o Google lê para mostrar o NOME do site no resultado (em vez de inventar um
+     * a partir do domínio). Só vale na página inicial, e só com `name` e `url`. É também o que
+     * permite tirar " · brpdf" dos títulos que não cabem em 60 caracteres (src/layouts/Base.astro).
+     */
+    {
+      '@type': 'WebSite',
+      '@id': `${SITE.url}/#site`,
+      name: SITE.name,
+      alternateName: `${SITE.name} · PDF Jurídico`,
+      url: SITE.url,
+      inLanguage: 'pt-BR',
+      publisher: { '@id': `${SITE.url}/#org` },
+    },
+    { '@type': 'Organization', '@id': `${SITE.url}/#org`, name: SITE.name, url: SITE.url, sameAs: [SITE.repo] },
     {
       '@type': 'WebApplication',
       name: 'brpdf · PDF Jurídico',
@@ -142,8 +157,8 @@ const dadosEstruturados = {
 }
 ---
 <Base
-  title="PDF pronto para protocolar"
-  description="Comprima no limite do tribunal, divida, verifique assinatura digital e veja o que seus PDFs revelam. Grátis, sem cadastro e sem enviar arquivo nenhum."
+  title="Comprimir PDF no limite do tribunal, grátis"
+  description="Comprima PDF no limite do PJe, e-SAJ e eproc, divida em partes, verifique assinatura digital e leia metadados. Grátis, sem cadastro e sem enviar o arquivo."
   path="/"
 >
   <Fragment slot="head">

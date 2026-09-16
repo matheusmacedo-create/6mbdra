@@ -122,9 +122,24 @@ describe('metadados de todas as páginas', () => {
     expect(errados).toEqual([])
   })
 
-  it('a descrição cabe no que o buscador exibe', () => {
-    const longas = indexaveis.filter((p) => p.descricao.length > 175).map((p) => `${p.rota} (${p.descricao.length})`)
+  it('a descrição cabe no que o buscador exibe, e não desperdiça o espaço', () => {
+    // O Google mostra por volta de 160 caracteres; abaixo de 100 o snippet fica magro e ele inventa outro.
+    const longas = indexaveis.filter((p) => p.descricao.length > 160).map((p) => `${p.rota} (${p.descricao.length})`)
     expect(longas, 'descrições longas demais').toEqual([])
+    const curtas = indexaveis.filter((p) => p.descricao.length < 100).map((p) => `${p.rota} (${p.descricao.length})`)
+    expect(curtas, 'descrições curtas demais').toEqual([])
+  })
+
+  it('o título cabe no corte do buscador, ou pelo menos abre mão do nome do site', () => {
+    /*
+     * Perto de 60 caracteres o Google corta. O Base só acrescenta " · brpdf" quando cabe; acima
+     * disso o título vai sem sufixo, e o teto vira o que a resposta precisa (contexto de petição
+     * no fim). O nome do site continua aparecendo no resultado, via WebSite na página inicial.
+     */
+    const ruins = indexaveis
+      .filter((p) => !(p.titulo.length <= 60 || (!p.titulo.endsWith(' · brpdf') && p.titulo.length <= 75)))
+      .map((p) => `${p.titulo} (${p.titulo.length})`)
+    expect(ruins, 'títulos longos demais').toEqual([])
   })
 
   it('nas páginas de tribunal, a resposta sobrevive ao corte do título', () => {

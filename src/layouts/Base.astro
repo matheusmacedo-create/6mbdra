@@ -22,7 +22,13 @@ interface Props {
 }
 const { title, description, path = Astro.url.pathname, noindex = false } = Astro.props
 const canonical = new URL(path, SITE.url).href
-const fullTitle = path === '/' ? `${SITE.name} — ${title}` : `${title} · ${SITE.name}`
+/*
+ * O buscador corta o título perto de 60 caracteres. Quando o nome do site não cabe, ele sai — e
+ * não a resposta. Isso não some com a marca do resultado: o Google mostra o nome do site por conta
+ * própria, lido do WebSite em dados estruturados da página inicial (src/pages/index.astro).
+ */
+const SUFIXO = ` · ${SITE.name}`
+const fullTitle = title.length + SUFIXO.length <= 60 ? `${title}${SUFIXO}` : title
 const current = (p: string) => (path === p || (p !== '/' && path.startsWith(p)) ? 'page' : undefined)
 interface NavLink {
   href: string
@@ -80,6 +86,8 @@ const LINKS: NavLink[] = [
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     {noindex && <meta name="robots" content="noindex" />}
+    {/* Sem isto o Google mostra prévia de imagem pequena; com isto, do tamanho que ele quiser. */}
+    {!noindex && <meta name="robots" content="max-image-preview:large" />}
     {SITE.verificacao.google && <meta name="google-site-verification" content={SITE.verificacao.google} />}
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE.name} />

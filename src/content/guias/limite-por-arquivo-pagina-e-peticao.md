@@ -1,5 +1,6 @@
 ---
 title: "Limite por arquivo, por página e por petição: três coisas diferentes"
+titleSeo: "Limite por arquivo, por página e por petição: a diferença"
 description: "Um PDF dentro do limite individual ainda pode ser recusado. Entenda os três tipos de limite que os sistemas de peticionamento aplicam e como conferir cada um."
 updated: 2026-09-14
 tags:

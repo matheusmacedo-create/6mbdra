@@ -1,8 +1,11 @@
 ---
 import Base from '../layouts/Base.astro'
 import { SITE } from '../config/site'
+import { dadosEstruturados, trilha } from '../tool/lib/trilha'
+const dados = dadosEstruturados(trilha({ nome: 'Contato', caminho: '/contato/' }))
 ---
-<Base title="Contato" description="Fale com a equipe do site: erros, sugestões e regras de tribunais que faltam ou mudaram." path="/contato/">
+<Base title="Contato" description="Fale com a equipe do brpdf: limite de tribunal errado ou que mudou, regra que falta, erro na ferramenta ou sugestão. O e-mail de contato está na página." path="/contato/">
+  <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
   <main class="page prose">
     <h1>Contato</h1>
     <p class="lead">Encontrou um limite errado, uma regra que falta ou um problema na ferramenta? Escreva para a gente.</p>

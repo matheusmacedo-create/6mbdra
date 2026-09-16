@@ -1,5 +1,6 @@
 ---
 title: "O sistema recusou meu PDF: as causas e o que fazer em cada uma"
+titleSeo: "O sistema recusou meu PDF: causas e o que fazer"
 description: "Arquivo grande demais, formato inválido, nome com caractere proibido, PDF com senha: as recusas mais comuns no peticionamento eletrônico e a saída de cada uma."
 updated: 2026-09-14
 tags:

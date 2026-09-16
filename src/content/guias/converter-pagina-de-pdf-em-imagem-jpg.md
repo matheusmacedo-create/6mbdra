@@ -1,6 +1,6 @@
 ---
 title: "Como transformar uma página de PDF em imagem JPG ou PNG"
-description: "Como exportar uma página do PDF como imagem para enviar por e-mail ou WhatsApp, pelo Preview no Mac ou pelo LibreOffice Draw no Windows, sem instalar programa pago."
+description: "Como exportar uma página do PDF como imagem JPG ou PNG para enviar por e-mail ou WhatsApp, com o Preview no Mac ou o LibreOffice no Windows, sem programa pago."
 updated: 2026-09-15
 tags:
   - converter pdf

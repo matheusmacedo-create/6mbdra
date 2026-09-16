@@ -1,6 +1,6 @@
 ---
 title: "Como converter PDF em Excel (extrair tabela de um PDF)"
-description: "Como levar uma tabela de um PDF — extrato, cálculo de liquidação, planilha de atualização — para o Excel, e por que copiar e colar quase sempre desalinha as colunas."
+description: "Como levar uma tabela de um PDF (extrato, cálculo de liquidação, planilha de atualização) para o Excel, e por que copiar e colar desalinha as colunas."
 updated: 2026-09-15
 tags:
   - converter pdf

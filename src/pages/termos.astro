@@ -1,8 +1,11 @@
 ---
 import Base from '../layouts/Base.astro'
 import { SITE } from '../config/site'
+import { dadosEstruturados, trilha } from '../tool/lib/trilha'
+const dados = dadosEstruturados(trilha({ nome: 'Termos de uso', caminho: '/termos/' }))
 ---
-<Base title="Termos de uso" description="Condições de uso da ferramenta gratuita de preparação de PDFs para peticionamento eletrônico." path="/termos/">
+<Base title="Termos de uso" description="Condições de uso do brpdf, ferramenta gratuita e de código aberto que prepara PDFs para o protocolo eletrônico sem enviar nenhum arquivo para a internet." path="/termos/">
+  <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
   <main class="page prose">
     <h1>Termos de uso</h1>
     <p class="lead">Ao usar o {SITE.name}, você concorda com os termos abaixo. Eles são simples porque o serviço também é.</p>

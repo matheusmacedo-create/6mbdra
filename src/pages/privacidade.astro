@@ -2,8 +2,11 @@
 import Base from '../layouts/Base.astro'
 import { SITE } from '../config/site'
 const USA_GOOGLE = Boolean((SITE.analytics.ga4 ?? '').trim() || (SITE.analytics.gtm ?? '').trim())
+import { dadosEstruturados, trilha } from '../tool/lib/trilha'
+const dados = dadosEstruturados(trilha({ nome: 'Privacidade', caminho: '/privacidade/' }))
 ---
 <Base title="Privacidade e segurança" description="O que acontece com seus PDFs ao usar a ferramenta: nada sai do seu computador. Entenda como o processamento local funciona e o que medimos." path="/privacidade/">
+  <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
   <main class="page prose">
     <h1>Privacidade e segurança</h1>
     <p class="lead">Documentos jurídicos contêm dados pessoais, financeiros e, muitas vezes, sigilosos. A regra número um deste serviço é: <strong>o conteúdo dos seus documentos não sai do seu dispositivo.</strong></p>

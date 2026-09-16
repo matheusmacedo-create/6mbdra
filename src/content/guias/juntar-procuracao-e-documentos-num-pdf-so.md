@@ -1,5 +1,6 @@
 ---
 title: "Juntar procuração e documentos num PDF só, sem perder assinatura"
+titleSeo: "Juntar procuração e anexos num PDF sem perder a assinatura"
 description: "Quando vale unir os anexos em um arquivo, em que ordem apresentá-los e por que documento assinado digitalmente nunca deve entrar na junção."
 updated: 2026-09-14
 tags:

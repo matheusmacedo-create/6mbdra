@@ -43,7 +43,7 @@ const dados = {
   ],
 }
 ---
-<Base title={guia.data.title} description={guia.data.description} path={`/guias/${guia.id}/`}>
+<Base title={guia.data.titleSeo ?? guia.data.title} description={guia.data.description} path={`/guias/${guia.id}/`}>
   <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
   <main class="page prose">
     <p><a href="/guias/">← Todos os guias</a></p>

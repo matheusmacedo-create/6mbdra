@@ -1,5 +1,6 @@
 ---
 title: "Como nomear os anexos do protocolo para o sistema não recusar"
+titleSeo: "Como nomear anexos do protocolo para não ser recusado"
 description: "Acento, espaço e caractere especial em nome de arquivo derrubam upload em alguns portais. Um padrão simples que funciona em qualquer sistema de peticionamento."
 updated: 2026-09-14
 tags:

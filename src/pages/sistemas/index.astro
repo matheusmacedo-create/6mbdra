@@ -5,12 +5,19 @@ import { formatLimite } from '../../tool/lib/regras'
 import { faixaDeLimites, sistemas } from '../../tool/lib/sistemas'
 const lista = sistemas()
 const totalTribunais = new Set(lista.flatMap((s) => s.tribunais.map((t) => t.sigla))).size
+import { dadosEstruturados, trilha } from '../../tool/lib/trilha'
+import { SITE } from '../../config/site'
+const dados = dadosEstruturados(
+  { '@type': 'CollectionPage', name: 'Limite de PDF por sistema de peticionamento', url: new URL('/sistemas/', SITE.url).href, inLanguage: 'pt-BR' },
+  trilha({ nome: 'Sistemas', caminho: '/sistemas/' }),
+)
 ---
 <Base
-  title="Limite de PDF por sistema: PJe, eproc, e-SAJ, Projudi e PJe-JT"
-  description="Quanto cada sistema de peticionamento aceita por arquivo. Tabela por tribunal, com fonte oficial e data de conferência, e ferramenta gratuita para deixar o PDF no tamanho."
+  title="Limite de PDF no PJe, eproc, e-SAJ, Projudi e PJe-JT"
+  description="Quanto cada sistema de peticionamento aceita por arquivo: PJe, eproc, e-SAJ, Projudi e PJe-JT, tribunal por tribunal, com fonte oficial e data de conferência."
   path="/sistemas/"
 >
+  <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
   <main class="page prose">
     <h1>Limite de PDF por sistema de peticionamento</h1>
     <p class="lead">

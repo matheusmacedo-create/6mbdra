@@ -1,6 +1,6 @@
 ---
 title: "Como saber se um documento foi feito por IA"
-description: "Detectores de texto por IA erram muito e não servem para acusar ninguém. Veja o que dá para verificar de fato num arquivo, e por que a ausência de marca não prova nada."
+description: "Detectores de texto por IA erram muito e não servem para acusar. Veja o que dá para verificar de fato num arquivo e por que a falta de marca não prova nada."
 updated: 2026-09-16
 tags:
   - anexos

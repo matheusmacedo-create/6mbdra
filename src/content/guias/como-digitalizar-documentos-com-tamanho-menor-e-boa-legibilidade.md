@@ -1,5 +1,6 @@
 ---
 title: "Como digitalizar documentos com tamanho menor e boa legibilidade"
+titleSeo: "Digitalizar documentos com arquivo menor e boa legibilidade"
 description: "Configurações de scanner e celular para gerar PDFs pequenos e nítidos, com preto e branco ou cor, 200 a 300 dpi, OCR e organização dos arquivos."
 updated: 2026-09-10
 tags:

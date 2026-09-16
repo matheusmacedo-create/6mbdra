@@ -3,8 +3,11 @@ import Base from '../layouts/Base.astro'
 import { REGRAS } from '../tool/lib/regras'
 import { formatDate } from '../tool/lib/format'
 import { SITE } from '../config/site'
+import { dadosEstruturados, trilha } from '../tool/lib/trilha'
+const dados = dadosEstruturados(trilha({ nome: 'Metodologia', caminho: '/metodologia/' }))
 ---
-<Base title="Metodologia: como cadastramos e atualizamos os limites dos tribunais" description="Como cada regra de tamanho de PDF entra na base, o que exigimos de fonte, como conferimos e o que fazer quando algo mudou." path="/metodologia/">
+<Base title="Como cadastramos e atualizamos os limites dos tribunais" description="Como cada regra de tamanho de PDF entra na base, o que exigimos de fonte, como conferimos e o que fazer quando algo mudou." path="/metodologia/">
+  <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
   <main class="page prose">
     <h1>Metodologia de cadastro e atualização das regras</h1>
     <p class="lead">Não existe uma tabela nacional oficial com os limites de upload de todos os sistemas de peticionamento. Por isso mantemos uma base própria, pequena e verificável.</p>

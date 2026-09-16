@@ -1,6 +1,6 @@
 ---
 title: "Assinatura eletrônica e assinatura digital: qual a diferença"
-description: "Assinatura eletrônica é o gênero, assinatura digital com certificado ICP-Brasil é a espécie exigida no peticionamento. Entenda a diferença antes de assinar a petição."
+description: "Assinatura eletrônica é o gênero; assinatura digital com certificado ICP-Brasil é a espécie exigida no peticionamento. Entenda a diferença antes de assinar."
 updated: 2026-09-15
 tags:
   - assinatura digital
