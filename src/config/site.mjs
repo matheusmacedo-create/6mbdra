@@ -42,6 +42,22 @@ export const SITE = {
    */
   verificacao: {
     google: process.env.PUBLIC_GOOGLE_SITE_VERIFICATION ?? '',
+    /*
+     * Bing Webmaster Tools, pela meta tag msvalidate.01. Vale o mesmo raciocínio do GA4: o código
+     * aparece no HTML de qualquer site que o use, então não é segredo, e fica versionado para o
+     * build de produção não depender de ninguém lembrar da variável. A alternativa sem código
+     * nenhum é "Importar do Google Search Console" dentro do próprio Bing Webmaster Tools.
+     */
+    bing: process.env.PUBLIC_BING_SITE_VERIFICATION ?? '79D3BEEB92703DDB18530EC32902EB72',
+  },
+  /*
+   * IndexNow (Bing, Yandex, Naver, Seznam): a cada deploy, scripts/indexnow.mjs avisa os
+   * buscadores quais URLs mudaram, em vez de esperar o rastreador voltar. A chave é publicada em
+   * /<chave>.txt (src/pages/[chave].txt.ts) — o protocolo exige isso, e ela só autoriza URLs deste
+   * host, então não é segredo. Para trocar: gere 32 hex novos e publique.
+   */
+  indexNow: {
+    chave: process.env.PUBLIC_INDEXNOW_KEY ?? '9dab8b52677fe83efe516378690919f1',
   },
   analytics: {
     ga4: process.env.PUBLIC_GA4_ID ?? 'G-4TLWSQ2CRM',

@@ -165,6 +165,36 @@ Bytespider…) antes das nossas regras. Buscadores comuns seguem liberados e o `
 correto. Para desligar: **Cloudflare → brpdf.com → Security → Settings → AI Scrapers and
 Crawlers**.
 
+### Buscadores: Search Console, Bing Webmaster Tools e IndexNow
+
+**Google.** A propriedade de domínio está verificada por registro TXT no DNS (vale para `www` e
+raiz, http e https, e não depende do HTML). O sitemap é `https://brpdf.com/sitemap-index.xml`,
+anunciado também no `robots.txt`. Nada disso vive no código.
+
+**Bing.** Verificado pela meta tag `msvalidate.01`, que o `Base.astro` emite a partir de
+`SITE.verificacao.bing` (`src/config/site.mjs`; `PUBLIC_BING_SITE_VERIFICATION` no ambiente tem
+precedência). O código não é segredo — aparece no HTML de qualquer site que o use — e fica
+versionado pelo mesmo motivo do identificador do GA4: o build de produção não pode depender de
+alguém lembrar de uma variável. Alternativa sem código: no Bing Webmaster Tools, *Importar do
+Google Search Console*.
+
+**IndexNow** (Bing, Yandex, Naver, Seznam). A cada `npm run deploy`, `scripts/indexnow.mjs`
+avisa os buscadores quais URLs mudaram, em vez de esperar o rastreador voltar:
+
+1. `plan`, antes do `wrangler deploy`: compara o `dist/` recém-construído com o site no ar e
+   grava em `.cache/indexnow.json` as URLs novas, alteradas e removidas. "Mudou" é o texto da
+   página (título, descrição e `<main>`), não o HTML — o hash dos assets muda em todo build e
+   não interessa ao buscador. Sem rede, marca tudo como desconhecido e nunca derruba o deploy.
+2. `submit`, depois: confere que `/<chave>.txt` está no ar e envia a lista a
+   `api.indexnow.org`. Preview (`*.pages.dev`, `*.workers.dev`, local) nunca é enviado.
+
+`npm run indexnow -- all` envia todas as URLs do sitemap (primeira vez ou reindexação);
+`--dry-run` mostra sem enviar. A chave vem de `SITE.indexNow.chave` e é publicada por
+`src/pages/[chave].txt.ts` — o protocolo exige o arquivo público, e a chave só autoriza URLs
+deste host, então não é segredo. Para trocar: gerar 32 hex novos e publicar.
+`tests/unit/indexnow.test.ts` trava a chave, a meta tag, a ordem do deploy e a definição de
+"mudou".
+
 ## Navegadores suportados
 
 O build usa o alvo padrão do Vite ("baseline widely available": Chrome/Edge 107+, Firefox 104+, Safari 16+,

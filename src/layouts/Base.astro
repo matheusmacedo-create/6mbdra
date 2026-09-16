@@ -89,6 +89,7 @@ const LINKS: NavLink[] = [
     {/* Sem isto o Google mostra prévia de imagem pequena; com isto, do tamanho que ele quiser. */}
     {!noindex && <meta name="robots" content="max-image-preview:large" />}
     {SITE.verificacao.google && <meta name="google-site-verification" content={SITE.verificacao.google} />}
+    {SITE.verificacao.bing && <meta name="msvalidate.01" content={SITE.verificacao.bing} />}
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={SITE.name} />
     <meta property="og:title" content={fullTitle} />

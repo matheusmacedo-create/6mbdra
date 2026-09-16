@@ -12,3 +12,5 @@ scratch/
 # Segredos do `wrangler dev` (PAINEL_TOKEN, SAL_VISITANTE). Nunca versionar.
 .dev.vars
 .dev.vars.*
+# Plano do IndexNow entre o build e o deploy (scripts/indexnow.mjs). Descartável.
+.cache/
