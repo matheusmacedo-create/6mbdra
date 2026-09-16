@@ -1,5 +1,6 @@
 ---
 title: "Preparar PDF em cima do prazo: petição de urgência e plantão judiciário"
+titleSeo: "Preparar PDF em cima do prazo: urgência e plantão judiciário"
 description: "Ordem de passos para converter, comprimir e protocolar um PDF em poucos minutos quando o prazo está terminando ou o pedido é de plantão judiciário."
 updated: 2026-09-16
 tags:

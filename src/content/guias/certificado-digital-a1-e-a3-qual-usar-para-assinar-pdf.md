@@ -1,6 +1,6 @@
 ---
 title: "Certificado digital A1 ou A3: qual usar para assinar PDF"
-description: "A diferença entre certificado A1 (arquivo) e A3 (cartão, token ou nuvem) para assinar petições em PDF, prós e contras de cada um e o que fazer quando o certificado vence."
+description: "A diferença entre certificado A1 (arquivo) e A3 (cartão, token ou nuvem) para assinar petições em PDF, prós e contras de cada um e o que fazer quando vence."
 updated: 2026-09-16
 tags:
   - assinatura digital
