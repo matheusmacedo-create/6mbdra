@@ -105,10 +105,16 @@ export function DropZone({ onFiles, disabled, variant = 'hero', title, big, smal
             <UploadIcon />
           </div>
           {/* Pintado como botão, mas é um span: a área inteira já é o controle focável. */}
-          <span id={`${id}-titulo`} className="upload-button">{title ?? 'Selecionar arquivos PDF'}</span>
+          <span id={`${id}-titulo`} className="upload-button">{title ?? 'Selecionar arquivos PDF'}</span>{' '}
         </>
       )}
-      <div id={`${id}-grande`} className="big">{big ?? (compact ? 'Adicionar mais documentos' : 'ou arraste seus PDFs aqui')}</div>
+      {/*
+        Os espaços entre os blocos são de propósito. O verificador de acessibilidade junta os nós de
+        texto visíveis SEM separador ("PDFou arraste…") e exige que o resultado esteja contido no
+        nome acessível — que o aria-labelledby monta COM espaços. Sem estes nós de espaço, os dois
+        nunca batem, e a área é apontada como "texto visível fora do nome" (WCAG 2.5.3).
+      */}
+      <div id={`${id}-grande`} className="big">{big ?? (compact ? 'Adicionar mais documentos' : 'ou arraste seus PDFs aqui')}</div>{' '}
       <div id={`${id}-pequeno`} className="small">{small ?? (compact ? 'Arraste ou clique para escolher' : 'Vários documentos de uma vez.')}</div>
       <input
         ref={inputRef}
