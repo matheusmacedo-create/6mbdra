@@ -24,10 +24,13 @@ Ele responde:
 - Existe alguma assinatura neste arquivo, e quantas.
 - O conteúdo assinado mudou desde a assinatura.
 - Qual nome e emissor constam no certificado.
+- **Se a cadeia do certificado fecha numa raiz da ICP-Brasil**, e em qual delas.
 - Se o certificado assina a si mesmo — ou seja, não veio de autoridade certificadora nenhuma.
 - Se algo foi escrito no arquivo **depois** do trecho que a assinatura cobre.
 
-E não responde: se o certificado encadeia até as raízes da ICP-Brasil, se estava revogado, e se o carimbo do tempo confere. Para isso existe o segundo caminho.
+A verificação de cadeia funciona sem consultar servidor nenhum: as doze raízes da Autoridade Certificadora Raiz Brasileira ficam guardadas dentro da ferramenta. Certificado é um objeto autoautenticável — o que garante a origem é a impressão digital, não o servidor de onde veio.
+
+E não responde duas coisas: **revogação** e **carimbo do tempo**. A primeira fica de fora por escolha, não por limitação: consultar se um certificado foi revogado significa perguntar a um servidor do ITI sobre ele, ou seja, contar a um terceiro que aquele documento está sendo conferido. Para as duas, existe o segundo caminho.
 
 ## O caminho completo: o validador oficial do ITI
 
@@ -49,14 +52,17 @@ A segunda: a mensagem "pelo menos uma assinatura tem problemas" costuma signific
 
 | Sua pergunta | Caminho |
 |---|---|
-| "Comprimi depois de assinar. Estraguei?" | Conferidor no navegador — resposta imediata, sem enviar nada. |
+| "Comprimi depois de assinar. Estraguei?" | Verificador no navegador — resposta imediata, sem enviar nada. |
+| "Este certificado é mesmo da ICP-Brasil?" | Verificador no navegador: ele monta a cadeia até a raiz oficial. |
+| "O certificado estava revogado? O carimbo confere?" | Validador do ITI — só ele faz essas duas. |
 | "Preciso de um parecer que valha numa discussão." | Validador do ITI. |
-| "Só quero ver quem assinou." | Leitor de PDF, lembrando que a confiança dele não é a ICP-Brasil. |
-| "Recebi de terceiro e o arquivo é sigiloso." | Conferidor no navegador primeiro; ITI só se houver dúvida real. |
+| "Recebi de terceiro e o arquivo é sigiloso." | Verificador no navegador primeiro; ITI só se houver dúvida real. |
 
 ## O que "assinatura válida" não quer dizer
 
 Nenhuma ferramenta, inclusive a oficial, decide validade jurídica. O que elas conferem é um conjunto de fatos técnicos: o conteúdo não mudou, o certificado encadeia até uma raiz reconhecida, não estava revogado.
+
+Um detalhe que aparece na tela e merece explicação: quando a ferramenta diz **"origem não verificada"**, isso não é o mesmo que "não é ICP-Brasil". Significa que a cadeia aponta para a ICP-Brasil mas passa por um certificado com algoritmo que ainda não sabemos conferir aqui — acontece no ramo usado por carimbo do tempo. Não saber não é acusar, e a diferença está escrita na tela de propósito.
 
 Isso não responde se quem assinou tinha poderes de representação, se o documento é o que diz ser, ou se a peça será aceita. Um contrato assinado por quem não podia assinar tem assinatura digital tecnicamente impecável.
 
