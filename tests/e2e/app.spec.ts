@@ -616,3 +616,58 @@ test('a barra leva às duas ferramentas prontas, e marca a página atual', async
   await menu.locator('summary').click()
   await expect(menu.getByRole('link', { name: 'Verificar assinatura' })).toBeVisible()
 })
+
+/*
+ * Captura de e-mail nas páginas de tribunal.
+ *
+ * A decisão de produto é que este bloco seja opcional e posterior ao valor entregue — nunca um
+ * popup no primeiro uso. Os testes de unidade travam o formato; estes travam o comportamento.
+ */
+test('a oferta de aviso manda o texto consentido, e não só o e-mail', async ({ page }) => {
+  await page.goto('/tribunais/tjsp-esaj/')
+  const bloco = page.locator('[data-aviso]')
+  await expect(bloco).toBeVisible()
+
+  // A resposta que a pessoa veio buscar já está na tela antes de qualquer pedido.
+  await expect(page.locator('table').first()).toBeVisible()
+
+  const enviado = page.waitForRequest((r) => r.url().includes('/api/avisos') && r.method() === 'POST')
+  await bloco.locator('[data-aviso-email]').fill('fulano@exemplo.com.br')
+  await bloco.getByRole('button', { name: /avisado/i }).click()
+
+  const corpo = JSON.parse((await enviado).postData() ?? '{}')
+  expect(corpo.email).toBe('fulano@exemplo.com.br')
+  expect(corpo.regra).toBe('tjsp-esaj')
+  // O texto aceito viaja junto: sem ele, a inscrição prova a data, não o consentimento.
+  expect(corpo.consentimento).toMatch(/Aceito receber um e-mail/)
+  expect(corpo.consentimento).toMatch(/cancelar/i)
+})
+
+test('a resposta é a mesma dê certo ou não, e o e-mail não trava a página', async ({ page }) => {
+  await page.goto('/tribunais/tjsp-esaj/')
+  const bloco = page.locator('[data-aviso]')
+
+  // O endpoint não existe no preview estático: é exatamente o caso "deu errado".
+  await bloco.locator('[data-aviso-email]').fill('fulano@exemplo.com.br')
+  await bloco.getByRole('button', { name: /avisado/i }).click()
+  await expect(bloco.locator('[data-aviso-nota]')).toHaveText(/Pronto\. Você receberá um e-mail/)
+  await expect(bloco.locator('form')).toBeHidden()
+
+  // E o resto da página segue inteiro: nada ficou esperando o e-mail.
+  await expect(page.locator('table').first()).toBeVisible()
+  await expect(page.getByRole('link', { name: /Preparar meus PDFs/ })).toBeVisible()
+})
+
+test('e-mail inválido não vira inscrição silenciosa', async ({ page }) => {
+  await page.goto('/tribunais/tjsp-esaj/')
+  const bloco = page.locator('[data-aviso]')
+  let bateu = false
+  page.on('request', (r) => {
+    if (r.url().includes('/api/avisos')) bateu = true
+  })
+  await bloco.locator('[data-aviso-email]').fill('nao-e-email')
+  await bloco.getByRole('button', { name: /avisado/i }).click()
+  await expect(bloco.locator('[data-aviso-nota]')).toHaveText(/Confira o e-mail/)
+  expect(bateu, 'mandou para o servidor mesmo assim').toBe(false)
+  await expect(bloco.locator('form')).toBeVisible()
+})

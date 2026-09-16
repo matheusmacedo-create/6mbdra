@@ -1,0 +1,120 @@
+---
+/*
+ * Inscrição para ser avisado quando o limite de um tribunal mudar.
+ *
+ * POR QUE NÃO É UM POPUP, e por que não aparece no primeiro uso:
+ *
+ * O site promete "grátis e sem cadastro" em 116 páginas, e a promessa de que nada é pedido é
+ * metade da razão de alguém escolher este site em vez do primeiro resultado do Google. Um popup
+ * bloqueante pedindo e-mail antes de entregar valor transformaria essa promessa em mentira na
+ * primeira tela — para um público que chegou aqui justamente para não entregar dado nenhum.
+ *
+ * O que sobra é a troca honesta: a pessoa dá o e-mail porque quer uma coisa que só este site pode
+ * dar. O projeto roda um monitor semanal das fontes oficiais (scripts/check-sources.mjs) e detecta
+ * quando um tribunal muda o limite. Descobrir isso por aviso é melhor que descobrir por peça
+ * recusada — e nenhum concorrente tem esse monitor.
+ *
+ * Por isso o bloco é inline, aparece DEPOIS da informação que a pessoa veio buscar, e não impede
+ * nada de funcionar se for ignorado.
+ */
+interface Props {
+  /** Id da regra a acompanhar. Sem id, a inscrição vale para o site inteiro. */
+  regra?: string
+  /** Como chamar o que será acompanhado, na frase. Ex.: "o e-SAJ do TJSP". */
+  rotulo?: string
+  /** De onde veio a inscrição, para medir o que converte. */
+  origem: string
+}
+const { regra = 'todas', rotulo, origem } = Astro.props
+
+// O texto aceito é gravado como a pessoa o viu: se a copy mudar, a prova do consentimento
+// continua correspondendo ao que cada um leu.
+const CONSENTIMENTO = rotulo
+  ? `Aceito receber um e-mail quando o limite de ${rotulo} mudar. Só isso, e dá para cancelar em um clique.`
+  : 'Aceito receber um e-mail quando os limites dos tribunais que eu acompanho mudarem. Só isso, e dá para cancelar em um clique.'
+---
+<section class="aviso-regra" data-aviso data-regra={regra} data-origem={origem} data-consentimento={CONSENTIMENTO}>
+  <div class="aviso-texto">
+    <h2>Avisamos se {rotulo ? `o limite ${rotulo.startsWith('o ') || rotulo.startsWith('a ') ? 'd' + rotulo : 'de ' + rotulo} mudar` : 'algum limite mudar'}</h2>
+    <p>
+      Conferimos as fontes oficiais toda semana. Quando um tribunal muda o limite, quem está na lista recebe um e-mail — antes de descobrir pela
+      peça recusada.
+    </p>
+  </div>
+  <form class="aviso-form" novalidate>
+    <label class="sr-only" for={`aviso-email-${regra}`}>Seu e-mail</label>
+    <input
+      id={`aviso-email-${regra}`}
+      type="email"
+      name="email"
+      inputmode="email"
+      autocomplete="email"
+      required
+      maxlength="254"
+      placeholder="seu@email.com"
+      data-aviso-email
+    />
+    <button type="submit" class="btn" data-aviso-enviar>Quero ser avisado</button>
+  </form>
+  <p class="aviso-nota" data-aviso-nota>
+    Um e-mail só quando houver mudança. Nada de novidades, promoção ou lista de terceiros —{' '}
+    <a href="/privacidade/">está escrito na política</a>.
+  </p>
+</section>
+
+<script>
+  /*
+   * Envio da inscrição.
+   *
+   * Sem biblioteca e sem ilha React: é um formulário. A página inteira continua funcionando com o
+   * JavaScript desligado — só este bloco fica inerte, e nada mais depende dele.
+   */
+  const CONSENTIDO = new Set<string>()
+  for (const bloco of document.querySelectorAll<HTMLElement>('[data-aviso]')) {
+    const form = bloco.querySelector('form')
+    const campo = bloco.querySelector<HTMLInputElement>('[data-aviso-email]')
+    const botao = bloco.querySelector<HTMLButtonElement>('[data-aviso-enviar]')
+    const nota = bloco.querySelector<HTMLElement>('[data-aviso-nota]')
+    if (!form || !campo || !botao || !nota) continue
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const email = campo.value.trim()
+      if (!email || !campo.checkValidity()) {
+        nota.textContent = 'Confira o e-mail digitado.'
+        nota.dataset.estado = 'erro'
+        campo.focus()
+        return
+      }
+      const chave = `${email}|${bloco.dataset.regra}`
+      if (CONSENTIDO.has(chave)) return
+      CONSENTIDO.add(chave)
+      botao.disabled = true
+      botao.textContent = 'Enviando…'
+      try {
+        await fetch('/api/avisos', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            regra: bloco.dataset.regra,
+            origem: bloco.dataset.origem,
+            consentimento: bloco.dataset.consentimento,
+          }),
+        })
+      } catch {
+        // Falha de rede não pode virar um formulário travado que a pessoa tenta de novo sem fim.
+      }
+      /*
+       * Mensagem única, dê certo ou não. Não é preguiça: responder diferente para e-mail já
+       * cadastrado transformaria a página numa ferramenta de descoberta — daria para perguntar se
+       * um endereço específico usa o site.
+       */
+      form.hidden = true
+      nota.dataset.estado = 'ok'
+      nota.textContent = 'Pronto. Você receberá um e-mail para confirmar a inscrição.'
+      const medir = (window as unknown as { __analytics?: (n: string, p?: Record<string, unknown>) => void }).__analytics
+      medir?.('aviso_inscricao', { origem: bloco.dataset.origem ?? 'desconhecida' })
+    })
+  }
+</script>

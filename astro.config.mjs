@@ -16,11 +16,12 @@ const GOOGLE_IMG = USA_GOOGLE ? ` ${GOOGLE_TAG} https://*.google-analytics.com` 
 
 export default defineConfig({
   site: SITE.url,
-  // O painel interno é noindex e fica fora do sitemap.
+  // Páginas noindex ficam fora do sitemap: o painel interno e o destino do link de
+  // cancelamento do aviso, que só chega por e-mail e não é conteúdo.
   integrations: [
     react(),
     sitemap({
-      filter: (page) => !page.includes('/painel'),
+      filter: (page) => !page.includes('/painel') && !page.includes('/cancelar-aviso'),
       /*
        * lastmod honesto: a data em que a regra daquele tribunal foi conferida pela última vez. É o
        * sinal que o buscador usa para decidir quando revisitar — e aqui ele corresponde a uma

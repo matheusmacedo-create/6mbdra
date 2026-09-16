@@ -24,7 +24,7 @@ const EVENTOS = new Set([
   'abriu_ferramenta', 'voltou_inicio', 'motor', 'regra_selecionada', 'opcao_alterada',
   'arquivo_adicionado', 'arquivo_analisado', 'arquivo_removido', 'liberar_arquivo',
   'juntou_documentos', 'lote_iniciado', 'lote_cancelado', 'lote_concluido', 'arquivo_resultado', 'tentar_novamente', 'erro',
-  'assinatura_conferida', 'metadados_lidos',
+  'assinatura_conferida', 'metadados_lidos', 'aviso_inscricao',
   'zip_gerado', 'download',
 ])
 
@@ -283,6 +283,87 @@ async function contarRastreador(req: Request, env: Env, url: URL): Promise<void>
   }
 }
 
+/*
+ * Inscrição para avisos de mudança de regra.
+ *
+ * O ÚNICO endpoint deste projeto que recebe dado pessoal. Três cuidados que não são opcionais:
+ *
+ * 1. O texto do consentimento vem do cliente e é GRAVADO como a pessoa o viu. Se a copy mudar
+ *    amanhã, a prova do que cada um aceitou continua correta. Guardar só o e-mail e a data
+ *    provaria que alguém se inscreveu, não em quê consentiu.
+ * 2. Nada além de e-mail e regra acompanhada. Sem IP, sem navegador, sem nome — coletar "para o
+ *    caso de precisar" é o começo de todo vazamento.
+ * 3. Sempre devolve a mesma resposta, exista ou não a inscrição. Um endpoint que responde
+ *    diferente para e-mail cadastrado vira ferramenta de descoberta: dá para perguntar
+ *    "fulano@escritorio.com usa o brpdf?" e obter resposta.
+ */
+const EMAIL_VALIDO = /^[^\s@]{1,64}@[^\s@.]+(?:\.[^\s@.]+)+$/
+
+async function inscrever(req: Request, env: Env): Promise<Response> {
+  if (!env.METRICAS) return json({ ok: false }, 503)
+  let corpo: { email?: unknown; regra?: unknown; origem?: unknown; consentimento?: unknown }
+  try {
+    corpo = (await req.json()) as typeof corpo
+  } catch {
+    return json({ ok: false, erro: 'json inválido' }, 400)
+  }
+
+  const email = typeof corpo.email === 'string' ? corpo.email.trim().toLowerCase() : ''
+  const regra = typeof corpo.regra === 'string' && corpo.regra.length <= 64 ? corpo.regra : 'todas'
+  const origem = typeof corpo.origem === 'string' ? corpo.origem.slice(0, 40) : null
+  const consentimento = typeof corpo.consentimento === 'string' ? corpo.consentimento.slice(0, 400) : ''
+
+  // Validação antes de qualquer escrita: e-mail malformado e consentimento ausente não entram.
+  if (!EMAIL_VALIDO.test(email) || email.length > 254) return json({ ok: false, erro: 'e-mail inválido' }, 400)
+  if (consentimento.length < 20) return json({ ok: false, erro: 'consentimento ausente' }, 400)
+
+  const token = crypto.randomUUID()
+  try {
+    await env.METRICAS.prepare(
+      /*
+       * O conflito NÃO reativa ninguém.
+       *
+       * Qualquer um pode digitar o e-mail de qualquer outro aqui — é um formulário aberto. Se o
+       * UPDATE limpasse `cancelado_em`, digitar o endereço de quem já saiu o colocaria de volta na
+       * lista sem ele tocar em nada; e se limpasse `confirmado_em` de quem está ativo, digitar o
+       * endereço de um inscrito cortaria os avisos dele. O `WHERE` corta os dois abusos: linha
+       * ativa e confirmada fica intocada, e só o clique no e-mail de confirmação (que chega a quem
+       * é dono da caixa) põe alguém na lista — é para isso que a dupla confirmação existe.
+       */
+      `INSERT INTO avisos (email, regra, criado_em, origem, consentimento, token)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+       ON CONFLICT(email, regra) DO UPDATE SET
+         criado_em = ?3, origem = ?4, consentimento = ?5, token = ?6, confirmado_em = NULL
+       WHERE avisos.confirmado_em IS NULL OR avisos.cancelado_em IS NOT NULL`,
+    )
+      .bind(email, regra, new Date().toISOString(), origem, consentimento, token)
+      .run()
+  } catch {
+    // Falha de banco não pode virar mensagem diferente: ver o cuidado 3 acima.
+    return json({ ok: true })
+  }
+  return json({ ok: true })
+}
+
+/**
+ * Descadastro por token, sem login e sem pedir o e-mail de volta.
+ *
+ * A linha não é apagada: `cancelado_em` marca a saída e preserva a prova de que houve
+ * consentimento — que é o que a LGPD exige guardar, e o contrário de guardar a pessoa.
+ */
+async function descadastrar(env: Env, token: string): Promise<Response> {
+  if (!env.METRICAS) return json({ ok: false }, 503)
+  if (!/^[0-9a-f-]{36}$/.test(token)) return json({ ok: false }, 400)
+  try {
+    await env.METRICAS.prepare(`UPDATE avisos SET cancelado_em = ?2 WHERE token = ?1 AND cancelado_em IS NULL`)
+      .bind(token, new Date().toISOString())
+      .run()
+  } catch {
+    // idem: resposta única.
+  }
+  return json({ ok: true })
+}
+
 /**
  * Um endereço canônico só: www.brpdf.com manda para brpdf.com, com 301, preservando caminho e
  * query. Fica aqui, e não numa Redirect Rule da Cloudflare, para o comportamento ficar versionado
@@ -330,6 +411,8 @@ export default {
     if (req.method === 'GET') ctx.waitUntil(contarRastreador(req, env, url))
     if (url.pathname === '/api/e' && req.method === 'POST') return registrar(req, env)
     if (url.pathname === '/api/painel' && req.method === 'GET') return painel(req, env)
+    if (url.pathname === '/api/avisos' && req.method === 'POST') return inscrever(req, env)
+    if (url.pathname === '/api/avisos' && req.method === 'DELETE') return descadastrar(env, url.searchParams.get('t') ?? '')
     if (url.pathname.startsWith('/api/')) return json({ erro: 'não encontrado' }, 404)
     return env.ASSETS.fetch(req)
   },

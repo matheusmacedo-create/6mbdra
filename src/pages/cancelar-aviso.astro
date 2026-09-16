@@ -1,0 +1,60 @@
+---
+import Base from '../layouts/Base.astro'
+import { SITE } from '../config/site'
+
+/*
+ * Cancelamento do aviso de mudança de regra.
+ *
+ * Fica fora do índice (noindex) porque não é conteúdo — é o destino de um link que só chega por
+ * e-mail, com o token na URL.
+ *
+ * O cancelamento acontece num clique e sem login. Pedir e-mail e senha para sair de uma lista em
+ * que se entrou com um campo é a prática que torna descadastro uma barreira, e a LGPD trata saída
+ * com o mesmo peso da entrada. O token no link já identifica a inscrição.
+ */
+---
+<Base
+  title="Cancelar o aviso de mudança de regra"
+  description="Cancele em um clique o aviso de mudança de limite dos tribunais."
+  path="/cancelar-aviso/"
+  noindex
+>
+  <main class="page prose">
+    <h1>Cancelar o aviso</h1>
+    <div data-cancelar>
+      <p class="lead" data-estado>Confirmando o cancelamento…</p>
+      <p data-ajuda hidden>
+        Este link não parece válido. Se quiser sair da lista, escreva para{' '}
+        <a href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a> e resolvemos na mão.
+      </p>
+    </div>
+    <p><a href="/">← Voltar para o brpdf</a></p>
+  </main>
+</Base>
+
+<script>
+  const caixa = document.querySelector<HTMLElement>('[data-cancelar]')
+  const estado = caixa?.querySelector<HTMLElement>('[data-estado]')
+  const ajuda = caixa?.querySelector<HTMLElement>('[data-ajuda]')
+  if (estado && ajuda) {
+    const token = new URLSearchParams(location.search).get('t') ?? ''
+    if (!/^[0-9a-f-]{36}$/.test(token)) {
+      estado.textContent = 'Link inválido.'
+      ajuda.hidden = false
+    } else {
+      /*
+       * DELETE, e não GET: pré-carregadores de link e antivírus de e-mail visitam URLs sozinhos, e
+       * um cancelamento por GET seria disparado sem ninguém clicar. Aqui o clique abre a página, e
+       * a página faz o pedido.
+       */
+      fetch(`/api/avisos?t=${encodeURIComponent(token)}`, { method: 'DELETE' })
+        .then(() => {
+          estado.textContent = 'Pronto. Você não receberá mais avisos de mudança de regra.'
+        })
+        .catch(() => {
+          estado.textContent = 'Não conseguimos falar com o servidor agora.'
+          ajuda.hidden = false
+        })
+    }
+  }
+</script>

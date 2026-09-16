@@ -39,6 +39,8 @@ export type EventName =
   // 4b. ferramentas de leitura, fora da fila de preparo
   | 'assinatura_conferida'
   | 'metadados_lidos'
+  // 6. pediu para ser avisado quando a regra do tribunal mudar
+  | 'aviso_inscricao'
   // 5. levou embora
   | 'zip_gerado'
   | 'download'

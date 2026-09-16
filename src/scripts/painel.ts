@@ -107,6 +107,8 @@ const ROTULOS: Record<string, string> = {
   nao_suportada: 'Formato ainda não lido',
   conferidor: 'Conferidor de assinaturas',
   metadados_lidos: 'Metadados lidos',
+  aviso_inscricao: 'Inscrição no aviso de mudança',
+  tribunal_pagina: 'Página de tribunal',
   metadados: 'Leitor de metadados',
   com_metadados: 'Tinha metadados',
   sem_metadados: 'Arquivo limpo',
