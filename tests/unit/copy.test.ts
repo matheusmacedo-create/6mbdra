@@ -72,6 +72,23 @@ describe('a copy não inventa prova social', () => {
     expect(ruins, 'páginas com nota ou avaliação').toEqual([])
   })
 
+  it('os dados estruturados não trazem nota nem avaliação que o site não coleta', () => {
+    /*
+     * A versão invisível da mesma mentira. O teste de resultados avançados do Google avisa que o
+     * campo "aggregateRating" está ausente do WebApplication — como aviso opcional, não como erro
+     * — e a forma mais rápida de silenciar o aviso é digitar uma nota no JSON-LD. Ninguém veria na
+     * página; o Google veria, e trataria como nota real.
+     *
+     * O site não tem sistema de avaliação, então qualquer valor ali seria inventado. Isso viola a
+     * regra do projeto e a política de dados estruturados do Google (nota que não vem de avaliação
+     * coletada é "self-serving review": ação manual e perda dos resultados avançados do domínio
+     * inteiro). O aviso fica; a nota, não.
+     */
+    const padrao = /aggregateRating|ratingValue|reviewCount|ratingCount|"@type":\s*"(?:Review|AggregateRating|Rating)"/
+    const ruins = todas.filter((p) => padrao.test(p.html)).map((p) => p.rota)
+    expect(ruins, 'páginas com nota nos dados estruturados').toEqual([])
+  })
+
   it('nenhuma página traz depoimento', () => {
     const padrao = /\b(?:depoiment|testemunh)\w*\b|["“][^"”]{25,}["”]\s*—\s*[A-ZÀ-Ú][a-zà-ú]+\s+[A-ZÀ-Ú]/
     const ruins = todas

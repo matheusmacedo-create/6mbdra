@@ -108,6 +108,13 @@ const dadosEstruturados = {
       applicationCategory: 'BusinessApplication',
       operatingSystem: 'Navegador (Chrome, Edge, Firefox, Safari)',
       inLanguage: 'pt-BR',
+      /*
+       * Sem aggregateRating, de propósito. O teste de resultados avançados do Google aponta a
+       * ausência como aviso opcional — e a única forma de removê-lo é publicar uma nota. O site não
+       * coleta avaliação nenhuma; uma nota aqui seria inventada, o que a regra do projeto proíbe e
+       * a política do Google pune (ação manual, resultados avançados removidos do domínio inteiro).
+       * O aviso amarelo é o estado correto. tests/unit/copy.test.ts trava isso.
+       */
       isAccessibleForFree: true,
       description:
         'Comprima no limite do tribunal, divida em partes, verifique assinatura digital ICP-Brasil e leia os metadados de um PDF. Gratuito, sem cadastro e sem enviar documentos para a internet.',
