@@ -3,6 +3,7 @@ import { DropZone, type OrigemArquivos } from '../components/DropZone'
 import { track, sizeBucket } from '../lib/analytics'
 import { formatBytes } from '../lib/format'
 import type { Conferencia, EstadoAssinatura } from '../lib/assinatura'
+import type { EstadoCadeia } from '../lib/cadeia-icp'
 // A área de upload é o mesmo componente da bancada, e as regras dele moram no tool.css.
 import '../tool.css'
 import './conferidor.css'
@@ -29,6 +30,22 @@ const APARENCIA: Record<EstadoAssinatura, { rotulo: string; classe: string; icon
   sem_assinatura: { rotulo: 'Nenhuma assinatura eletrônica no arquivo', classe: 'neutro', icone: '-' },
   indeterminada: { rotulo: 'Não foi possível concluir a conferência', classe: 'atencao', icone: '?' },
   nao_suportada: { rotulo: 'Formato de assinatura que ainda não lemos', classe: 'atencao', icone: '?' },
+}
+
+/*
+ * Procedência: a outra metade da resposta.
+ *
+ * Integridade diz que o conteúdo não mudou. A cadeia diz se QUEM assinou tem origem verificável.
+ * São perguntas diferentes e um arquivo pode passar numa e não na outra — daí este bloco viver
+ * junto do veredito, e não escondido nos detalhes.
+ *
+ * "incompleta" e "nao_verificada" são deliberadamente neutros: não saber não é acusar.
+ */
+const PROCEDENCIA: Record<EstadoCadeia, { rotulo: string; classe: string; icone: 'ok' | 'x' | '?' | '-' }> = {
+  icp_brasil: { rotulo: 'Certificado ICP-Brasil', classe: 'ok', icone: 'ok' },
+  fora_da_icp: { rotulo: 'Não é um certificado ICP-Brasil', classe: 'ruim', icone: 'x' },
+  incompleta: { rotulo: 'Cadeia incompleta neste arquivo', classe: 'neutro', icone: '-' },
+  nao_verificada: { rotulo: 'Origem não verificada aqui', classe: 'atencao', icone: '?' },
 }
 
 function Marca({ tipo }: { tipo: 'ok' | 'x' | '?' | '-' }) {
@@ -176,16 +193,21 @@ function Cartao({ item }: { item: Situacao }) {
       )}
 
       {/*
-        Certificado autoassinado é o caso em que "a integridade confere" mais engana: o arquivo está
-        intacto, e mesmo assim ninguém emitiu aquele certificado. Acontece com assinador caseiro e
-        com documento forjado. Precisa aparecer no mesmo bloco do veredito, não escondido nos
-        detalhes — e precisa aparecer mesmo quando o desfecho é positivo.
+        A procedência vem logo depois do veredito de integridade porque é o caso em que
+        "a integridade confere" mais engana: arquivo intacto, assinado com certificado que ninguém
+        emitiu. Aparece inclusive quando o desfecho é positivo — sobretudo quando é.
       */}
-      {r.signatarios.some((s) => s.autoassinado) && (
-        <p className="conf-alerta">
-          <strong>Este certificado assina a si mesmo.</strong> Nenhuma autoridade certificadora o emitiu, então ele não é um certificado
-          ICP-Brasil — qualquer pessoa consegue gerar um assim. A integridade do arquivo é uma coisa; quem assinou é outra.
-        </p>
+      {r.cadeia && (
+        <div className={`conf-procedencia ${PROCEDENCIA[r.cadeia.estado].classe}`}>
+          <span className="conf-proc-marca" aria-hidden="true"><Marca tipo={PROCEDENCIA[r.cadeia.estado].icone} /></span>
+          <div>
+            <strong>{PROCEDENCIA[r.cadeia.estado].rotulo}</strong>
+            <span className="conf-meta">{r.cadeia.motivo}</span>
+            {r.cadeia.estado === 'icp_brasil' && !r.cadeia.foraDeValidade && (
+              <span className="conf-meta">Conferimos cada assinatura do caminho, da folha até a raiz, aqui no navegador.</span>
+            )}
+          </div>
+        </div>
       )}
 
       {r.signatarios.length > 0 && (
@@ -228,9 +250,14 @@ function Cartao({ item }: { item: Situacao }) {
       <details className="conf-limite">
         <summary>O que esta conferência {r.estado === 'conferida' ? 'não' : 'ainda não'} verifica</summary>
         <p>
-          Conferimos a <strong>integridade</strong>: se o conteúdo assinado mudou. Não verificamos a cadeia do certificado até as raízes da
-          ICP-Brasil, nem revogação, nem carimbo do tempo. Para um parecer completo, use o{' '}
+          Conferimos a <strong>integridade</strong> (se o conteúdo assinado mudou) e a <strong>cadeia do certificado</strong> até as raízes da
+          ICP-Brasil, que ficam guardadas aqui dentro. Não verificamos <strong>revogação</strong> nem <strong>carimbo do tempo</strong>. Para um
+          parecer completo, use o{' '}
           <a href="https://validar.iti.gov.br/" rel="noreferrer noopener nofollow" target="_blank">validador oficial do ITI</a>.
+        </p>
+        <p>
+          Revogação fica de fora por escolha, não por descuido: consultar se este certificado foi revogado significaria perguntar a um servidor do
+          ITI sobre ele — ou seja, contar a um terceiro que este documento está sendo conferido aqui, agora.
         </p>
         <p>
           Nunca dizemos “assinatura válida”: validade jurídica é decisão do juízo, não de uma ferramenta. Dizemos o que dá para medir.

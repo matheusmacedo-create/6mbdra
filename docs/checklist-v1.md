@@ -31,7 +31,9 @@ exatamente o que falta — um checklist que arredonda para "feito" deixa de serv
 | §15.1 Navegadores: Chrome/Edge/Firefox/Safari | Parcial | **Chromium**: suíte completa (32 e2e). **Firefox**: 10/10 dos testes `@navegadores` (WASM, workers, WebCrypto, download, celular), verificado em 16/09/2026. **WebKit/Safari**: projeto configurado e navegador instalável (`npm run test:e2e:navegadores`), mas a suíte ainda não foi executada nele — é o que falta para fechar este item |
 | §15.3 Piloto com profissionais | Pendente | Depende de pessoas reais |
 | §19 Nome público (brpdf), domínio, e-mail de contato, ferramenta de analytics | Feito | `brpdf.com` no ar (Cloudflare Workers, `wrangler.jsonc`), contato `brpdf@proton.me`, medição própria em D1 + GA4 |
-| Conferidor de assinaturas (integridade PAdES no navegador) | Feito | `src/tool/lib/assinatura.ts`, `politicas-icp.ts`, ilha em `src/tool/conferidor/`, página `/conferir-assinatura/`; 13 unitários + 10 e2e; Etapa 0 documentada em `docs/conferidor-etapa-0.md` |
+| Conferidor de assinaturas (integridade PAdES no navegador) | Feito | `src/tool/lib/assinatura.ts`, `politicas-icp.ts`, ilha em `src/tool/conferidor/`, página `/conferir-assinatura/`; Etapa 0 em `docs/conferidor-etapa-0.md` |
+| Cadeia do certificado até as raízes ICP-Brasil, sem rede | Feito | `raizes-icp.ts` (12 raízes embutidas, SHA-256 fixado) + `cadeia-icp.ts`; medido contra as 180 autoridades reais do ITI: 177 validam, 3 viram `nao_verificada` (ramo Ed25519), 0 falsos negativos |
+| Revogação (LCR/OCSP) | Fora do escopo por decisão | Consultar revogação contaria a um terceiro que o documento está sendo conferido; a interface e `/conferir-assinatura/` dizem isso explicitamente |
 | Código aberto verificável: a promessa vem com endereço | Feito | `SITE.repo` no rodapé de todas as páginas, nas 5 páginas que afirmam código aberto e em `SoftwareSourceCode`; `tests/unit/codigoAberto.test.ts` quebra se a afirmação ficar sem link |
 
 ## Tribunais ainda sem regra (7 de 92)

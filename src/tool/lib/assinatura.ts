@@ -17,6 +17,7 @@
 import * as pkijs from 'pkijs'
 import * as asn1js from 'asn1js'
 import { OID_ATRIBUTO_POLITICA, politicaDoOid, type PoliticaDeclarada } from './politicas-icp'
+import { validarCadeia, type Cadeia } from './cadeia-icp'
 
 /** Os estados que esta sonda sabe distinguir hoje. A spec prevê oito no total. */
 export type EstadoAssinatura =
@@ -70,6 +71,13 @@ export interface Conferencia {
    * Ausente quando a assinatura não declara política, o que é comum e não é defeito.
    */
   politica?: PoliticaDeclarada
+  /**
+   * A cadeia do certificado chega a uma raiz da ICP-Brasil?
+   *
+   * É a outra metade da pergunta. Integridade diz que o conteúdo não mudou; a cadeia diz se quem
+   * assinou tem procedência. Um arquivo pode estar intacto e assinado por ninguém.
+   */
+  cadeia?: Cadeia
 }
 
 const dec = new TextDecoder('latin1')
@@ -218,6 +226,23 @@ export async function conferirAssinatura(bytes: Uint8Array): Promise<Conferencia
   const cobertura = { assinados: assinados.length, total: bytes.length }
   const extras = { quantidade, acrescentadoDepois }
   const politica = politicaDeclarada(cms)
+
+  /*
+   * Cadeia. Roda mesmo quando a integridade falha: saber que um documento alterado foi assinado com
+   * certificado ICP-Brasil legítimo muda o diagnóstico — aponta para "mexeram no arquivo depois",
+   * e não para "a assinatura era falsa desde o começo".
+   *
+   * Nunca derruba a conferência: erro aqui vira 'nao_verificada', como todo o resto do módulo.
+   */
+  let cadeia: Cadeia | undefined
+  const assinante = certs[0]
+  if (assinante) {
+    try {
+      cadeia = await validarCadeia(assinante, certs)
+    } catch {
+      cadeia = { estado: 'nao_verificada', motivo: 'A verificação da cadeia não pôde ser concluída neste navegador.' }
+    }
+  }
   const indeterminada = (): Conferencia => ({
     estado: 'indeterminada',
     orientacao: 'Confira no validador oficial do ITI antes de protocolar.',
@@ -226,6 +251,7 @@ export async function conferirAssinatura(bytes: Uint8Array): Promise<Conferencia
     cobertura,
     ...extras,
     politica,
+    cadeia,
   })
 
   /*
@@ -278,6 +304,7 @@ export async function conferirAssinatura(bytes: Uint8Array): Promise<Conferencia
         cobertura,
         ...extras,
         politica,
+        cadeia,
       }
     }
   } else {
@@ -318,5 +345,6 @@ export async function conferirAssinatura(bytes: Uint8Array): Promise<Conferencia
     cobertura,
     ...extras,
     politica,
+    cadeia,
   }
 }

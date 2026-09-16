@@ -72,3 +72,26 @@
   .conf-cartao h3 { font-size: 16.5px; }
   .conf-topo h2 { font-size: 18px; }
 }
+
+/*
+ * Procedência do certificado.
+ *
+ * Fica logo abaixo do veredito de integridade, com peso visual parecido, porque são duas metades da
+ * mesma pergunta — e a segunda é a que o usuário não sabe que precisa fazer.
+ */
+.conf-procedencia {
+  margin: 16px 0 0; padding: 12px 14px; border-radius: 10px;
+  display: flex; align-items: flex-start; gap: 11px;
+  border: 1px solid var(--border);
+}
+.conf-procedencia.ok { background: var(--success-background); border-color: var(--success-line); }
+.conf-procedencia.ruim { background: var(--err-bg); border-color: var(--err-line); }
+.conf-procedencia.atencao { background: var(--warn-bg); border-color: var(--warn-line); }
+.conf-procedencia.neutro { background: var(--info-bg); border-color: var(--info-line); }
+.conf-procedencia > div { display: grid; gap: 3px; min-width: 0; }
+.conf-procedencia strong { font-size: 15px; color: var(--ink); }
+.conf-proc-marca { flex: 0 0 auto; margin-top: 1px; }
+.conf-procedencia.ok .conf-proc-marca { color: var(--success); }
+.conf-procedencia.ruim .conf-proc-marca { color: var(--err); }
+.conf-procedencia.atencao .conf-proc-marca { color: var(--warn); }
+.conf-procedencia.neutro .conf-proc-marca { color: var(--muted); }

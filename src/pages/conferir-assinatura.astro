@@ -39,7 +39,15 @@ const PERGUNTAS = [
   },
   {
     q: 'Isto valida a assinatura como o validador oficial do ITI?',
-    a: 'Não, e a diferença importa. Aqui conferimos a integridade: se o conteúdo assinado mudou desde a assinatura. O validador oficial do ITI vai além — confere a cadeia do certificado até as raízes da ICP-Brasil, a revogação e o carimbo do tempo. Para um parecer completo, use o ITI. Para descobrir em segundos se a compressão quebrou seu arquivo, esta ferramenta responde sem enviar o documento para lugar nenhum.',
+    a: 'Não, e a diferença ficou menor do que era. Hoje conferimos duas coisas: a integridade (se o conteúdo assinado mudou) e a cadeia do certificado até as raízes da ICP-Brasil, que ficam guardadas dentro da ferramenta. Falta a revogação — que deixamos de fora por escolha, porque consultá-la contaria a um servidor do ITI que este documento está sendo conferido — e o carimbo do tempo. Para um parecer completo, use o ITI, lembrando que ele recebe o documento. Para saber em segundos se o arquivo está íntegro e se quem assinou tem certificado ICP-Brasil, aqui responde sem enviar nada.',
+  },
+  {
+    q: 'Como vocês sabem se o certificado é mesmo da ICP-Brasil, sem consultar a internet?',
+    a: 'As 12 raízes da Autoridade Certificadora Raiz Brasileira ficam guardadas dentro da ferramenta, com a impressão digital de cada uma fixada no código. A partir delas, a cadeia do certificado é montada e conferida no seu navegador. Certificado é um objeto autoautenticável: o que garante a origem é a impressão digital, não o servidor de onde veio — por isso guardar funciona tão bem quanto buscar, e não conta a ninguém que você está conferindo este documento.',
+  },
+  {
+    q: 'A ferramenta diz "origem não verificada". O que isso quer dizer?',
+    a: 'Que a cadeia aponta para a ICP-Brasil mas passa por um certificado com algoritmo que ainda não sabemos verificar aqui — acontece no ramo das raízes v6 e v7, usado principalmente por carimbo do tempo. Não é um problema do seu documento, e é diferente de "não é um certificado ICP-Brasil". Quando não conseguimos concluir, dizemos isso em vez de arriscar uma acusação falsa.',
   },
   {
     q: 'Por que vocês nunca dizem "assinatura válida"?',
@@ -85,6 +93,7 @@ const dados = {
       codeRepository: SITE.repo,
       featureList: [
         'Conferência de integridade de assinatura PAdES',
+        'Validação da cadeia do certificado até as raízes da ICP-Brasil',
         'Detecção de documento alterado depois de assinado',
         'Leitura da política de assinatura da ICP-Brasil declarada',
         'Processamento local, sem envio de arquivos',
@@ -164,8 +173,8 @@ const dados = {
         <p>Nome e emissor do certificado, como vieram no arquivo, além do período de validade.</p>
       </li>
       <li>
-        <strong>Se o certificado tem procedência</strong>
-        <p>Avisamos quando ele assina a si mesmo: qualquer pessoa gera um assim em dois minutos, e não é ICP-Brasil.</p>
+        <strong>Se o certificado é mesmo da ICP-Brasil</strong>
+        <p>A cadeia é montada até as raízes oficiais, guardadas aqui dentro — sem consultar servidor nenhum, e dizendo qual raiz ancorou.</p>
       </li>
       <li>
         <strong>Se escreveram no arquivo depois</strong>
@@ -286,16 +295,27 @@ const dados = {
         <tr><td>Qual nome e emissor constam no certificado?</td><td><strong>Sim</strong>, como vieram no arquivo.</td></tr>
         <tr><td>Que política da ICP-Brasil o arquivo declara seguir?</td><td><strong>Sim</strong> — declarada, não conferida.</td></tr>
         <tr><td>Foi escrito algo depois do trecho assinado?</td><td><strong>Sim</strong>, e quantos bytes.</td></tr>
-        <tr><td>O certificado encadeia até uma raiz da ICP-Brasil?</td><td>Ainda não.</td></tr>
-        <tr><td>O certificado estava revogado na hora da assinatura?</td><td>Ainda não.</td></tr>
+        <tr><td>O certificado encadeia até uma raiz da ICP-Brasil?</td><td><strong>Sim</strong> — as 12 raízes ficam guardadas aqui dentro.</td></tr>
+        <tr><td>O certificado estava revogado na hora da assinatura?</td><td>Não, e por escolha. Veja abaixo.</td></tr>
         <tr><td>O carimbo do tempo confere?</td><td>Ainda não.</td></tr>
         <tr><td>A assinatura tem validade jurídica?</td><td>Isso nenhuma ferramenta responde. É decisão do juízo.</td></tr>
       </tbody>
     </table>
     <p>
-      Para os três “ainda não”, o caminho é o
+      Para o que fica de fora, o caminho é o
       <a href="https://validar.iti.gov.br/" rel="noreferrer noopener nofollow" target="_blank">validador oficial do ITI</a>. Ele faz a verificação
       completa — enviando o documento, que é a diferença que talvez tenha trazido você até aqui.
+    </p>
+
+    <h3>Por que não checamos revogação</h3>
+    <p>
+      Não é limitação técnica: é a mesma decisão que faz o documento não sair do seu computador. Perguntar se <em>este</em> certificado foi
+      revogado significa consultar um servidor do ITI sobre ele — ou seja, contar a um terceiro que este documento está sendo conferido aqui,
+      agora. O identificador do certificado é, na prática, o identificador de quem assinou.
+    </p>
+    <p>
+      Por isso as raízes da ICP-Brasil ficam <strong>guardadas dentro da ferramenta</strong> (são 22 KB, e mudam de década em década) em vez de
+      buscadas durante a conferência. O efeito colateral é bom: a verificação de cadeia também funciona sem internet.
     </p>
 
     <h2>Três situações em que isto resolve o dia</h2>

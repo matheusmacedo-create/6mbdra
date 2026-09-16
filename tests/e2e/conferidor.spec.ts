@@ -55,15 +55,46 @@ test('um byte trocado vira "documento alterado", nunca "não deu para conferir" 
   await expect(cartao).not.toHaveAttribute('data-estado', 'indeterminada')
 })
 
-test('certificado que assina a si mesmo é avisado mesmo com a integridade conferindo', async ({ page }) => {
+test('certificado sem procedência é avisado mesmo com a integridade conferindo @navegadores', async ({ page }) => {
   await abrir(page)
   await conferir(page, 'assinado-autoassinado.pdf')
 
   const cartao = page.locator('.conf-cartao')
+  // Arquivo intacto E sem origem: as duas metades da resposta aparecem juntas, e discordam.
   await expect(cartao).toHaveAttribute('data-estado', 'conferida')
-  // Arquivo intacto e, ainda assim, sem procedência. Dizer só "confere" seria enganoso.
-  await expect(cartao.locator('.conf-alerta')).toContainText(/assina a si mesmo/i)
-  await expect(cartao.locator('.conf-alerta')).toContainText(/ICP-Brasil/)
+  const proc = cartao.locator('.conf-procedencia')
+  await expect(proc).toHaveClass(/ruim/)
+  await expect(proc).toContainText(/Não é um certificado ICP-Brasil/i)
+  await expect(proc).toContainText(/assina a si mesmo/i)
+})
+
+test('cadeia sem os elos do arquivo é "incompleta", e não uma acusação @navegadores', async ({ page }) => {
+  /*
+   * A distinção que mais importa nesta camada: faltar no arquivo a autoridade que emitiu o
+   * certificado é defeito do arquivo, não prova de que o certificado seja irregular. Confundir as
+   * duas coisas transformaria a ferramenta numa fonte de falso alarme.
+   */
+  await abrir(page)
+  await conferir(page, 'assinado-politica.pdf')
+  const proc = page.locator('.conf-cartao .conf-procedencia')
+  await expect(proc).toHaveClass(/neutro/)
+  await expect(proc).toContainText(/incompleta/i)
+  await expect(proc).not.toContainText(/Não é um certificado ICP-Brasil/i)
+})
+
+test('a verificação de cadeia não faz nenhuma requisição de rede @navegadores', async ({ page }) => {
+  /*
+   * Consultar revogação, ou baixar a autoridade que falta, contaria a um terceiro que ESTE
+   * documento está sendo conferido aqui. As raízes moram no código exatamente para isso não ser
+   * necessário — e o teste prova que continua assim.
+   */
+  const externas: string[] = []
+  await abrir(page)
+  const base = new URL(page.url()).origin
+  page.on('request', (r) => { if (!r.url().startsWith(base)) externas.push(r.url()) })
+  await conferir(page, 'assinado-autoassinado.pdf')
+  await page.waitForTimeout(1500)
+  expect(externas, 'a conferência saiu para a internet').toEqual([])
 })
 
 test('PDF sem assinatura não vira falso positivo', async ({ page }) => {

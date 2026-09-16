@@ -80,7 +80,12 @@ Duas observações que importam:
   *cumprir* AD-RC exige conferir as referências. Por isso o campo se chama `politica` **declarada**,
   e a interface não pode dizer mais do que isso.
 
-## Dependência 3 — raízes ICP-Brasil: **obtíveis, mas o HTTPS do ITI está quebrado**
+## Dependência 3 — raízes ICP-Brasil: **obtidas, embutidas e em uso**
+
+> **Atualizado em 16/09/2026.** Esta dependência saiu da sondagem e virou produto: as 12 raízes
+> estão embutidas em `src/tool/lib/raizes-icp.ts` e a validação de cadeia roda em
+> `src/tool/lib/cadeia-icp.ts`. O que segue abaixo é o levantamento original, mais o resultado da
+> implementação no fim da seção.
 
 As raízes estão publicadas e são baixáveis. A raiz corrente é a **v13**:
 
@@ -113,13 +118,47 @@ Consequências para o desenho:
    com a cadeia TLS incompleta" é exatamente o tipo de coisa que a seção de segurança do brpdf
    existe para mostrar — e que reforça a tese do projeto.
 
+### Resultado da implementação
+
+As 12 raízes (v2 a v13) foram baixadas por HTTP, com o SHA-256 de cada uma fixado no código — o
+que torna o canal irrelevante, já que certificado é autoautenticável. São 22,4 KB em base64, e
+entram no mesmo pedaço que já carrega sob demanda: **+11 KB comprimidos, e nada no pacote de quem
+só comprime PDF**.
+
+A validação foi medida contra os **180 certificados reais** de autoridades da ICP-Brasil
+publicados no `ACcompactado.zip`:
+
+| resultado | quantos | o que são |
+|---|---|---|
+| `icp_brasil` | 177 | cadeia montada e conferida até a raiz correta |
+| `nao_verificada` | 3 | ramo do INMETRO (carimbo do tempo), sob as raízes v6 e v7 |
+| falso negativo | **0** | — |
+
+Os 3 casos são a descoberta que mudou o desenho. Medindo o algoritmo dos 192 certificados da
+hierarquia: 182 usam RSA com SHA-512, 3 usam ECDSA, e **7 usam Ed25519** (as raízes v6 e v7 e o
+ramo do INMETRO) ou um OID privado. Os navegadores já suportam Ed25519, mas a biblioteca de ASN.1
+usada aqui não mapeia o OID `1.3.101.113`, e estender o motor não bastou.
+
+O ponto não é a cobertura de 95%: é o que acontece nos 5%. Um certificado do ramo Ed25519 é
+ICP-Brasil legítimo, e chamá-lo de "fora da ICP-Brasil" seria acusação falsa contra documento
+correto. Por isso o caminho é percorrido **pelo nome primeiro, sem criptografia**: se ele leva a
+uma raiz nossa mas passa por algoritmo desconhecido, a resposta é `nao_verificada` com o motivo.
+É a mesma regra que governa o módulo — impossibilidade de conferir nunca vira veredito negativo —
+aplicada onde é mais fácil violá-la sem perceber.
+
+**Revogação continua fora, e por escolha.** Consultar LCR ou OCSP significa perguntar a um servidor
+do ITI sobre um certificado específico, ou seja, contar a um terceiro que aquele documento está
+sendo conferido aqui, agora. O identificador do certificado é, na prática, o identificador de quem
+assinou. Fosse só a técnica, ainda haveria os dois obstáculos já medidos (sem CORS, TLS
+incompleto) — mas a razão principal é a promessa do produto.
+
 ## O que ainda não foi verificado
 
 Nada disto está no caminho da Etapa 0, mas nenhum deles pode ser tratado como resolvido:
 
-- Validação de cadeia de verdade contra as raízes ICP-Brasil (a sonda usa cadeia de teste própria).
-- Revogação: LCR e OCSP, ambos com o mesmo problema de TLS acima.
-- Carimbo do tempo (necessário para AD-RT em diante).
+- Revogação: fora por escolha (ver acima), não por pendência.
+- O ramo Ed25519 da hierarquia (raízes v6/v7, INMETRO e carimbo do tempo).
+- Carimbo do tempo (necessário para AD-RT em diante) — depende do ramo do INMETRO, acima.
 - DocMDP e assinaturas incrementais múltiplas: qual assinatura decide o estado do arquivo.
 - CAdES destacado (`.p7s`), que é como boa parte dos tribunais entrega.
 - Comportamento em Firefox e Safari: a sonda rodou em Chromium.
