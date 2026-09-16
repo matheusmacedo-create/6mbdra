@@ -6,6 +6,7 @@ import AvisoRegra from '../../layouts/AvisoRegra.astro'
 import { contextoCurto, formatLimite, idPagina, limiteBytes, metaBytes, mostrarBytesDoLimite, paginasDeRegras, percentualMeta, regrasDoTribunal, rotuloContexto, rotuloSistema, sistemaCurto, slugSistema, tituloRegraDoTribunal, type RegraDoTribunal } from '../../tool/lib/regras'
 import { sistemaPorSlug } from '../../tool/lib/sistemas'
 import { alvoDoTribunal, guiasDoTribunal } from '../../tool/lib/guias'
+import { comparacao, nomeCurto, posicaoNoSistema } from '../../tool/lib/comparacao'
 import { ALVOS } from '../../data/tamanhosAlvo'
 import { getCollection } from 'astro:content'
 import { formatBytes, formatDate } from '../../tool/lib/format'
@@ -19,6 +20,24 @@ const { regra, tribunal, herdada } = pagina
 const sigla = tribunal.sigla
 const contexto = rotuloContexto(regra)
 const titulo = tituloRegraDoTribunal(pagina)
+/*
+ * O nome por extenso entra no lead, na descrição, na FAQ e nos dados estruturados. Media-se: nenhuma
+ * das 101 páginas continha "Tribunal de Justiça do Estado de Minas Gerais" — só a sigla. Quem busca
+ * pelo nome, e muita gente busca, não encontrava a página.
+ */
+const nome = nomeCurto(tribunal)
+const comp = comparacao(pagina)
+const posicao = posicaoNoSistema(pagina)
+const ctxCurto = contextoCurto(regra) ? ` (${contextoCurto(regra)})` : ''
+/*
+ * Descrição com o nome por extenso, dentro do que o buscador exibe. A cauda encolhe até caber:
+ * nome longo (TJDFT) com contexto (documento principal) não deixa espaço para a frase inteira.
+ */
+const descricaoBase = `${sigla} (${nome}): até ${formatLimite(regra)} por PDF no ${sistemaCurto(regra)}${ctxCurto}.`
+const descricao =
+  [' Fonte oficial, data da conferência e a meta segura para não ser recusado.', ' Fonte oficial e data da conferência.', '']
+    .map((cauda) => descricaoBase + cauda)
+    .find((d) => d.length <= 160) ?? descricaoBase
 const outras = regrasDoTribunal(sigla).filter((x) => idPagina(x) !== idPagina(pagina))
 const linkFerramenta = herdada ? `/?regra=${regra.id}&tribunal=${encodeURIComponent(sigla)}` : `/?regra=${regra.id}`
 /** Existe página do sistema? (sistemas de um tribunal só não têm) */
@@ -53,7 +72,7 @@ const alvoDaqui = alvoDoTribunal(regra.id, limiteBytes(regra) / 1_000_000, ALVOS
 const PERGUNTAS: { q: string; a: string }[] = [
   {
     q: `Qual o tamanho máximo de PDF no ${sistemaCurto(regra)} do ${sigla}?`,
-    a: `${formatLimite(regra)} por arquivo${contexto ? ` (${contexto})` : ''}. Valor conferido em ${formatDate(regra.verificado_em)} na fonte oficial do tribunal. Confira também na tela de anexar antes de protocolar: regra muda sem aviso.`,
+    a: `No ${sistemaCurto(regra)} do ${nome} (${sigla}), ${formatLimite(regra)} por arquivo${contexto ? ` (${contexto})` : ''}. Valor conferido em ${formatDate(regra.verificado_em)} na fonte oficial do tribunal. Confira também na tela de anexar antes de protocolar: regra muda sem aviso.`,
   },
   {
     q: `O que fazer se o PDF passar de ${formatLimite(regra)}?`,
@@ -87,6 +106,14 @@ const dadosEstruturados = {
   '@context': 'https://schema.org',
   '@graph': [
     {
+      '@type': 'WebPage',
+      name: titulo,
+      url: new URL(`/tribunais/${idPagina(pagina)}/`, SITE.url).href,
+      inLanguage: 'pt-BR',
+      dateModified: `${regra.verificado_em}T00:00:00Z`,
+      about: { '@type': 'GovernmentOrganization', name: nome, alternateName: sigla },
+    },
+    {
       '@type': 'BreadcrumbList',
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Início', item: SITE.url },
@@ -100,7 +127,7 @@ const dadosEstruturados = {
 ---
 <Base
   title={titulo}
-  description={`${sigla}: cada PDF anexado no ${sistemaCurto(regra)}${contextoCurto(regra) ? ` (${contextoCurto(regra)})` : ''} pode ter até ${formatLimite(regra)}. Fonte oficial, data da conferência e a meta segura.`}
+  description={descricao}
   path={`/tribunais/${idPagina(pagina)}/`}
 >
   <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dadosEstruturados)} /></Fragment>
@@ -117,7 +144,7 @@ const dadosEstruturados = {
       de copy com mais alcance do site.
     */}
     <p class="lead">
-      No {rotuloSistema(regra)} do {sigla}, cada PDF anexado pode ter até <strong>{formatLimite(regra)}</strong>.
+      No {rotuloSistema(regra)} do {sigla} ({nome}), cada PDF anexado pode ter até <strong>{formatLimite(regra)}</strong>.
       {contexto ? ` ${contexto}.` : ''}
     </p>
     <p class="lead-acao">
@@ -176,6 +203,45 @@ const dadosEstruturados = {
     </p>
     <p><a class="cta" href={linkFerramenta}>Preparar PDFs para o {rotuloSistema(regra)} do {sigla}</a></p>
     <SeloSigilo />
+
+    {/*
+      Contexto que só esta página tem. Sai dos dados: os outros tribunais que atendem o mesmo
+      estado e onde este limite fica entre as regras do mesmo sistema. Ver src/tool/lib/comparacao.ts
+      para o porquê — em resumo, 101 páginas quase iguais e com 1 ou 2 links de entrada cada.
+    */}
+    {comp && (
+      <section class="comparacao">
+        <h2>{comp.titulo}</h2>
+        <p>{comp.intro}</p>
+        <ul>
+          {comp.itens.map((v) => (
+            <li>
+              <a href={`/tribunais/${v.id}/`}>
+                {v.pagina.tribunal.sigla} no {sistemaCurto(v.pagina.regra)}{contextoCurto(v.pagina.regra) ? ` (${contextoCurto(v.pagina.regra)})` : ''}
+              </a>
+              : <strong>{formatLimite(v.pagina.regra)}</strong> — {v.relacao}.
+            </li>
+          ))}
+        </ul>
+        <p>{comp.resumo}</p>
+        {posicao && (
+          <p>
+            {posicao.menores === 0 && posicao.maiores === 0
+              ? `As ${posicao.total} regras de ${rotuloSistema(regra)} na base têm o mesmo limite de ${formatLimite(regra)}.`
+              : `Entre as ${posicao.total} regras de ${rotuloSistema(regra)} na base, ${
+                  posicao.menores === 0 ? 'nenhuma é menor' : posicao.menores === 1 ? 'uma é menor' : `${posicao.menores} são menores`
+                } e ${
+                  posicao.maiores === 0 ? 'nenhuma é maior' : posicao.maiores === 1 ? 'uma é maior' : `${posicao.maiores} são maiores`
+                } que ${formatLimite(regra)}: a faixa vai de ${formatLimite(posicao.min.regra)} (${posicao.min.tribunal.sigla}) a ${formatLimite(posicao.max.regra)} (${posicao.max.tribunal.sigla}).`}
+            {paginaDoSistema && (
+              <>
+                {' '}<a href={`/sistemas/${paginaDoSistema.slug}/`}>Tabela completa do {paginaDoSistema.nome}</a>.
+              </>
+            )}
+          </p>
+        )}
+      </section>
+    )}
 
     {/*
       Depois de tudo que a pessoa veio buscar, e antes do aviso de que o limite pode mudar — que é
