@@ -1,0 +1,260 @@
+---
+import Base from '../layouts/Base.astro'
+import Conferidor from '../tool/conferidor/Conferidor'
+import { SITE } from '../config/site'
+
+/*
+ * Página da ferramenta de conferência de assinatura.
+ *
+ * A ferramenta vem primeiro e o texto depois, ao contrário das outras páginas de ferramenta: quem
+ * busca "assinatura digital do PDF" tem um arquivo na mão e uma dúvida urgente — protocolo ou não
+ * protocolo. Fazer essa pessoa rolar por três parágrafos antes de conferir seria cobrar pedágio
+ * numa resposta que leva 18 ms.
+ *
+ * O texto abaixo não é enfeite de SEO: é o que a ferramenta se recusa a dizer na tela de resultado.
+ * "Confere" é uma frase curta; o que ela não abrange precisa de espaço.
+ */
+const PERGUNTAS = [
+  {
+    q: 'Isto valida a assinatura como o validador oficial do ITI?',
+    a: 'Não, e a diferença importa. Aqui conferimos a integridade: se o conteúdo assinado mudou desde a assinatura. O validador oficial do ITI vai além — confere a cadeia do certificado até as raízes da ICP-Brasil, a revogação e o carimbo do tempo. Para um parecer completo, use o ITI. Para descobrir em segundos se a compressão quebrou seu arquivo, esta ferramenta responde sem enviar o documento para lugar nenhum.',
+  },
+  {
+    q: 'Por que vocês nunca dizem "assinatura válida"?',
+    a: 'Porque validade jurídica é decisão do juízo, não de uma ferramenta. Um documento pode ter assinatura tecnicamente perfeita e ser recusado por outro motivo; pode ter a assinatura de alguém sem poderes de representação. Dizemos o que dá para medir — "a integridade confere" — e paramos aí. Ferramenta que promete validade jurídica cria uma confiança que não tem como sustentar.',
+  },
+  {
+    q: 'Comprimir um PDF assinado quebra a assinatura?',
+    a: 'Sim, sempre. A assinatura cobre uma sequência exata de bytes; a compressão reescreve o arquivo inteiro. Não existe compressão "leve o bastante" para preservar uma assinatura digital. A ordem certa é preparar o PDF primeiro, assinar depois — e é por isso que o brpdf se recusa a comprimir documentos assinados, a menos que você libere explicitamente.',
+  },
+  {
+    q: 'O documento é enviado para algum servidor?',
+    a: 'Não. A conferência acontece dentro do seu navegador, com o mesmo princípio do resto do brpdf. Com a página carregada, dá para desligar a internet e conferir mesmo assim. Nenhum byte do documento, do nome do arquivo ou do certificado sai da sua máquina.',
+  },
+  {
+    q: 'A ferramenta lê arquivos .p7s?',
+    a: 'Ainda não. O .p7s é a assinatura guardada num arquivo separado, ao lado do documento — formato que vários tribunais usam. Hoje lemos a assinatura embutida no próprio PDF (PAdES), que é o caso mais comum em petição eletrônica. O .p7s está na fila.',
+  },
+  {
+    q: 'O que significa "não foi possível concluir a conferência"?',
+    a: 'Que a verificação não chegou a rodar — algoritmo fora do comum, estrutura que ainda não lemos, ou navegador sem as funções de criptografia (elas exigem HTTPS). Isso não quer dizer que o documento esteja alterado. Quando não conseguimos concluir, dizemos exatamente isso e mandamos você ao ITI, em vez de arriscar um veredito negativo errado.',
+  },
+  {
+    q: 'Meu PDF tem mais de uma assinatura. Qual vocês conferem?',
+    a: 'A mais recente, porque é ela que cobre o estado atual do arquivo. A tela mostra quantas assinaturas existem para você saber que há outras. Conferência individual de cada assinatura e do que cada uma cobre é um passo seguinte.',
+  },
+]
+
+const dados = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebApplication',
+      name: 'Conferidor de assinatura digital em PDF — brpdf',
+      url: new URL('/conferir-assinatura/', SITE.url).href,
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Navegador (Chrome, Edge, Firefox, Safari)',
+      inLanguage: 'pt-BR',
+      isAccessibleForFree: true,
+      description:
+        'Confira se a assinatura digital de um PDF continua íntegra, sem enviar o documento para a internet. Detecta arquivos alterados depois de assinados.',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'BRL' },
+      featureList: [
+        'Conferência de integridade de assinatura PAdES',
+        'Detecção de documento alterado depois de assinado',
+        'Leitura da política de assinatura da ICP-Brasil declarada',
+        'Processamento local, sem envio de arquivos',
+      ],
+    },
+    { '@type': 'FAQPage', mainEntity: PERGUNTAS.map((p) => ({ '@type': 'Question', name: p.q, acceptedAnswer: { '@type': 'Answer', text: p.a } })) },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Início', item: SITE.url },
+        { '@type': 'ListItem', position: 2, name: 'Conferir assinatura', item: new URL('/conferir-assinatura/', SITE.url).href },
+      ],
+    },
+  ],
+}
+---
+<Base
+  title="Conferir assinatura digital de PDF, sem enviar o arquivo"
+  description="Descubra em segundos se a assinatura digital do seu PDF continua íntegra ou se o arquivo foi alterado depois de assinado. Roda no navegador, sem enviar o documento."
+  path="/conferir-assinatura/"
+>
+  <Fragment slot="head"><script type="application/ld+json" is:inline set:html={JSON.stringify(dados)} /></Fragment>
+
+  <main class="page prose conferidor-page">
+    <h1>A assinatura digital deste PDF ainda confere?</h1>
+    <p class="lead">
+      Arraste o arquivo. Em menos de um segundo você sabe se o documento foi alterado depois de assinado — e o PDF não sai do seu computador
+      para isso.
+    </p>
+
+    <div class="conferidor-ilha"><Conferidor client:only="react" /></div>
+
+    <p class="selo-sigilo">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="4" y="10" width="16" height="11" rx="2" />
+        <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+      </svg>
+      <span>
+        A conferência acontece dentro do navegador — o documento e o certificado não são enviados para lugar nenhum.{' '}
+        <a href="/seguranca/verifique/">Veja como conferir isso</a>.
+      </span>
+    </p>
+
+    <h2>Por que uma assinatura “some” depois que o arquivo passa por uma ferramenta</h2>
+    <p>
+      Uma assinatura digital não é um carimbo colado no documento: é um cálculo sobre uma <strong>sequência exata de bytes</strong>. Trocar um único
+      byte dentro dessa sequência derruba a conferência — e comprimir um PDF reescreve o arquivo inteiro.
+    </p>
+    <p>
+      Por isso a ordem importa mais do que quase tudo em preparação de petição:
+    </p>
+
+    <figure class="diagrama">
+      <svg viewBox="0 0 760 296" role="img" aria-labelledby="t-ordem d-ordem" class="svg-diagrama">
+        <title id="t-ordem">A ordem entre comprimir e assinar decide se a assinatura sobrevive</title>
+        <desc id="d-ordem">
+          Na ordem errada, o PDF é assinado e depois comprimido, e a assinatura deixa de conferir. Na ordem certa, o PDF é comprimido primeiro e
+          assinado por último, e a assinatura permanece íntegra.
+        </desc>
+
+        <text x="0" y="14" class="d-rot">Ordem errada — o caso que traz você aqui</text>
+
+        <rect x="0" y="30" width="150" height="62" rx="8" class="d-caixa" />
+        <text x="75" y="66" class="d-cap" text-anchor="middle">PDF pronto</text>
+
+        <path d="M156 61 H198" class="d-seta d-neutro" marker-end="url(#p-neutro)" />
+
+        <rect x="204" y="30" width="150" height="62" rx="8" class="d-caixa" />
+        <text x="279" y="58" class="d-cap" text-anchor="middle">Assinado</text>
+        <text x="279" y="76" class="d-mini" text-anchor="middle">certificado aplicado</text>
+
+        <path d="M360 61 H402" class="d-seta d-perigo" marker-end="url(#p-perigo)" />
+
+        <rect x="408" y="30" width="150" height="62" rx="8" class="d-caixa d-caixa-perigo" />
+        <text x="483" y="58" class="d-cap" text-anchor="middle">Comprimido</text>
+        <text x="483" y="76" class="d-mini" text-anchor="middle">todo byte reescrito</text>
+
+        <path d="M564 61 H606" class="d-seta d-perigo" marker-end="url(#p-perigo)" />
+
+        <rect x="612" y="30" width="148" height="62" rx="8" class="d-caixa d-caixa-perigo" />
+        <text x="686" y="58" class="d-cap" text-anchor="middle">Não confere</text>
+        <text x="686" y="76" class="d-mini" text-anchor="middle">sem volta</text>
+
+        <text x="0" y="118" class="d-nota">A assinatura cobria os bytes antigos. Eles não existem mais.</text>
+
+        <line x1="0" y1="140" x2="760" y2="140" class="d-divisa" />
+
+        <text x="0" y="176" class="d-rot d-rot-ok">Ordem certa</text>
+
+        <rect x="0" y="192" width="150" height="62" rx="8" class="d-caixa" />
+        <text x="75" y="228" class="d-cap" text-anchor="middle">PDF pronto</text>
+
+        <path d="M156 223 H198" class="d-seta d-neutro" marker-end="url(#p-neutro)" />
+
+        <rect x="204" y="192" width="150" height="62" rx="8" class="d-caixa" />
+        <text x="279" y="220" class="d-cap" text-anchor="middle">Comprimido</text>
+        <text x="279" y="238" class="d-mini" text-anchor="middle">cabe no limite</text>
+
+        <path d="M360 223 H402" class="d-seta d-ok" marker-end="url(#p-ok)" />
+
+        <rect x="408" y="192" width="150" height="62" rx="8" class="d-caixa d-caixa-ok" />
+        <text x="483" y="220" class="d-cap" text-anchor="middle">Assinado</text>
+        <text x="483" y="238" class="d-mini" text-anchor="middle">por último</text>
+
+        <path d="M564 223 H606" class="d-seta d-ok" marker-end="url(#p-ok)" />
+
+        <rect x="612" y="192" width="148" height="62" rx="8" class="d-caixa d-caixa-ok" />
+        <text x="686" y="220" class="d-cap" text-anchor="middle">Confere</text>
+        <text x="686" y="238" class="d-mini" text-anchor="middle">e cabe</text>
+
+        <text x="0" y="280" class="d-nota">O arquivo já estava no tamanho final quando recebeu a assinatura.</text>
+
+        <defs>
+          <marker id="p-neutro" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" class="d-pta-neutro" />
+          </marker>
+          <marker id="p-perigo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" class="d-pta-perigo" />
+          </marker>
+          <marker id="p-ok" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" class="d-pta-ok" />
+          </marker>
+        </defs>
+      </svg>
+      <figcaption>
+        Não existe compressão leve o bastante para preservar uma assinatura digital. O que existe é preparar o arquivo antes de assinar.
+      </figcaption>
+    </figure>
+
+    <div class="callout warn">
+      <strong>Se a conferência acusou alteração, não há conserto.</strong> A assinatura não pode ser “recolocada” no arquivo comprimido — só quem
+      tem o certificado pode assinar, e assinar de novo exige o documento original. Recupere o arquivo como saiu do assinador e recomece dali.
+    </div>
+
+    <h2>O que a ferramenta consegue dizer, e o que não</h2>
+    <p>Sendo específico, porque uma conferência com limites não declarados vale pouco:</p>
+    <table class="tabela-compacta">
+      <thead><tr><th>Pergunta</th><th>Respondemos?</th></tr></thead>
+      <tbody>
+        <tr><td>O conteúdo assinado mudou desde a assinatura?</td><td><strong>Sim</strong> — é o coração da ferramenta.</td></tr>
+        <tr><td>Existe alguma assinatura neste PDF?</td><td><strong>Sim</strong>, e quantas.</td></tr>
+        <tr><td>Qual nome e emissor constam no certificado?</td><td><strong>Sim</strong>, como vieram no arquivo.</td></tr>
+        <tr><td>Que política da ICP-Brasil o arquivo declara seguir?</td><td><strong>Sim</strong> — declarada, não conferida.</td></tr>
+        <tr><td>Foi escrito algo depois do trecho assinado?</td><td><strong>Sim</strong>, e quantos bytes.</td></tr>
+        <tr><td>O certificado encadeia até uma raiz da ICP-Brasil?</td><td>Ainda não.</td></tr>
+        <tr><td>O certificado estava revogado na hora da assinatura?</td><td>Ainda não.</td></tr>
+        <tr><td>O carimbo do tempo confere?</td><td>Ainda não.</td></tr>
+        <tr><td>A assinatura tem validade jurídica?</td><td>Isso nenhuma ferramenta responde. É decisão do juízo.</td></tr>
+      </tbody>
+    </table>
+    <p>
+      Para os três “ainda não”, o caminho é o
+      <a href="https://validar.iti.gov.br/" rel="noreferrer noopener nofollow" target="_blank">validador oficial do ITI</a>. Ele faz a verificação
+      completa — enviando o documento, que é a diferença que talvez tenha trazido você até aqui.
+    </p>
+
+    <h2>Três situações em que isto resolve o dia</h2>
+    <ul class="grid-cards">
+      <li>
+        <a href="/guias/por-que-comprimir-antes-de-assinar-digitalmente/">“Comprimi e agora não sei se estraguei”</a>
+        <p>O caso mais comum. Confira antes de protocolar, em vez de descobrir pela intimação de que a peça foi recusada.</p>
+      </li>
+      <li>
+        <a href="/guias/pdf-com-senha-assinado-ou-corrompido-o-que-fazer/">Recebi um PDF assinado de outra pessoa</a>
+        <p>Cliente, correspondente ou parte contrária. Saber se o arquivo chegou íntegro antes de juntar aos autos.</p>
+      </li>
+      <li>
+        <a href="/guias/checklist-antes-de-protocolar-anexos-em-pdf/">Conferência final antes do protocolo</a>
+        <p>Último passo do checklist: os assinados continuam assinados, os demais cabem no limite.</p>
+      </li>
+    </ul>
+
+    <h2>Perguntas frequentes</h2>
+    <div class="faq-list">
+      {PERGUNTAS.map((p) => (<details><summary>{p.q}</summary><p>{p.a}</p></details>))}
+    </div>
+
+    <h2>Leia também</h2>
+    <ul>
+      <li><a href="/guias/por-que-comprimir-antes-de-assinar-digitalmente/">Por que comprimir antes de assinar digitalmente</a></li>
+      <li><a href="/guias/assinatura-eletronica-e-assinatura-digital-a-diferenca/">Assinatura eletrônica e assinatura digital: a diferença</a></li>
+      <li><a href="/comprimir-pdf/">Comprimir PDF para o protocolo</a></li>
+      <li><a href="/seguranca/">Como o brpdf protege seus documentos</a></li>
+    </ul>
+  </main>
+</Base>
+
+<style>
+  .conferidor-page { max-width: 860px; }
+  /* Altura reservada: a ilha só existe depois de hidratar, e sem isto o texto pula (CLS). */
+  .conferidor-ilha { min-height: 330px; margin: 8px 0 4px; }
+  .tabela-compacta { width: 100%; border-collapse: collapse; margin: 18px 0 8px; font-size: 15px; }
+  .tabela-compacta th, .tabela-compacta td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .tabela-compacta th { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+  .tabela-compacta tbody tr:last-child td { border-bottom: none; }
+  @media (max-width: 560px) { .conferidor-ilha { min-height: 300px; } .tabela-compacta { font-size: 14px; } }
+</style>

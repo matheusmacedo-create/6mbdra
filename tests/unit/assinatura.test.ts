@@ -133,3 +133,41 @@ describe('políticas do DOC-ICP-15 (dependência 2 da Etapa 0)', () => {
     expect(p?.aprovada).toBe(false)
   })
 })
+
+describe('procedência do certificado', () => {
+  it('distingue certificado emitido por uma AC de certificado que assina a si mesmo', async () => {
+    /*
+     * É o único fato sobre a ORIGEM que dá para afirmar sem validar cadeia, e é o caso em que
+     * "a integridade confere" mais engana: arquivo intacto, assinado com certificado caseiro que
+     * qualquer pessoa gera em dois minutos.
+     */
+    const emitido = await conferirAssinatura(ler('assinado-ok.pdf'))
+    expect(emitido.estado).toBe('conferida')
+    expect(emitido.signatarios.every((s) => s.autoassinado)).toBe(false)
+
+    const caseiro = await conferirAssinatura(ler('assinado-autoassinado.pdf'))
+    expect(caseiro.estado).toBe('conferida')
+    expect(caseiro.signatarios.some((s) => s.autoassinado)).toBe(true)
+  })
+
+  it('conta as assinaturas e os bytes escritos depois do trecho assinado', async () => {
+    const r = await conferirAssinatura(ler('assinado-ok.pdf'))
+    expect(r.quantidade).toBe(1)
+    // Fixture bem formada: a assinatura vai até o fim do arquivo.
+    expect(r.acrescentadoDepois).toBe(0)
+  })
+
+  it('acusa conteúdo acrescentado depois da assinatura sem chamar o arquivo de alterado', async () => {
+    /*
+     * Anexar uma página depois de assinar não quebra a assinatura — ela cobre o que cobria. Mas o
+     * documento deixou de ser só aquilo que foi assinado, e um "confere" silencioso esconderia isso.
+     */
+    const base = ler('assinado-ok.pdf')
+    const comSobra = new Uint8Array(base.length + 512)
+    comSobra.set(base, 0)
+    comSobra.set(new TextEncoder().encode('% pagina anexada depois\n'), base.length)
+    const r = await conferirAssinatura(comSobra)
+    expect(r.estado).toBe('conferida')
+    expect(r.acrescentadoDepois).toBe(512)
+  })
+})

@@ -10,6 +10,9 @@ interface Props {
   variant?: 'hero' | 'compact'
   /** Chamada principal da área grande (o herói e a ferramenta usam textos diferentes) */
   title?: string
+  /** Linha de baixo. O conferidor recebe um arquivo por vez com mais frequência que a bancada. */
+  big?: string
+  small?: string
 }
 
 async function collectFiles(items: DataTransferItemList | null, fallback: FileList | null): Promise<File[]> {
@@ -54,7 +57,7 @@ function UploadIcon() {
   )
 }
 
-export function DropZone({ onFiles, disabled, variant = 'hero', title }: Props) {
+export function DropZone({ onFiles, disabled, variant = 'hero', title, big, small }: Props) {
   const [active, setActive] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const compact = variant === 'compact'
@@ -99,8 +102,8 @@ export function DropZone({ onFiles, disabled, variant = 'hero', title }: Props) 
           <span className="upload-button">{title ?? 'Selecionar arquivos PDF'}</span>
         </>
       )}
-      <div className="big">{compact ? 'Adicionar mais documentos' : 'ou arraste seus PDFs aqui'}</div>
-      <div className="small">{compact ? 'Arraste ou clique para escolher' : 'Vários documentos de uma vez.'}</div>
+      <div className="big">{big ?? (compact ? 'Adicionar mais documentos' : 'ou arraste seus PDFs aqui')}</div>
+      <div className="small">{small ?? (compact ? 'Arraste ou clique para escolher' : 'Vários documentos de uma vez.')}</div>
       <input
         ref={inputRef}
         type="file"

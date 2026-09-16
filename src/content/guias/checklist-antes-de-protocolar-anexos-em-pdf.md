@@ -62,7 +62,7 @@ Depois de corrigir, confira de novo a legibilidade e a assinatura do arquivo nov
 
 ## Antes de clicar em protocolar
 
-Esta ferramenta e este guia não são oficiais nem vinculados a nenhum tribunal. As regras de cada sistema mudam, e o único jeito seguro é abrir cada anexo final, conferir o conteúdo, a ordem e a assinatura, e só então protocolar.
+Esta ferramenta e este guia não são oficiais nem vinculados a nenhum tribunal. As regras de cada sistema mudam, e o único jeito seguro é abrir cada anexo final, conferir o conteúdo, a ordem e a assinatura — os assinados passam pelo [conferidor de assinatura](/conferir-assinatura/) em segundos — e só então protocolar.
 
 ## Perguntas frequentes
 

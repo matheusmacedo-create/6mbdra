@@ -18,25 +18,39 @@ pkijs.setEngine('node', new pkijs.CryptoEngine({ name: 'node', crypto: webcrypto
 const ESPACO = 8192
 const DESTINO = join(process.cwd(), 'tests', 'fixtures')
 
-/** Certificado autoassinado + chave, para servir de signatário de teste. */
-async function certificadoDeTeste(nomeComum) {
-  const chaves = await webcrypto.subtle.generateKey(
+function dn(...nomes) {
+  const rdn = new pkijs.RelativeDistinguishedNames()
+  for (const n of nomes) {
+    rdn.typesAndValues.push(new pkijs.AttributeTypeAndValue({ type: '2.5.4.3', value: new asn1js.PrintableString({ value: n }) }))
+  }
+  return rdn
+}
+
+const parDeChaves = () =>
+  webcrypto.subtle.generateKey(
     { name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
     true,
     ['sign', 'verify'],
   )
+
+/**
+ * Emite um certificado. Sem `emissor`, o certificado assina a si mesmo.
+ *
+ * As duas formas importam nos testes: o conferidor distingue certificado emitido por alguém de
+ * certificado autoassinado, e essa distinção é o único fato sobre a ORIGEM que dá para afirmar
+ * sem validar a cadeia.
+ */
+async function emite(nomeComum, serie, emissor) {
+  const chaves = await parDeChaves()
   const cert = new pkijs.Certificate()
   cert.version = 2
-  cert.serialNumber = new asn1js.Integer({ value: 20260916 })
-  for (const alvo of [cert.issuer, cert.subject]) {
-    alvo.typesAndValues.push(
-      new pkijs.AttributeTypeAndValue({ type: '2.5.4.3', value: new asn1js.PrintableString({ value: nomeComum }) }),
-    )
-  }
+  cert.serialNumber = new asn1js.Integer({ value: serie })
+  cert.subject = dn(nomeComum)
+  cert.issuer = emissor ? emissor.cert.subject : cert.subject
   cert.notBefore.value = new Date(Date.UTC(2026, 0, 1))
   cert.notAfter.value = new Date(Date.UTC(2028, 0, 1))
   await cert.subjectPublicKeyInfo.importKey(chaves.publicKey, pkijs.getCrypto(true))
-  await cert.sign(chaves.privateKey, 'SHA-256', pkijs.getCrypto(true))
+  await cert.sign(emissor ? emissor.chave : chaves.privateKey, 'SHA-256', pkijs.getCrypto(true))
   return { cert, chave: chaves.privateKey }
 }
 
@@ -140,18 +154,24 @@ function insere(pdf, ini, fim, cms) {
   return Buffer.concat([pdf.subarray(0, ini), Buffer.from(hex + '0'.repeat(espaco - hex.length), 'latin1'), pdf.subarray(fim)])
 }
 
-const signatario = await certificadoDeTeste('FULANO DE TAL:12345678901')
+const ac = await emite('AC Teste brpdf', 1, null)
+const signatario = await emite('FULANO DE TAL:12345678901', 20260916, ac)
+// O caseiro: mesma estrutura, mas sem autoridade nenhuma por trás.
+const caseiro = await emite('SICRANO DE TAL', 4242, null)
 
-for (const [arquivo, oid] of [
-  ['assinado-ok.pdf', null],
+for (const [arquivo, oid, quem] of [
+  ['assinado-ok.pdf', null, signatario],
   // AD-RB v1.3, a política PAdES aprovada mais usada no dia a dia.
-  ['assinado-politica.pdf', '2.16.76.1.7.1.11.1.3'],
+  ['assinado-politica.pdf', '2.16.76.1.7.1.11.1.3', signatario],
+  // Íntegro e mesmo assim sem procedência: certificado que assina a si mesmo.
+  ['assinado-autoassinado.pdf', null, caseiro],
 ]) {
   const { pdf, iniContents, fimContents } = montaPdf()
   const assinados = Buffer.concat([pdf.subarray(0, iniContents - 1), pdf.subarray(fimContents + 1)])
-  const final = insere(pdf, iniContents, fimContents, await assina(assinados, signatario, oid))
+  const final = insere(pdf, iniContents, fimContents, await assina(assinados, quem, oid))
   writeFileSync(join(DESTINO, arquivo), final)
-  console.log(`  ${arquivo}: ${final.length} bytes, assinatura cobre ${assinados.length}${oid ? `, política ${oid}` : ''}`)
+  const origem = quem === caseiro ? ', autoassinado' : ''
+  console.log(`  ${arquivo}: ${final.length} bytes, assinatura cobre ${assinados.length}${oid ? `, política ${oid}` : ''}${origem}`)
 
   if (arquivo === 'assinado-ok.pdf') {
     // O gêmeo alterado: UM byte trocado dentro do trecho assinado.

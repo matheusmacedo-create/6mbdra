@@ -36,6 +36,8 @@ export type EventName =
   | 'arquivo_resultado'
   | 'tentar_novamente'
   | 'erro'
+  // 4b. conferiu uma assinatura (ferramenta separada, fora da fila de preparo)
+  | 'assinatura_conferida'
   // 5. levou embora
   | 'zip_gerado'
   | 'download'

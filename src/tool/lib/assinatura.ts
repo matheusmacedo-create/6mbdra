@@ -30,6 +30,16 @@ export interface Signatario {
   /** Nome comum do certificado, como veio — sem normalização. */
   nome: string
   emissor: string
+  /**
+   * O certificado assina a si mesmo (emissor idêntico ao titular).
+   *
+   * É o único fato sobre a ORIGEM do certificado que dá para afirmar sem validar a cadeia, e vale
+   * muito: um certificado autoassinado, por definição, não foi emitido por autoridade certificadora
+   * nenhuma — então não é ICP-Brasil. É assim que aparece a maior parte dos PDFs "assinados" com um
+   * certificado caseiro, e a integridade deles confere perfeitamente. Dizer só "confere" nesse caso
+   * seria tecnicamente correto e praticamente enganoso.
+   */
+  autoassinado: boolean
   serie: string
   validoDe: string
   validoAte: string
@@ -44,6 +54,17 @@ export interface Conferencia {
   signatarios: Signatario[]
   /** Quantos bytes do arquivo a assinatura cobre, e quantos ficaram de fora. */
   cobertura?: { assinados: number; total: number }
+  /** Quantas assinaturas o arquivo tem. Mais de uma é comum (advogado + parte, ou parte + juízo). */
+  quantidade?: number
+  /**
+   * Bytes acrescentados DEPOIS do trecho que a última assinatura cobre.
+   *
+   * Num arquivo bem formado isto é zero: a última assinatura vai até o fim. Qualquer valor acima
+   * de zero significa que alguém escreveu no arquivo depois de assinado — página anexada,
+   * anotação, carimbo. A assinatura pode até continuar conferindo (ela cobre o que cobria), mas o
+   * documento não é mais só aquilo que foi assinado, e isso precisa aparecer.
+   */
+  acrescentadoDepois?: number
   /**
    * A política da ICP-Brasil que o arquivo DECLARA seguir — não uma confirmação de que a cumpre.
    * Ausente quando a assinatura não declara política, o que é comum e não é defeito.
@@ -89,6 +110,11 @@ function hexParaBytes(hex: string): Uint8Array {
 function nomeComum(nome: pkijs.RelativeDistinguishedNames): string {
   const cn = nome.typesAndValues.find((t) => t.type === '2.5.4.3')
   return cn ? String(cn.value.valueBlock.value) : '(sem nome)'
+}
+
+/** O DN inteiro, em ordem, para comparar titular e emissor sem depender só do nome comum. */
+function distinguido(nome: pkijs.RelativeDistinguishedNames): string {
+  return nome.typesAndValues.map((t) => `${t.type}=${String(t.value.valueBlock.value)}`).join('|')
 }
 
 /**
@@ -152,6 +178,8 @@ export async function conferirAssinatura(bytes: Uint8Array): Promise<Conferencia
 
   // A última assinatura é a mais recente; é a que decide o estado do arquivo como um todo.
   const { range, contents } = achados[achados.length - 1]
+  const quantidade = achados.length
+  const acrescentadoDepois = Math.max(0, bytes.length - (range[2] + range[3]))
   const texto = dec.decode(bytes.subarray(contents[0], contents[1]))
 
   let cms: pkijs.SignedData
@@ -175,6 +203,7 @@ export async function conferirAssinatura(bytes: Uint8Array): Promise<Conferencia
   const signatarios: Signatario[] = certs.map((c) => ({
     nome: nomeComum(c.subject),
     emissor: nomeComum(c.issuer),
+    autoassinado: distinguido(c.subject) === distinguido(c.issuer),
     // Sem Buffer: isto roda no navegador, onde ele não existe. A sonda pegou esse erro.
     serie: [...c.serialNumber.valueBlock.valueHexView].map((b) => b.toString(16).padStart(2, '0')).join(''),
     validoDe: c.notBefore.value.toISOString().slice(0, 10),
@@ -187,6 +216,7 @@ export async function conferirAssinatura(bytes: Uint8Array): Promise<Conferencia
   assinados.set(bytes.subarray(range[2], range[2] + range[3]), range[1])
 
   const cobertura = { assinados: assinados.length, total: bytes.length }
+  const extras = { quantidade, acrescentadoDepois }
   const politica = politicaDeclarada(cms)
   const indeterminada = (): Conferencia => ({
     estado: 'indeterminada',
@@ -194,6 +224,7 @@ export async function conferirAssinatura(bytes: Uint8Array): Promise<Conferencia
     motivo: 'A conferência não pôde ser concluída aqui — isto não significa que o documento esteja alterado.',
     signatarios,
     cobertura,
+    ...extras,
     politica,
   })
 
@@ -245,6 +276,7 @@ export async function conferirAssinatura(bytes: Uint8Array): Promise<Conferencia
         motivo: 'O documento foi alterado depois de assinado — a causa mais comum é compressão, edição ou junção.',
         signatarios,
         cobertura,
+        ...extras,
         politica,
       }
     }
@@ -284,6 +316,7 @@ export async function conferirAssinatura(bytes: Uint8Array): Promise<Conferencia
     motivo: 'O conteúdo assinado não mudou desde a assinatura.',
     signatarios,
     cobertura,
+    ...extras,
     politica,
   }
 }

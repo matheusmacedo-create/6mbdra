@@ -1,0 +1,74 @@
+/*
+ * Conferidor de assinaturas.
+ *
+ * A cor aqui tem função, não decoração: verde, vermelho e âmbar significam três ações diferentes
+ * (pode protocolar / recupere o original / confira em outro lugar). Por isso nenhum estado depende
+ * só da cor — cada cartão tem ícone e frase de ação própria, que continuam legíveis para quem não
+ * distingue as cores e para quem imprime a tela.
+ */
+.conferidor { width: 100%; min-width: 0; }
+.conf-dica { margin: 14px 0 0; text-align: center; font-size: 14.5px; color: var(--muted); }
+.conf-erro-linha { margin: 8px 0 0; text-align: center; font-size: 14.5px; color: var(--warn); }
+
+.conf-topo { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.conf-topo h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.4px; }
+.conf-limpar {
+  border: 1px solid var(--border-strong); background: var(--surface); color: var(--ink-2);
+  border-radius: 8px; padding: 7px 14px; font-size: 14.5px; font-weight: 600; cursor: pointer;
+}
+.conf-limpar:hover { background: var(--surface-hover); }
+.conf-limpar:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.conf-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+
+.conf-cartao {
+  background: var(--surface); border: 1px solid var(--border); border-left-width: 5px;
+  border-radius: var(--radius, 12px); padding: 20px; box-shadow: var(--shadow);
+}
+.conf-cartao.ok { border-left-color: var(--success); }
+.conf-cartao.ruim { border-left-color: var(--err); }
+.conf-cartao.atencao { border-left-color: var(--warn); }
+.conf-cartao.neutro { border-left-color: var(--border-strong); }
+
+.conf-cartao > header { display: flex; align-items: flex-start; gap: 12px; }
+.conf-cartao h3 { margin: 0; font-size: 17.5px; font-weight: 800; letter-spacing: -0.3px; line-height: 1.3; }
+.conf-marca { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; flex: 0 0 auto; }
+.conf-cartao.ok .conf-marca { background: var(--success-background); color: var(--success); }
+.conf-cartao.ruim .conf-marca { background: var(--err-bg); color: var(--err); }
+.conf-cartao.atencao .conf-marca { background: var(--warn-bg); color: var(--warn); }
+.conf-cartao.neutro .conf-marca { background: var(--info-bg); color: var(--muted); }
+
+.conf-arquivo { margin: 4px 0 0; font-size: 13.5px; color: var(--muted); word-break: break-word; }
+.conf-acao { margin: 14px 0 0; font-size: 16px; font-weight: 700; color: var(--ink); }
+.conf-motivo { margin: 6px 0 0; font-size: 15px; color: var(--ink-3); }
+
+.conf-alerta {
+  margin: 14px 0 0; padding: 12px 14px; border-radius: 8px;
+  background: var(--warn-bg); border: 1px solid var(--warn-line); color: var(--ink-2); font-size: 14.5px;
+}
+
+.conf-detalhes { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+.conf-detalhes h4 { margin: 0 0 10px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.conf-signatarios { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.conf-signatarios li { display: grid; gap: 2px; }
+.conf-nome { font-size: 15px; font-weight: 700; color: var(--ink); word-break: break-word; }
+.conf-meta { display: block; font-size: 13.5px; color: var(--muted); }
+
+.conf-fatos { margin: 14px 0 0; display: grid; gap: 10px; }
+.conf-fatos > div { display: grid; gap: 2px; }
+.conf-fatos dt { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.conf-fatos dd { margin: 0; font-size: 14.5px; color: var(--ink-2); }
+.conf-aviso-inline { color: var(--warn); font-weight: 600; }
+
+.conf-limite { margin-top: 16px; font-size: 14.5px; }
+.conf-limite > summary { cursor: pointer; font-weight: 600; color: var(--ink-3); }
+.conf-limite > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.conf-limite p { margin: 10px 0 0; color: var(--ink-3); }
+
+.conf-saida { margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--border); font-size: 14.5px; color: var(--ink-3); }
+
+@media (max-width: 560px) {
+  .conf-cartao { padding: 16px; }
+  .conf-cartao h3 { font-size: 16.5px; }
+  .conf-topo h2 { font-size: 18px; }
+}

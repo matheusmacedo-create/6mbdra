@@ -50,8 +50,9 @@ const ASSINAR = 'por-que-comprimir-antes-de-assinar-digitalmente'
 const OCR = 'o-que-e-ocr-e-texto-pesquisavel-no-pdf'
 const SENHA = 'pdf-com-senha-assinado-ou-corrompido-o-que-fazer'
 const QUANTAS = 'quantas-paginas-cabem-num-pdf-dentro-do-limite'
+const VERIFICAR = 'como-verificar-a-assinatura-digital-de-um-pdf'
 
-export const SLUGS_CITADOS = [RECUSA, CHECKLIST, LIMITES, PDFA, MB_MIB, CELULAR, DIVIDIR, NOMEAR, ASSINAR, OCR, SENHA, QUANTAS]
+export const SLUGS_CITADOS = [RECUSA, CHECKLIST, LIMITES, PDFA, MB_MIB, CELULAR, DIVIDIR, NOMEAR, ASSINAR, OCR, SENHA, QUANTAS, VERIFICAR]
 
 /** Quantos guias no máximo cabem no bloco da página de tribunal, antes de virar lista sem peso. */
 const MAX_POR_TRIBUNAL = 4
@@ -73,6 +74,7 @@ const UNIVERSAIS: { slug: string; motivo: string }[] = [
   { slug: ASSINAR, motivo: 'comprimir depois de assinar quebra a assinatura — a ordem importa' },
   { slug: OCR, motivo: 'PDF sem camada de texto não é pesquisável pelo tribunal nem pela parte contrária' },
   { slug: SENHA, motivo: 'documento com senha, assinado ou corrompido trava o envio de formas diferentes' },
+  { slug: VERIFICAR, motivo: 'conferir se a assinatura do PDF sobreviveu ao preparo, antes de descobrir pela recusa' },
 ]
 
 /** Índice estável a partir do id, para a rotação não mudar entre builds. */

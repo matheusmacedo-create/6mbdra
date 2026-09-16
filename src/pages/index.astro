@@ -12,6 +12,7 @@ const ICONES: Record<string, string> = {
   comprimir: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v7"/><path d="m8 7 4 4 4-4"/><path d="M12 21v-7"/><path d="m8 17 4-4 4 4"/></svg>',
   dividir: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"/><rect x="5" y="3" width="14" height="5" rx="1.5"/><rect x="5" y="16" width="14" height="5" rx="1.5"/></svg>',
   zip: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5z"/><path d="M12 3v18"/><path d="m4 7.5 8 4.5 8-4.5"/></svg>',
+  selo: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v5.5c0 4.4 3.1 8.3 8 9.5 4.9-1.2 8-5.1 8-9.5V6z"/><path d="m9 12 2 2 4-4"/></svg>',
   juntar: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="10" height="13" rx="2"/><path d="M17 8h2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-1"/></svg>',
   paginas: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 17.5h7M17.5 14v7"/></svg>',
   check: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m20 6-11 11-5-5"/></svg>',
@@ -43,6 +44,15 @@ const FERRAMENTAS = [
     desc: 'Baixe tudo em ordem, com nomes padronizados e um resumo para facilitar o protocolo.',
     status: 'Disponível',
     cta: 'Preparar lote',
+  },
+  {
+    icone: 'selo',
+    cor: 'green',
+    title: 'Conferir assinatura digital',
+    desc: 'Descubra se o PDF assinado continua íntegro ou se foi alterado depois de assinado.',
+    status: 'Disponível',
+    cta: 'Conferir assinatura',
+    href: '/conferir-assinatura/',
   },
   { icone: 'juntar', cor: 'yellow', title: 'Juntar PDFs', desc: 'Una procurações, contratos e anexos na ordem desejada antes de protocolar.', status: 'Em breve' },
   { icone: 'paginas', cor: 'red', title: 'Organizar páginas', desc: 'Reordene, remova ou gire páginas de documentos digitalizados em poucos cliques.', status: 'Em breve' },
@@ -144,7 +154,7 @@ const dadosEstruturados = {
         {FERRAMENTAS.map((f) =>
           f.cta ? (
             <li>
-              <a class="tool-card" href="/?view=tool" data-open-tool="card">
+              <a class="tool-card" href={f.href ?? '/?view=tool'} data-open-tool={f.href ? undefined : 'card'}>
                 <span class={`mark ${f.cor}`} aria-hidden="true" set:html={icone(f.icone)} />
                 <span class="title">{f.title}</span>
                 <span class="desc">{f.desc}</span>
@@ -173,7 +183,8 @@ const dadosEstruturados = {
       </ul>
       <p class="mais-sobre">
         Como cada uma funciona: <a href="/comprimir-pdf/">comprimir PDF</a> · <a href="/dividir-pdf/">dividir por tamanho</a> ·{' '}
-        <a href="/juntar-pdf/">juntar em um só</a> · <a href="/sistemas/">limites por sistema</a>
+        <a href="/juntar-pdf/">juntar em um só</a> · <a href="/conferir-assinatura/">conferir assinatura</a> ·{' '}
+        <a href="/sistemas/">limites por sistema</a>
       </p>
     </section>
 

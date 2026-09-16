@@ -20,7 +20,7 @@ Qualquer meio de manifestar concordância por via eletrônica é, tecnicamente, 
 
 ## Assinatura digital é a espécie exigida no processo eletrônico
 
-O que o meio jurídico chama de "assinatura digital" é, na prática, a assinatura eletrônica **qualificada**: baseada em certificado ICP-Brasil (e-CPF ou e-CNPJ), usando criptografia de chave pública para garantir simultaneamente a autoria e a integridade do documento — qualquer alteração no arquivo depois de assinado invalida a assinatura, o que é justamente o mecanismo que comprova que o documento não foi adulterado.
+O que o meio jurídico chama de "assinatura digital" é, na prática, a assinatura eletrônica **qualificada**: baseada em certificado ICP-Brasil (e-CPF ou e-CNPJ), usando criptografia de chave pública para garantir simultaneamente a autoria e a integridade do documento — qualquer alteração no arquivo depois de assinado invalida a assinatura, o que é justamente o mecanismo que comprova que o documento não foi adulterado. É esse mecanismo que o [conferidor de assinatura](/conferir-assinatura/) verifica, sem que o documento saia do seu computador.
 
 A Lei 11.419/2006, que trata do processo eletrônico, é a base para os tribunais exigirem esse nível de assinatura nas peças processuais. Por isso uma assinatura eletrônica simples ou avançada — válida, por exemplo, para assinar um contrato entre duas empresas — frequentemente **não** é aceita pelo sistema do tribunal para a petição em si, mesmo sendo uma assinatura eletrônica legítima para outros fins.
 
