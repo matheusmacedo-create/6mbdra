@@ -18,6 +18,7 @@ import { defineConfig, devices } from '@playwright/test'
  * `npx playwright install --with-deps firefox webkit`.
  */
 const NAVEGADORES = /@navegadores/
+const CELULAR = /@navegadores|@celular/
 
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -28,7 +29,9 @@ export default defineConfig({
   reporter: [['list']],
   outputDir: 'test-results/output',
   use: {
-    baseURL: 'http://localhost:4329',
+    // HTTPS com certificado local: ver o comentário em scripts/serve-dist.mjs (WebKit + upgrade-insecure-requests).
+    baseURL: 'https://localhost:4329',
+    ignoreHTTPSErrors: true,
     headless: true,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
@@ -37,10 +40,20 @@ export default defineConfig({
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
     { name: 'firefox', use: { ...devices['Desktop Firefox'] }, grep: NAVEGADORES },
     { name: 'webkit', use: { ...devices['Desktop Safari'] }, grep: NAVEGADORES },
+    /*
+     * Celular de verdade, emulado: viewport, toque, UA e pixel ratio do aparelho. iPhone roda em
+     * WebKit — o motor de TODO navegador no iOS, inclusive o Chrome — e Pixel em Chromium. Rodam os
+     * testes de motor (@navegadores) e os específicos de celular (@celular). Medido antes de existir:
+     * 11 dos 14 primeiros visitantes humanos chegaram pelo celular, à noite, e nenhum concluiu um
+     * lote; sem projeto de celular, a suíte nunca teria visto o que eles viram.
+     */
+    { name: 'iphone', use: { ...devices['iPhone 14'] }, grep: CELULAR },
+    { name: 'android', use: { ...devices['Pixel 7'] }, grep: CELULAR },
   ],
   webServer: {
     command: 'npm run build && node scripts/serve-dist.mjs 4329',
-    url: 'http://localhost:4329/',
+    url: 'https://localhost:4329/',
+    ignoreHTTPSErrors: true,
     reuseExistingServer: false,
     timeout: 300_000,
   },
