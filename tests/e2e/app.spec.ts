@@ -196,7 +196,12 @@ test('nenhuma requisição de rede transporta os documentos (RF06) @navegadores'
   const fileBytes = readFileSync(fx.scanBig)
   const size = String(fileBytes.length)
   const sha = createHash('sha256').update(fileBytes).digest('hex')
-  const allowed = /^\/(\?[a-z0-9=&%_-]*)?$|^\/_astro\/[\w.-]+\.(js|css|wasm|woff2)$|^\/favicon\.svg$/
+  /*
+   * Lista fechada do que a página da ferramenta pode pedir. O manifest e os ícones de tela inicial
+   * entram porque o WebKit busca o manifest já no carregamento (o Chromium, não) — foi este teste,
+   * rodando no Safari, que revelou a diferença. São GETs de arquivos estáticos do próprio site.
+   */
+  const allowed = /^\/(\?[a-z0-9=&%_-]*)?$|^\/_astro\/[\w.-]+\.(js|css|wasm|woff2)$|^\/favicon\.svg$|^\/manifest\.webmanifest$|^\/(apple-touch-icon|icon-\d+)\.png$/
   expect(sockets, 'nenhum WebSocket').toHaveLength(0)
   for (const r of requests) {
     const rota = new URL(r.url).pathname
