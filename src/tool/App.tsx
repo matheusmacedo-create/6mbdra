@@ -15,6 +15,8 @@ import { planZip, type ZipDoc, type ZipExcluded } from './lib/zipPlan'
 import { LEVELS } from './lib/engine/levels'
 import { SITE } from '../config/site.mjs'
 import { track } from './lib/analytics'
+import { criarTelaAcesa } from './lib/telaAcesa'
+import { compartilharArquivos, paraFile, podeCompartilharArquivos } from './lib/compartilhar'
 import './tool.css'
 
 const STORAGE_KEY = 'brpdf:settings:v1'
@@ -247,6 +249,32 @@ export default function App() {
     window.addEventListener('beforeunload', handler)
     return () => window.removeEventListener('beforeunload', handler)
   }, [counts.busy])
+
+  // Tela acesa enquanto o lote roda (ver lib/telaAcesa.ts): no celular, tela apagada é lote parado.
+  const tela = useRef<ReturnType<typeof criarTelaAcesa> | null>(null)
+  useEffect(() => {
+    tela.current ??= criarTelaAcesa()
+    if (phase === 'processing') void tela.current.manter()
+    else void tela.current.soltar()
+  }, [phase])
+  useEffect(() => () => void tela.current?.soltar(), [])
+
+  /*
+   * Compartilhar pela folha do sistema (WhatsApp, e-mail…) — ver lib/compartilhar.ts. A lista é
+   * montada de forma síncrona, de propósito: a folha só abre dentro do toque, e um `await` antes
+   * dela faz o Safari recusar. Os originais mantidos entram como o próprio File, sem leitura.
+   */
+  const podeCompartilhar = useMemo(() => podeCompartilharArquivos(), [])
+  const arquivosDoLote = (): File[] => {
+    const out: File[] = []
+    for (const j of jobs) {
+      const k = deriveKind(j, process)
+      if (isStaleJob(j, process)) continue
+      if (k === 'done' && j.outputs.length > 0) out.push(...j.outputs.map(paraFile))
+      else if (k === 'unchanged' || (k === 'done' && j.outputs.length === 0)) out.push(new File([j.file], safeFileName(j.name), { type: 'application/pdf' }))
+    }
+    return out
+  }
 
   const capacity = deviceCapacityWarning(jobs.map((j) => ({ size: j.originalSize })))
 
@@ -495,6 +523,11 @@ export default function App() {
                     {zipping ? 'Montando o pacote…' : `Baixar lote em ZIP (${zipCount})`}
                   </button>
                 )}
+                {phase === 'result' && zipCount > 0 && podeCompartilhar && (
+                  <button className="btn secondary" onClick={() => void compartilharArquivos(arquivosDoLote(), 'lote')} data-testid="share-all">
+                    Compartilhar
+                  </button>
+                )}
                 {counts.busy === 0 && (
                   <button className="btn secondary" onClick={clear} data-testid="clear">
                     {phase === 'result' ? 'Novo lote' : 'Limpar lista'}
@@ -619,6 +652,11 @@ export default function App() {
                       {zipCount > 0 && (
                         <button className="btn block" onClick={collectZip} disabled={zipping} data-testid="download-all">
                           {zipping ? 'Montando o pacote…' : `Baixar lote em ZIP (${zipCount})`}
+                        </button>
+                      )}
+                      {zipCount > 0 && podeCompartilhar && (
+                        <button className="btn block secondary" onClick={() => void compartilharArquivos(arquivosDoLote(), 'lote')} data-testid="share-all-destino">
+                          Compartilhar
                         </button>
                       )}
                       <span className="hint" data-testid="nothing-to-prepare">

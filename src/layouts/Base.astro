@@ -80,7 +80,8 @@ const LINKS: NavLink[] = [
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {/* viewport-fit=cover: a faixa de consentimento usa env(safe-area-inset-bottom) para não ficar sob a barra do iPhone. */}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#2e2e2e" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
@@ -106,6 +107,15 @@ const LINKS: NavLink[] = [
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={new URL('/og.png', SITE.url).href} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {/*
+      Tela inicial do celular. Sem apple-touch-icon o iOS usa uma captura da página como ícone; o
+      Android lê o manifest. Os PNGs saem de scripts/gera-icones.mjs, do mesmo desenho do favicon.
+      display "minimal-ui" no manifest, e não "standalone": no modo app do iOS o download de Blob
+      é instável, e baixar é o que esta ferramenta faz.
+    */}
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-title" content={SITE.name} />
     <link rel="sitemap" href="/sitemap-index.xml" />
     <slot name="head" />
   </head>

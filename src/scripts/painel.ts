@@ -108,6 +108,8 @@ const ROTULOS: Record<string, string> = {
   conferidor: 'Conferidor de assinaturas',
   metadados_lidos: 'Metadados lidos',
   aviso_inscricao: 'Inscrição no aviso de mudança',
+  compartilhou: 'Compartilhou o resultado',
+  lote: 'Lote inteiro',
   tribunal_pagina: 'Página de tribunal',
   metadados: 'Leitor de metadados',
   com_metadados: 'Tinha metadados',

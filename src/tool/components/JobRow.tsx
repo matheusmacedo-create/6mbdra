@@ -1,6 +1,8 @@
 import { deriveKind, isStale as isStaleJob, targetFor, type Job, type ProcessSettings } from '../lib/types'
 import { formatBytes, formatDuration, formatReduction } from '../lib/format'
+import { useMemo } from 'react'
 import { downloadFile, downloadZip } from '../lib/download'
+import { compartilharArquivos, paraFile, podeCompartilharArquivos } from '../lib/compartilhar'
 import { LEVELS } from '../lib/engine/levels'
 import { baseName } from '../lib/naming'
 
@@ -37,6 +39,7 @@ function pageRangeLabel(range: [number, number]): string {
 }
 
 export function JobRow({ job, process, onRemove, onRetry, onAllow, onMove, posicao, total }: Props) {
+  const podeCompartilhar = useMemo(() => podeCompartilharArquivos(), [])
   const targetBytes = targetFor(job, process)
   const kind = deriveKind(job, process)
   const stale = isStaleJob(job, process)
@@ -100,6 +103,16 @@ export function JobRow({ job, process, onRemove, onRetry, onAllow, onMove, posic
           {kind === 'done' && job.outputs.length > 1 && (
             <button className={`btn small ${stale ? 'secondary' : 'dark'}`} onClick={() => downloadZip(job.outputs, `${baseName(job.name)}_partes.zip`, 'partes')}>
               Baixar as {job.outputs.length} partes (.zip)
+            </button>
+          )}
+          {kind === 'done' && job.outputs.length > 0 && podeCompartilhar && (
+            <button
+              className="btn small secondary"
+              onClick={() => void compartilharArquivos(job.outputs.map(paraFile), job.outputs.length > 1 ? 'partes' : 'arquivo')}
+              aria-label={`Compartilhar ${job.name}`}
+              data-testid="share"
+            >
+              Compartilhar
             </button>
           )}
           {kind === 'error' && job.outputs.length > 0 && (

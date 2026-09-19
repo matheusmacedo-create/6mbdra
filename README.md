@@ -199,8 +199,41 @@ deste host, então não é segredo. Para trocar: gerar 32 hex novos e publicar.
 
 O build usa o alvo padrão do Vite ("baseline widely available": Chrome/Edge 107+, Firefox 104+, Safari 16+,
 todos de 2022 em diante). Requisitos de execução: WebAssembly, Web Workers em módulo e `File.arrayBuffer()`.
-Sem WebAssembly a página avisa e a divisão em partes continua funcionando. Testado automaticamente só em
-Chromium; Firefox e Safari precisam de conferência manual antes do lançamento (spec §15.1).
+Sem WebAssembly a página avisa e a divisão em partes continua funcionando.
+
+A suíte de ponta a ponta roda em quatro projetos (`playwright.config.ts`): Chromium com tudo; WebKit — o
+motor de todo navegador no iOS, inclusive o Chrome — com os testes de motor (`@navegadores`: WebAssembly,
+Workers, WebCrypto, download de Blob, layout no celular); e dois aparelhos emulados, **iPhone 14 (WebKit)**
+e **Pixel 7 (Chromium)**, com os testes de motor mais os específicos de celular (`@celular`). Firefox roda
+com `npm run test:e2e:navegadores`.
+
+### Celular (iOS e Android)
+
+O que o celular tem de diferente, e como o site lida com cada coisa:
+
+- **A tela apaga no meio do lote.** O iOS suspende a aba e o Android estrangula o JavaScript; o
+  Ghostscript para. `src/tool/lib/telaAcesa.ts` pede um *wake lock* enquanto a fase é "processando" e
+  pede de novo quando a pessoa volta para a aba. Sem suporte, nada muda.
+- **O passo seguinte é mandar o PDF para alguém.** `src/tool/lib/compartilhar.ts` abre a folha do
+  sistema (WhatsApp, e-mail…) com os PDFs como arquivos — botão "Compartilhar" por documento e para o
+  lote. Só aparece onde `navigator.canShare({ files })` é verdadeiro (Safari iOS 15+, Chrome Android);
+  a lista de arquivos é montada sem nenhum `await`, porque o Safari só abre a folha dentro do toque.
+- **Tela inicial.** `apple-touch-icon.png` (o iOS ignora SVG e, sem ele, usa uma captura da página) e
+  `manifest.webmanifest` com ícones 192/512, gerados de `favicon.svg` por `scripts/gera-icones.mjs`.
+  `display: minimal-ui`, não `standalone`: no modo app do iOS o download de Blob é instável.
+- **Barra de gestos do iPhone.** `viewport-fit=cover` e `env(safe-area-inset-bottom)` na faixa de
+  consentimento, que é o único elemento fixo no rodapé.
+- **Memória.** `deviceCapacityWarning()` (`src/tool/lib/limits.ts`) avisa acima de 50 MB por arquivo
+  em celular/tablet, sem bloquear. O motor pesa 11 MB comprimidos na primeira visita (a interface diz
+  isso), fica em cache por um ano e compila em streaming.
+- Campos de texto têm 16 px: abaixo disso o iOS dá zoom ao focar. Não há `100vh` nem `:hover` que
+  esconda conteúdo.
+
+**Servidor de teste em HTTPS.** `scripts/serve-dist.mjs` serve o `dist/` com certificado autoassinado
+(gerado com openssl em `.cache/`). Motivo: a CSP tem `upgrade-insecure-requests`, e o WebKit aplica isso
+até em `localhost` — trocava `http://localhost/_astro/…` por `https://` e falhava o handshake, o que
+fazia a suíte inteira do Safari falhar antes de carregar o CSS. Chromium e Firefox isentam localhost, e
+por isso ninguém tinha visto. `--http` mantém o modo antigo para conferência manual.
 
 ## Licença
 

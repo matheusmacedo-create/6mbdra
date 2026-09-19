@@ -44,6 +44,7 @@ export type EventName =
   // 5. levou embora
   | 'zip_gerado'
   | 'download'
+  | 'compartilhou' // mandou o resultado pela folha do sistema (WhatsApp, e-mail…), no celular
 
 /*
  * Campos de medição, e só estes.

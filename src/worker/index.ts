@@ -25,7 +25,7 @@ const EVENTOS = new Set([
   'arquivo_adicionado', 'arquivo_analisado', 'arquivo_removido', 'liberar_arquivo',
   'juntou_documentos', 'lote_iniciado', 'lote_cancelado', 'lote_concluido', 'arquivo_resultado', 'tentar_novamente', 'erro',
   'assinatura_conferida', 'metadados_lidos', 'aviso_inscricao',
-  'zip_gerado', 'download',
+  'zip_gerado', 'download', 'compartilhou',
 ])
 
 /** Campos de texto aceitos, com o tamanho máximo de cada um. */
